@@ -32,6 +32,15 @@ import { summarize, computeLift, formatSummary, formatLift, type Summary } from 
 import { createAnthropicProvider } from "./providers/anthropic.js";
 import { createOpenAIProvider } from "./providers/openai.js";
 import { createMockProvider } from "./providers/mock.js";
+import {
+  buildProvenance,
+  getGitInfo,
+  hashFile,
+  digestFiles,
+  readGenerationProvenance,
+  sha256,
+  type Provenance,
+} from "./provenance.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "../..");
@@ -87,13 +96,15 @@ export interface ReportInput {
   providerId: string;
   modelName: string | null;
   trials: number;
+  /** 計測来歴（施策6A）。省略可（旧テスト互換）だが CLI 実行では必ず渡す */
+  provenance?: Provenance;
 }
 
 export function buildReport(input: ReportInput): {
   report: string;
   groups: Record<string, Record<ConditionId, Summary>>;
 } {
-  const { cells, conditions, prompts, isoDate, providerId, modelName, trials } = input;
+  const { cells, conditions, prompts, isoDate, providerId, modelName, trials, provenance } = input;
   const standardIds = prompts.filter((p) => !p.isRedTeam).map((p) => p.id);
   const redTeamIds = prompts.filter((p) => p.isRedTeam).map((p) => p.id);
   const allIds = prompts.map((p) => p.id);
@@ -122,6 +133,18 @@ export function buildReport(input: ReportInput): {
   let report = `# melta UI Benchmark — 条件別 DS 準拠スコア\n\n`;
   report += `**日時**: ${isoDate}\n`;
   report += `**Provider**: ${providerId}${modelName ? ` (${modelName})` : ""}\n`;
+  if (provenance) {
+    const g = provenance.git;
+    const commitStr = g.commit
+      ? `${g.commit.slice(0, 7)}${g.dirty ? ` (dirty: ${g.dirtyFiles.length} files)` : ""}`
+      : "(git 情報なし)";
+    report += `**Commit**: ${commitStr}\n`;
+    if (provenance.mode === "score-dir") {
+      report += provenance.generation
+        ? `**生成元**: ${provenance.generation.date} / ${provenance.generation.provider.id}${provenance.generation.provider.model ? ` (${provenance.generation.provider.model})` : ""} / commit ${provenance.generation.git.commit?.slice(0, 7) ?? "不明"}\n`
+        : `**生成元**: provenance 不明（score-dir に provenance.json が無い。生成時の model / commit は復元不能）\n`;
+    }
+  }
   report += `**Trials/cell**: ${trials}（試行 ${totalAttempted} / 失敗 ${totalFailed}）\n`;
   report += `**Prompts**: ${allIds.join(", ")}\n`;
   report += `**採点**: 共通 lint core による DS 準拠 proxy（error -10 / warn -3、base 50 + 準拠シグナル +5）。見た目の美しさそのものではない。\n`;
@@ -350,6 +373,13 @@ interface HistoryRecord {
   baselineCondition: ConditionId;
   byCondition: Record<string, { mean: number; ci95: number | null; min: number; max: number; n: number }>;
   liftVsBaseline: Record<string, number>;
+  // --- 計測来歴（施策6A, 2026-07 追加。旧エントリは欠落のまま = 任意フィールド） ---
+  // results/ は gitignore のため、git に残る来歴の正本はこの要約。
+  git?: Provenance["git"];
+  inputHashes?: Provenance["inputHashes"];
+  cli?: string[];
+  /** score-dir 実行時の生成元来歴（provenance.json から引き継ぎ。無ければ null を明示記録） */
+  generation?: Provenance["generation"];
 }
 
 function appendHistory(record: HistoryRecord): void {
@@ -403,7 +433,11 @@ async function main(): Promise<void> {
   console.log(`  provider: ${effectiveProvider}, trials/cell: ${trials}, temperature: ${temperature ?? "(provider 既定)"}`);
 
   const isoDate = new Date().toISOString();
-  const runDir = resolve(resultsDir, isoDate.slice(0, 10));
+  // runDir は日時分秒まで含める（同日再実行・mock 検証実行が過去 run を上書きしないように。施策6A）
+  const runDir = resolve(
+    resultsDir,
+    `${isoDate.slice(0, 10)}-${isoDate.slice(11, 19).replace(/:/g, "")}`
+  );
   if (!existsSync(runDir)) mkdirSync(runDir, { recursive: true });
 
   const targetPrompts = promptFilter
@@ -454,14 +488,49 @@ async function main(): Promise<void> {
     }
   }
 
+  // 実効 model の記録: score-dir は生成しない（generation 側に残る）、mock は無意味なので null。
+  // それ以外（anthropic / 将来の openai 実装）は CLI 指定の model を記録する
+  const recordedModel = scoreDir || providerId === "mock" ? null : modelName;
+
+  // --- 計測来歴の組み立て（施策6A）---
+  const scoredPaths = cells.flatMap((c) => c.trials.map((t) => t.htmlPath));
+  const provenance = buildProvenance({
+    date: isoDate,
+    mode: scoreDir ? "score-dir" : "generate",
+    git: getGitInfo(root),
+    // 実際に送る組み立て済み context を hash（DESIGN.md・埋め込み contracts の変化を自動で拾う）
+    contextHashes: Object.fromEntries(conditions.map((c) => [c.id, sha256(c.context)])),
+    fileHashes: Object.fromEntries(
+      [
+        "design/benchmarks/prompts.ts",
+        "design/contracts/rules.json", // scorer（共通 lint core）の入力
+      ].map((p) => [p, hashFile(resolve(root, p)) ?? "(missing)"])
+    ),
+    scoredFilesDigest: scoreDir ? digestFiles(scoredPaths) : null,
+    provider: {
+      id: effectiveProvider,
+      model: recordedModel,
+      temperature: temperature ?? null,
+      temperatureSource: temperature != null ? "cli" : "provider-default",
+      trials,
+    },
+    prompts: targetPrompts.map((p) => p.id),
+    conditions: conditions.map((c) => c.id),
+    cli: args,
+    generation: scoreDir ? readGenerationProvenance(resolve(scoreDir)) : null,
+  });
+  const provenancePath = resolve(runDir, "provenance.json");
+  writeFileSync(provenancePath, JSON.stringify(provenance, null, 2) + "\n", "utf-8");
+
   const { report, groups } = buildReport({
     cells,
     conditions,
     prompts: targetPrompts,
     isoDate,
     providerId: effectiveProvider,
-    modelName: scoreDir ? null : providerId === "anthropic" ? modelName : null,
+    modelName: recordedModel,
     trials,
+    provenance,
   });
   const reportPath = resolve(runDir, "report.md");
   writeFileSync(reportPath, report, "utf-8");
@@ -485,7 +554,7 @@ async function main(): Promise<void> {
     appendHistory({
       date: isoDate,
       provider: effectiveProvider,
-      model: scoreDir ? null : providerId === "anthropic" ? modelName : null,
+      model: recordedModel,
       trials,
       temperature: temperature ?? null,
       prompts: targetPrompts.map((p) => p.id),
@@ -504,9 +573,14 @@ async function main(): Promise<void> {
         ])
       ),
       liftVsBaseline,
+      git: provenance.git,
+      inputHashes: provenance.inputHashes,
+      cli: provenance.cli,
+      generation: provenance.generation,
     });
     console.log(`\n  history: ${historyPath.replace(root + "/", "")} に追記`);
   }
+  console.log(`  provenance: ${provenancePath.replace(root + "/", "")}`);
   console.log(`  レポート: ${reportPath.replace(root + "/", "")}`);
 }
 

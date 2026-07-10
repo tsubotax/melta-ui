@@ -19,6 +19,13 @@ import {
   aggregateByCondition,
   type Cell,
 } from "../design/benchmarks/runner.js";
+import {
+  buildProvenance,
+  extractGenerationSummary,
+  sha256,
+  type GitInfo,
+  type ProviderInfo,
+} from "../design/benchmarks/provenance.js";
 import { prompts as benchmarkPrompts } from "../design/benchmarks/prompts.js";
 
 test.describe("stats: 集計純関数", () => {
@@ -147,5 +154,84 @@ test.describe("buildReport: 集約・lift・prompt 等重み", () => {
     expect(groups.redteam.full.mean).toBe(80);
     expect(report).toContain("限界寄与");
     expect(report).toContain("自己検証"); // contracts→full の交絡注記が出る
+  });
+});
+
+test.describe("provenance: 計測来歴（施策6A）", () => {
+  const GIT: GitInfo = { commit: "a".repeat(40), dirty: true, dirtyFiles: ["DESIGN.md"] };
+  const PROVIDER: ProviderInfo = {
+    id: "anthropic",
+    model: "claude-sonnet-4-20250514",
+    temperature: null,
+    temperatureSource: "provider-default",
+    trials: 3,
+  };
+
+  function prov(overrides: Partial<Parameters<typeof buildProvenance>[0]> = {}) {
+    return buildProvenance({
+      date: "2026-01-01T00:00:00.000Z",
+      mode: "generate",
+      git: GIT,
+      contextHashes: { cold: sha256("") },
+      fileHashes: { "design/contracts/rules.json": sha256("{}") },
+      scoredFilesDigest: null,
+      provider: PROVIDER,
+      prompts: ["1"],
+      conditions: ["cold"],
+      cli: ["--prompt", "1"],
+      generation: null,
+      ...overrides,
+    });
+  }
+
+  test("buildProvenance は必須キーを揃え、dirty / temperatureSource が伝播する", () => {
+    const p = prov();
+    expect(p.schemaVersion).toBe(1);
+    expect(p.git.dirty).toBe(true);
+    expect(p.git.dirtyFiles).toEqual(["DESIGN.md"]);
+    expect(p.provider.temperature).toBeNull();
+    expect(p.provider.temperatureSource).toBe("provider-default"); // null は「provider 既定」の明示
+    expect(p.inputHashes.contextByCondition.cold).toMatch(/^[0-9a-f]{64}$/);
+    expect(p.generation).toBeNull();
+  });
+
+  test("extractGenerationSummary: generate 由来からは git/provider/inputHashes/date を要約", () => {
+    const g = extractGenerationSummary(prov());
+    expect(g?.date).toBe("2026-01-01T00:00:00.000Z");
+    expect(g?.git.commit).toBe(GIT.commit);
+    expect(g?.provider.model).toBe(PROVIDER.model);
+  });
+
+  test("extractGenerationSummary: score-dir 由来は generation を引き継ぐ（再帰肥大しない）", () => {
+    const original = extractGenerationSummary(prov())!;
+    const scoreDirProv = prov({ mode: "score-dir", generation: original });
+    const g = extractGenerationSummary(scoreDirProv);
+    // score-dir 実行自体の git ではなく、元の生成時来歴が返る。generation の generation は作らない
+    expect(g).toEqual(original);
+    expect((g as Record<string, unknown>).generation).toBeUndefined();
+  });
+
+  test("extractGenerationSummary: 不正・欠落は null（推測で埋めない）", () => {
+    expect(extractGenerationSummary(null)).toBeNull();
+    expect(extractGenerationSummary("broken")).toBeNull();
+    expect(extractGenerationSummary({ mode: "generate" })).toBeNull(); // date/git/provider 欠落
+    expect(extractGenerationSummary({ mode: "score-dir" })).toBeNull(); // 生成元不明の score-dir
+  });
+
+  test("buildReport: provenance 付きで commit 短縮 SHA と生成元不明の注記が出る", () => {
+    const std = benchmarkPrompts.find((p) => !p.isRedTeam)!;
+    const cells: Cell[] = [];
+    const { report } = buildReport({
+      cells,
+      conditions: [{ id: "cold", label: "cold", context: "", useTools: false }],
+      prompts: [std],
+      isoDate: "2026-01-01T00:00:00.000Z",
+      providerId: "score-dir",
+      modelName: null,
+      trials: 1,
+      provenance: prov({ mode: "score-dir", generation: null }),
+    });
+    expect(report).toContain("**Commit**: aaaaaaa (dirty: 1 files)");
+    expect(report).toContain("provenance 不明"); // 生成元が復元不能なことを隠さない
   });
 });
