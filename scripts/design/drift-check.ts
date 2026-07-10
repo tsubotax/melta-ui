@@ -17,7 +17,7 @@ import { isAutoDetectable } from "../../src/utils/matcher.js";
 import { getAllRules } from "../../src/utils/loader.js";
 import { buildFrontMatter } from "./export-designmd.js";
 import {
-  isManualOnly,
+  isDocOnlyGuarded,
   renderCoverageBlock,
   renderCoverageBlockEn,
   COVERAGE_BEGIN,
@@ -335,15 +335,16 @@ if (!foundationsLabel) {
   ok(`Foundations 件数一致: ${foundationCount} 件`);
 }
 
-// --- 8. manual ルールの orphan 0 検証 ---
-// 「文脈判断が要る manual ルール」は静的検出に乗らないため、どこかの doc/contract が
-// AI に提示しないと到達不能になる。全 manual ルールが contract.rules[] か
-// foundations/patterns の md（prohibited.md の <!-- ID --> コメント等）でカバーされることを担保する。
+// --- 8. doc-only ルールの orphan 0 検証 ---
+// 「ドキュメント参照でのみ守られるルール」（human-only / llm-judge-candidate / impossible-static /
+// 未分類）は静的検出にもテストにも乗らないため、どこかの doc/contract が AI に提示しないと
+// 到達不能になる。全対象が contract.rules[] か foundations/patterns の md（prohibited.md の
+// <!-- ID --> コメント等）でカバーされることを担保する。
 // 100 個目のルール追加時に「rules.json に足したが参照経路が無い」死蔵を構造的に防ぐ。
-section("8. manual ルール orphan 0（参照経路の到達性）");
+section("8. doc-only ルール orphan 0（参照経路の到達性）");
 
 const allRules = getAllRules();
-const manualRules = allRules.filter(isManualOnly);
+const manualRules = allRules.filter(isDocOnlyGuarded);
 
 // カバレッジコーパス: contract.rules[] の ID + foundations/patterns の md 本文
 const contractRefIds = new Set<string>();
@@ -377,12 +378,12 @@ const orphans = manualRules.filter((r) => {
 });
 if (orphans.length > 0) {
   drift(
-    `manual ルール ${orphans.length} 件が contract.rules[] にも foundations/patterns md にも未参照（orphan）: ${orphans
+    `doc-only ルール ${orphans.length} 件が contract.rules[] にも foundations/patterns md にも未参照（orphan）: ${orphans
       .map((r) => r.id)
       .join(", ")}`
   );
 } else {
-  ok(`manual ${manualRules.length} 件すべてが参照経路を持つ（orphan 0）`);
+  ok(`doc-only ${manualRules.length} 件すべてが参照経路を持つ（orphan 0）`);
 }
 
 // --- 9. README の検証カバレッジ表が computeCoverage と一致するか ---

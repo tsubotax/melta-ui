@@ -54,7 +54,7 @@ export function checkHtml(source: string, sourceType: SourceType = "html"): Chec
     violations,
     coverage: {
       automated: `${rules.length} ルール中 ${automatedTotal} 件を自動検査（class: ${autoCount} / html-attr: ${attrCount}${sourceType === "html" ? ` / composition: ${compositionCount}` : ""}）`,
-      notAutomated: `残り ${manualCount} 件は文脈依存（manual）で自動検査できない。violations が空でも完全準拠の保証ではないため、必要に応じて get_rules({detector:"manual"}) を確認すること`,
+      notAutomated: `残り ${manualCount} 件はこのツールでは検査されない（interaction test 担保 / 静的検出不能 / 文脈依存の manual を含む。経路は各ルールの automationStatus 参照）。violations が空でも完全準拠の保証ではないため、必要に応じて get_rules({detector:"manual"}) を確認すること`,
     },
   };
 }

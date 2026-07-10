@@ -215,13 +215,16 @@ export interface RuleEntry {
   /** detector="composition" に付与（S2）。DOM 合成検査の spec */
   compositionCheck?: CompositionCheck;
   /**
-   * 自動検証の状態（P1-5）。カバレッジ集計の意味を明示する:
+   * 現在の自動検証状態（P1-5、棚卸しは 2026-07）。カバレッジ集計の意味を明示する:
    * - "auto": class/attr/composition で静的に自動検出される
    * - "covered-by-test": 静的検出はしないが Playwright 等の interaction test で担保
    * - "impossible-static": 「どれが active/modal/selected か」等の意味依存で静的検出は原理的に不能
+   *   （静的検出可能性の軸。runtime test での検証とは独立 — MODAL_ROLE_DIALOG_REQUIRED が実証）
+   * - "llm-judge-candidate": 現在は自動検証なし。将来の LLM 審査（shadow judge）候補（計画であり稼働中の検証ではない）
+   * - "human-only": 現在は自動検証なし。人間レビューでのみ守る
    * 省略時は detector から導出（manual 以外で pattern/check を持てば auto 相当）。
    */
-  automationStatus?: "auto" | "covered-by-test" | "impossible-static";
+  automationStatus?: "auto" | "covered-by-test" | "impossible-static" | "llm-judge-candidate" | "human-only";
 }
 
 /** lint-core / attr-lint が返す 1 件の違反 */

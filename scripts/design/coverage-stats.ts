@@ -13,19 +13,38 @@ import { getAllRules } from "../../src/utils/loader.js";
 import { isAutoDetectable } from "../../src/utils/matcher.js";
 import type { RuleEntry } from "../../src/utils/types.js";
 
+/** 静的検出機構（class/attr/composition のいずれか）を持つルールの判定述語 */
+export function isStaticallyDetectable(r: RuleEntry): boolean {
+  if (isAutoDetectable(r)) return true;
+  if (r.detector === "html-attr" && r.htmlAttrCheck != null) return true;
+  if (r.detector === "composition" && r.compositionCheck != null) return true;
+  return false;
+}
+
 /**
- * 「manual（AI 参照のみ）」ルールの判定述語。
- * いずれの静的/テスト経路にも乗らないルール = 文脈判断が要り、AI への提示でのみ守らせる。
- * coverage-stats の manualOnly カウントと drift-check の orphan 検証がこの 1 箇所を共有し、
- * 集計値と実リストが乖離しないようにする。
+ * 「ドキュメント参照でのみ守られる」ルールの判定述語（2026-07 棚卸しで isManualOnly から改名・拡張）。
+ * 静的検出にもテストにも乗らないルール = AI/人間がドキュメントを読むことだけが防御線。
+ * impossible-static も静的に検出されない以上ここに含める（旧 isManualOnly は除外していたが、
+ * 参照経路が無ければ死蔵する点は同じ）。coverage-stats の集計と drift-check の orphan 検証が
+ * この 1 箇所を共有し、集計値と実リストが乖離しないようにする。
  */
-export function isManualOnly(r: RuleEntry): boolean {
-  if (isAutoDetectable(r)) return false;
-  if (r.detector === "html-attr" && r.htmlAttrCheck != null) return false;
-  if (r.detector === "composition" && r.compositionCheck != null) return false;
+export function isDocOnlyGuarded(r: RuleEntry): boolean {
+  if (isStaticallyDetectable(r)) return false;
   if (r.automationStatus === "covered-by-test") return false;
-  if (r.automationStatus === "impossible-static") return false;
   return true;
+}
+
+/** 棚卸し未了（非静的なのに automationStatus 未宣言）の判定述語 */
+export function isUnclassified(r: RuleEntry): boolean {
+  return !isStaticallyDetectable(r) && r.automationStatus == null;
+}
+
+/**
+ * 「無防備 error ルール」= severity=error なのに自動検証（静的検出 / interaction test）が
+ * 一切効いていないルール。llm-judge-candidate は計画であって稼働中の検証ではないため含める。
+ */
+export function isUnguardedError(r: RuleEntry): boolean {
+  return r.severity === "error" && isDocOnlyGuarded(r);
 }
 
 export interface Coverage {
@@ -40,10 +59,16 @@ export interface Coverage {
   staticAuto: number;
   /** 静的検出はしないが interaction test で担保 */
   coveredByTest: number;
-  /** 意味依存で静的検出が原理的に不能 */
+  /** 意味依存で静的検出が原理的に不能（自動検証なし） */
   impossibleStatic: number;
-  /** 上記いずれにも乗らない（manual で AI 参照のみ） */
-  manualOnly: number;
+  /** 自動検証なし・将来の LLM 審査候補（2026-07 棚卸し） */
+  llmJudgeCandidate: number;
+  /** 自動検証なし・人間レビューでのみ守る（2026-07 棚卸し） */
+  humanOnly: number;
+  /** 棚卸し未了（非静的なのに automationStatus 未宣言） */
+  unclassified: number;
+  /** severity=error なのに自動検証が一切効いていない件数（≠ バケットの一部。横断集計） */
+  unguardedError: number;
 }
 
 export function computeCoverage(): Coverage {
@@ -64,8 +89,22 @@ export function computeCoverage(): Coverage {
     staticAuto,
     coveredByTest,
     impossibleStatic,
-    manualOnly: rules.filter(isManualOnly).length,
+    llmJudgeCandidate: rules.filter((r) => r.automationStatus === "llm-judge-candidate").length,
+    humanOnly: rules.filter((r) => r.automationStatus === "human-only").length,
+    unclassified: rules.filter(isUnclassified).length,
+    unguardedError: rules.filter(isUnguardedError).length,
   };
+}
+
+/** 無防備 error ルールの ID を automationStatus 別にグループ化（CLI の一覧表示用） */
+export function listUnguardedErrors(): Map<string, string[]> {
+  const groups = new Map<string, string[]>();
+  for (const r of getAllRules().filter(isUnguardedError)) {
+    const key = r.automationStatus ?? "unclassified";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(r.id);
+  }
+  return groups;
 }
 
 // --- stateSpec カバレッジ（P2-1 Phase1b の backlog 計器） ---
@@ -116,16 +155,30 @@ export const COVERAGE_END = "<!-- END:coverage -->";
 export const COVERAGE_EN_BEGIN = "<!-- BEGIN:coverage-en (npm run design:coverage で再生成) -->";
 export const COVERAGE_EN_END = "<!-- END:coverage-en -->";
 
+/** バケット別の error 件数（README 表の「うち error N」用） */
+function errorCountsByBucket(): { impossibleStatic: number; llmJudgeCandidate: number; humanOnly: number; unclassified: number } {
+  const rules = getAllRules().filter((r) => r.severity === "error");
+  return {
+    impossibleStatic: rules.filter((r) => r.automationStatus === "impossible-static").length,
+    llmJudgeCandidate: rules.filter((r) => r.automationStatus === "llm-judge-candidate").length,
+    humanOnly: rules.filter((r) => r.automationStatus === "human-only").length,
+    unclassified: rules.filter(isUnclassified).length,
+  };
+}
+
 /** 日本語 README 用の経路別マトリクス（アンカー込み） */
 export function renderCoverageBlock(): string {
   const c = computeCoverage();
+  const e = errorCountsByBucket();
   const rows = [
     "| 経路 | 件数 | 内容 |",
     "|------|------|------|",
     `| 静的自動検証 | **${c.staticAuto} / ${c.total}** | class マッチ ${c.classAuto}（MCP \`check_rule\` 同経路）+ html-attr ${c.htmlAttr} + composition ${c.composition}（ネスト + a11y DOM） |`,
     `| interaction test | ${c.coveredByTest} | \`tests/modal.spec.ts\` が focus trap / Escape / focus 復帰を実機検証 |`,
-    `| 静的検出 不能 | ${c.impossibleStatic} | \`impossible-static\`（active/selected/current の特定が意味依存） |`,
-    `| manual（AI 参照のみ） | ${c.manualOnly} | 文脈判断が要るもの。\`get_rules\` で AI に提示 |`,
+    `| 静的検出 不能 | ${c.impossibleStatic}（うち error ${e.impossibleStatic}） | \`impossible-static\`（active/selected/current の特定が意味依存） |`,
+    `| LLM 審査候補 | ${c.llmJudgeCandidate}（うち error ${e.llmJudgeCandidate}） | \`llm-judge-candidate\`（shadow judge 導入までは自動検証なし） |`,
+    `| human-only | ${c.humanOnly}（うち error ${e.humanOnly}） | 人間レビューでのみ守る。\`get_rules\` で AI に提示 |`,
+    `| 未分類 | ${c.unclassified}（うち error ${e.unclassified}） | 棚卸し未了（automationStatus 未宣言） |`,
   ];
   return `${COVERAGE_BEGIN}\n${rows.join("\n")}\n${COVERAGE_END}`;
 }
@@ -133,13 +186,16 @@ export function renderCoverageBlock(): string {
 /** 英語 README 用の経路別マトリクス（アンカー込み）。同じ contracts を参照し全入口で数値整合させる */
 export function renderCoverageBlockEn(): string {
   const c = computeCoverage();
+  const e = errorCountsByBucket();
   const rows = [
     "| Route | Count | What |",
     "|-------|-------|------|",
     `| Static auto-detection | **${c.staticAuto} / ${c.total}** | class-match ${c.classAuto} (same path as MCP \`check_rule\`) + html-attr ${c.htmlAttr} + composition ${c.composition} (nesting + a11y DOM) |`,
     `| Interaction test | ${c.coveredByTest} | \`tests/modal.spec.ts\` verifies focus trap / Escape / focus return in a real browser |`,
-    `| Statically undetectable | ${c.impossibleStatic} | \`impossible-static\` (active/selected/current are semantically dependent) |`,
-    `| Manual (AI reference only) | ${c.manualOnly} | Context-dependent; surfaced to the AI via \`get_rules\` |`,
+    `| Statically undetectable | ${c.impossibleStatic} (${e.impossibleStatic} error) | \`impossible-static\` (active/selected/current are semantically dependent) |`,
+    `| LLM-judge candidate | ${c.llmJudgeCandidate} (${e.llmJudgeCandidate} error) | \`llm-judge-candidate\` (no automated verification until the shadow judge ships) |`,
+    `| Human-only | ${c.humanOnly} (${e.humanOnly} error) | Guarded by human review only; surfaced to the AI via \`get_rules\` |`,
+    `| Unclassified | ${c.unclassified} (${e.unclassified} error) | Inventory pending (no automationStatus declared) |`,
   ];
   return `${COVERAGE_EN_BEGIN}\n${rows.join("\n")}\n${COVERAGE_EN_END}`;
 }
@@ -176,7 +232,19 @@ if (isCli) {
   console.log(`    └ composition    ${c.composition}（ネスト + a11y DOM）`);
   console.log(`  interaction test  ${c.coveredByTest}（covered-by-test）`);
   console.log(`  静的検出 不能      ${c.impossibleStatic}（impossible-static: active/selected/current の意味依存）`);
-  console.log(`  manual（参照のみ） ${c.manualOnly}\n`);
+  console.log(`  LLM 審査候補       ${c.llmJudgeCandidate}（llm-judge-candidate: shadow judge 導入までは自動検証なし）`);
+  console.log(`  human-only        ${c.humanOnly}（人間レビューでのみ守る）`);
+  console.log(`  未分類            ${c.unclassified}（棚卸し未了）\n`);
+
+  // 無防備 error ルール = error なのに自動検証（静的検出 / interaction test）が効いていないもの。
+  // 「error 表記がある = 守られている」という偽の安心を可視化する（2026-05-30 redteam 監査 S5）。
+  const unguarded = listUnguardedErrors();
+  console.log(`=== 無防備 error ルール（自動検証なし）: ${c.unguardedError} 件 ===\n`);
+  for (const [status, ids] of [...unguarded.entries()].sort()) {
+    console.log(`  [${status}] ${ids.length} 件`);
+    console.log(`    ${ids.join(", ")}`);
+  }
+  console.log("");
 
   // stateSpec カバレッジ（P2-1 Phase1b の backlog 計器）
   const __dirname = dirname(fileURLToPath(import.meta.url));

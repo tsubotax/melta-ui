@@ -83,8 +83,8 @@
           },
           "automationStatus": {
             "type": "string",
-            "enum": ["auto", "covered-by-test", "impossible-static"],
-            "description": "自動検証の状態（P1-5）。impossible-static は意味依存で静的検出不能（カバレッジ分母から除外）"
+            "enum": ["auto", "covered-by-test", "impossible-static", "llm-judge-candidate", "human-only"],
+            "description": "現在の自動検証状態（P1-5、棚卸しは 2026-07）。auto=静的検出が稼働 / covered-by-test=interaction test が担保 / impossible-static=意味依存で静的検出が原理的に不能（静的検出可能性の軸。runtime test での検証は可能 — MODAL_ROLE_DIALOG_REQUIRED が実証） / llm-judge-candidate=現在は自動検証なし・将来の LLM 審査（shadow judge）候補（candidate は計画であり稼働中の検証ではない。無防備として数える） / human-only=現在は自動検証なし・人間レビューでのみ守る。静的検出機構を持つルールには付与しない（検出可能性は detector/spec から導出する）"
           }
         }
       }

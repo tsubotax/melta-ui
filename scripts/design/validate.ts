@@ -14,6 +14,7 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tokenize, matches, isAutoDetectable } from "../../src/utils/matcher.js";
+import { isStaticallyDetectable, isUnclassified, isUnguardedError } from "./coverage-stats.js";
 import type { RuleEntry, RulesFile } from "../../src/utils/types.js";
 import { serializeDtcg, DTCG_PATH } from "./export-dtcg.js";
 import { serializeWebRecipe, WEB_RECIPES_DIR } from "./export-recipes.js";
@@ -278,6 +279,41 @@ if (rulesData) {
     const autoDetectable = rulesData.rules.filter(isAutoDetectable);
     const manualOnly = rulesData.rules.filter((r) => !isAutoDetectable(r));
     ok(`自動検出可能: ${autoDetectable.length} 件 / manual: ${manualOnly.length} 件`);
+
+    // --- automationStatus 整合（2026-07 棚卸し）---
+    // 「宣言と検出機構の矛盾」を機械で塞ぐ。severity 問わず全ルール対象（warn ルールの誤分類も許さない）。
+    let statusConflicts = 0;
+    for (const rule of rulesData.rules) {
+      const detectable = isStaticallyDetectable(rule);
+      const declaresNoAutomation = ["impossible-static", "llm-judge-candidate", "human-only"].includes(
+        rule.automationStatus ?? ""
+      );
+      if (detectable && declaresNoAutomation) {
+        error(
+          `ルール ${rule.id}: 静的検出機構を持つのに automationStatus "${rule.automationStatus}" を宣言（矛盾。検出可能性は detector/spec から導出する）`
+        );
+        statusConflicts++;
+      }
+      if (!detectable && rule.automationStatus === "auto") {
+        error(`ルール ${rule.id}: automationStatus "auto" だが静的検出機構が無い（宣言だけの auto は禁止）`);
+        statusConflicts++;
+      }
+    }
+    if (statusConflicts === 0) ok("automationStatus と検出機構の矛盾なし");
+
+    // 集約 warn（stateSpecs backlog と同パターン: design:check 出力を汚さない。詳細は design:coverage）
+    const unclassified = rulesData.rules.filter(isUnclassified);
+    if (unclassified.length > 0) {
+      warn(
+        `棚卸し backlog: ${unclassified.length} 件が automationStatus 未宣言（npm run design:coverage で一覧。2026-07 棚卸しで解消）`
+      );
+    }
+    const unguardedErrors = rulesData.rules.filter(isUnguardedError);
+    if (unguardedErrors.length > 0) {
+      warn(
+        `無防備 error: ${unguardedErrors.length} 件が severity=error なのに自動検証（静的検出 / interaction test）なし（npm run design:coverage で ID 一覧）`
+      );
+    }
   }
 }
 

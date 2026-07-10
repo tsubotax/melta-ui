@@ -6,14 +6,16 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { computeCoverage } from "../scripts/design/coverage-stats.js";
+import { computeCoverage, isStaticallyDetectable } from "../scripts/design/coverage-stats.js";
 import { getAllRules } from "../src/utils/loader.js";
 
 test.describe("coverage-stats: 集計の構造整合", () => {
   test("内訳の合計が total に一致する（取りこぼし無し）", () => {
     const c = computeCoverage();
     expect(c.staticAuto).toBe(c.classAuto + c.htmlAttr + c.composition);
-    expect(c.staticAuto + c.coveredByTest + c.impossibleStatic + c.manualOnly).toBe(c.total);
+    expect(
+      c.staticAuto + c.coveredByTest + c.impossibleStatic + c.llmJudgeCandidate + c.humanOnly + c.unclassified
+    ).toBe(c.total);
   });
 
   test("auto 状態のルールは実際に検出機構を持つ", () => {
@@ -41,5 +43,18 @@ test.describe("coverage-stats: 集計の構造整合", () => {
   test("静的自動検証は 41 件以上（P1-5 で 38→41 に到達した floor を割らない）", () => {
     // 退行ガード: 蘇生した composition a11y ルールが dead に戻ると割れる
     expect(computeCoverage().staticAuto).toBeGreaterThanOrEqual(41);
+  });
+
+  test("llm-judge-candidate / human-only は静的検出機構を持たない（宣言と機構の排他）", () => {
+    // 静的検出できるなら分類は不要（detector/spec から導出）。宣言してしまうと coverage が二重計上になる
+    for (const r of getAllRules()) {
+      if (r.automationStatus !== "llm-judge-candidate" && r.automationStatus !== "human-only") continue;
+      expect(isStaticallyDetectable(r), `${r.id} は ${r.automationStatus} だが静的検出機構を持つ`).toBe(false);
+    }
+  });
+
+  test("無防備 error ルールは 45 件以下（2026-07 棚卸し開始時点の ceiling を超えて増やさない）", () => {
+    // 増加検知: 新規 error ルールを自動検証なしで足すと割れる（分類 or 検証機構の追加を強制）
+    expect(computeCoverage().unguardedError).toBeLessThanOrEqual(45);
   });
 });
