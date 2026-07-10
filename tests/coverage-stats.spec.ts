@@ -53,8 +53,13 @@ test.describe("coverage-stats: 集計の構造整合", () => {
     }
   });
 
-  test("無防備 error ルールは 45 件以下（2026-07 棚卸し開始時点の ceiling を超えて増やさない）", () => {
+  test("無防備 error ルールは 43 件以下（2026-07 棚卸し完了時点の ceiling を超えて増やさない）", () => {
     // 増加検知: 新規 error ルールを自動検証なしで足すと割れる（分類 or 検証機構の追加を強制）
-    expect(computeCoverage().unguardedError).toBeLessThanOrEqual(45);
+    expect(computeCoverage().unguardedError).toBeLessThanOrEqual(43);
+  });
+
+  test("未分類 0（ratchet: 新規ルールは静的検出機構か automationStatus 宣言のどちらかを必ず持つ）", () => {
+    // 2026-07 棚卸しで全 99 件の検証経路を宣言済み。100 個目以降も棚卸し済み状態を維持する
+    expect(computeCoverage().unclassified).toBe(0);
   });
 });

@@ -229,7 +229,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "アイコン/テキストを必ず併用",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "PHILOSOPHY_NO_EXCESSIVE_ANIMATION",
@@ -239,7 +240,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "150〜300ms の状態変化フィードバックに限定",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "MOTION_NO_LONG_DURATION",
@@ -265,7 +267,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "メディアクエリで対応",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "TYPO_NO_TRACKING_TIGHT",
@@ -285,7 +288,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "text-base（16px）",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "TYPO_NO_FONT_LIGHT",
@@ -305,7 +309,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "<label> を必ず使用",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "SPACE_NO_ROUNDED_NONE_CARDS",
@@ -379,7 +384,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "px-6 py-8 以上",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "SPACE_NO_DARK_SIDEBAR_BG",
@@ -389,7 +395,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "bg-white + ボーダー",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "SPACE_NO_NONSTANDARD_SIDEBAR_WIDTH",
@@ -410,7 +417,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "rounded-lg",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "SPACE_NO_LARGE_NAV_ICON",
@@ -420,7 +428,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "w-5 h-5",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "SPACE_NO_DRAWER_NO_FOCUS_TRAP",
@@ -430,7 +439,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "フォーカストラップを実装",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     },
     {
       "id": "SPACE_NO_MISSING_ARIA_CURRENT",
@@ -451,7 +461,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "サイドバー + メインの2列",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "AI_NO_CARD_COLOR_BAR_TOP",
@@ -506,7 +517,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "階層の異なるボタンを組み合わせる",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "BTN_NO_LIGHTED_SOLO",
@@ -516,7 +528,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "Neutralとペアで使用",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "BTN_ICON_ONLY_ARIA_REQUIRED",
@@ -547,7 +560,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "パディングでタップ領域 44px 以上を確保",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "FORM_SELECT_APPEARANCE_NONE",
@@ -557,7 +571,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "appearance-none + pr-10 + カスタムSVGシェブロン",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "FORM_NO_LABEL_OMIT",
@@ -567,7 +582,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "<label> を for 属性で関連付け",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "FORM_NO_SIDE_LABEL",
@@ -577,7 +593,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "ラベルは入力欄の上",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "FORM_FIELDSET_LEGEND_REQUIRED",
@@ -587,7 +604,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "グループ時は <fieldset> / <legend> を使用",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "FORM_NO_AUTO_HIDE_ERROR",
@@ -597,7 +615,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "修正されるまで表示",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     },
     {
       "id": "FORM_NO_COLOR_ONLY_ERROR",
@@ -607,7 +626,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "ボーダー色 + エラーアイコン + テキスト",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "FORM_NO_CARD_FIELDSET_LEGEND",
@@ -617,7 +637,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "カードレベルは <div> + <h2>。<fieldset>/<legend> はカード内部のフォームグループに限定",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "FORM_NO_DATE_EQUAL_WIDTH",
@@ -627,7 +648,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "flex レイアウトで年 w-28、月・日 w-20 に固定",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "FORM_NO_CHECK_ONLY_CONFIRM",
@@ -637,7 +659,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "確認ボタンを必ず配置",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     },
     {
       "id": "FORM_NO_AUTO_FOCUS_MOVE",
@@ -647,7 +670,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "ユーザー操作に任せる",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     },
     {
       "id": "FORM_NO_DISTANT_ERROR",
@@ -657,7 +681,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "フィールド直下に表示",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "MODAL_FOCUS_TRAP_REQUIRED",
@@ -689,7 +714,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "閉じるボタン + Esc + オーバーレイクリック",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "MODAL_ROLE_DIALOG_REQUIRED",
@@ -710,7 +736,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "bg-black/50 のオーバーレイ",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "MODAL_NO_NESTED",
@@ -748,7 +775,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "可変高さにする",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "LIST_NO_COLOR_ONLY_SELECTION",
@@ -758,7 +786,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "ボーダー太さ + 背景スタイルを併用",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "LIST_NO_GESTURE_ONLY",
@@ -768,7 +797,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "ボタンによる代替操作を提供",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     },
     {
       "id": "LIST_NO_ICON_BORDER",
@@ -778,7 +808,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "ボーダーはアイテム間のみ",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "TABLE_NO_LAYOUT_TABLE",
@@ -788,7 +819,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "flex / grid を使う",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "TABLE_TH_SCOPE_REQUIRED",
@@ -813,7 +845,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "×ボタンを必ず表示",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "TAG_X_MIN_TAP_TARGET",
@@ -823,7 +856,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "p-0.5 + SVG w-3 h-3（実質24px以上）",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "TAG_X_ARIA_LABEL_REQUIRED",
@@ -871,7 +905,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "用途に応じて badge / tag を使い分ける",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "DIVIDER_NO_DIV_BORDER_B",
@@ -881,7 +916,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "<hr> or role=\"separator\"",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "DIVIDER_NO_GRAY_100",
@@ -901,7 +937,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "border-slate-200（標準）/ border-slate-300（強調）",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "STEPPER_NO_COLOR_ONLY_STATE",
@@ -911,7 +948,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "アイコン + ボーダー + 背景色を併用",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "STEPPER_ARIA_CURRENT_REQUIRED",
@@ -932,7 +970,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "w-8 h-8（標準）/ w-6 h-6（コンパクト最小）",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "STEPPER_NO_DARK_CONNECTOR",
@@ -942,7 +981,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "bg-primary-500（完了区間）/ bg-slate-200（未着手区間）",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "DATEPICKER_NO_NATIVE_INPUT",
@@ -968,7 +1008,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "shadow-md",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "DATEPICKER_Z_INDEX_20",
@@ -978,7 +1019,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "z-20（Dropdown レイヤー）",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "DATEPICKER_NO_COLOR_ONLY_TODAY",
@@ -988,7 +1030,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "font-semibold を併用",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "DATEPICKER_KEYBOARD_NAV_REQUIRED",
@@ -998,7 +1041,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "矢印 + Enter + Escape を実装",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     },
     {
       "id": "DATEPICKER_WEEKDAY_HEADER_REQUIRED",
@@ -1008,7 +1052,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "日〜土のラベルを必ず表示",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "SKELETON_BG_SLATE_200_ONLY",
@@ -1018,7 +1063,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "bg-slate-200 固定",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "SKELETON_NO_SPINNER_ONLY",
@@ -1028,7 +1074,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "スケルトン or プログレスバーを併用",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "SKELETON_ARIA_BUSY_REQUIRED",
@@ -1057,7 +1104,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "aria-busy=\"false\" に変更",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     },
     {
       "id": "A11Y_NO_OUTLINE_NONE_WITHOUT_RING",
@@ -1067,7 +1115,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "focus:ring-2 focus:ring-primary-500/50",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "A11Y_NO_TABINDEX_POSITIVE",
@@ -1092,7 +1141,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "時間制限を設けない",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     },
     {
       "id": "A11Y_NO_DECORATIVE_ANIMATION",
@@ -1102,7 +1152,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "状態変化のフィードバックのみ",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "llm-judge-candidate"
     },
     {
       "id": "A11Y_NO_TEXT_TRUNCATION_200",
@@ -1112,7 +1163,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "レスポンシブに対応",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "human-only"
     }
   ]
 }
