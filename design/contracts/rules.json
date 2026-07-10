@@ -667,7 +667,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "Tab/Shift+Tabがモーダル内を循環",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "covered-by-test"
     },
     {
       "id": "MODAL_ESC_CLOSE_REQUIRED",
@@ -677,7 +678,8 @@
       "detector": "manual",
       "pattern": null,
       "alternative": "Escキーで閉じる",
-      "contractLint": "skip"
+      "contractLint": "skip",
+      "automationStatus": "covered-by-test"
     },
     {
       "id": "MODAL_CLOSE_REQUIRED",

@@ -199,6 +199,16 @@ test.describe("composition-lint P1-5: impossible-static 分類", () => {
     expect(rule?.automationStatus).toBe("covered-by-test"); // tests/modal.spec.ts が担保
   });
 
+  test("modal の focus trap / Esc close も covered-by-test（2026-07 棚卸しで宣言漏れを解消）", () => {
+    // 宣言に機械的証拠を要求する: この 2 件の実体は tests/modal.spec.ts の
+    // 「Tab が開いたモーダル内で focus trap される」「Escape で閉じ、focus がトリガーに復帰する」。
+    // modal.spec.ts からテストを消すならこの宣言も戻すこと
+    for (const id of ["MODAL_FOCUS_TRAP_REQUIRED", "MODAL_ESC_CLOSE_REQUIRED"]) {
+      const rule = getAllRules().find((r) => r.id === id);
+      expect(rule?.automationStatus, id).toBe("covered-by-test");
+    }
+  });
+
   test("蘇生した 3 ルールは composition + auto", () => {
     const ids = ["BTN_ICON_ONLY_ARIA_REQUIRED", "TAG_X_ARIA_LABEL_REQUIRED", "SKELETON_ARIA_BUSY_REQUIRED"];
     for (const id of ids) {
