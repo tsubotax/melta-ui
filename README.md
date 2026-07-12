@@ -48,7 +48,7 @@ Layer 3: 検証（破っても通さない）
 |---------|------|--------|------|
 | **DESIGN.md** | Markdown | AI（全エージェント） | デザイン憲法 + Quick Reference。これだけで基本 UI を生成可能 |
 | **CLAUDE.md** | Markdown | AI (Claude Code) | 作業手順・読み込みガイド・npm scripts |
-| **contracts/** | JSON | AI + harness | 40 contract（web 28）+ 99 ルール + 99 トークンの厳密仕様 |
+| **contracts/** | JSON | AI + harness | 40 contract（web 28）+ 99 ルール + 101 トークンの厳密仕様 |
 | **harness** | TypeScript | CI | Schema 検証・drift 検出・Playwright + axe |
 | **components/*.md** | Markdown | 人間 | 設計意図・使い方・判断基準を自然言語で記述 |
 | **docs/index.html** | HTML | 人間 | 全コンポーネントのインタラクティブショーケース |

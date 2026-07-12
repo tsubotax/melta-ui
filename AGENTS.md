@@ -11,7 +11,7 @@
 この DS は 3 層構造（AI-Ready 2.0）で運用されている。
 
 - **Layer 1: 憲法** — `DESIGN.md` が AI 向け入口。原則 + Quick Reference。これだけで基本 UI を生成可能
-- **Layer 2: 仕様** — `design/contracts/` に 40 contract（web 28 + app 先行 12）+ 99 禁止ルール + 99 トークンの JSON 仕様。これが SSOT
+- **Layer 2: 仕様** — `design/contracts/` に 40 contract（web 28 + app 先行 12）+ 99 禁止ルール + 101 トークンの JSON 仕様。これが SSOT
 - **Layer 3: 検証** — `scripts/design/` の harness が Schema 整合・drift・a11y を自動検証。CI + hook で守る
 
 > 詳細: `design/authority.md`（SSOT 宣言・値競合時の優先順位）、`README.md`（全体構造）

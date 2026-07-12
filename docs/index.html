@@ -102,6 +102,7 @@
           mono: ['JetBrains Mono','SF Mono','monospace'],
         },
         fontSize: {
+          xxs: ['0.625rem', { lineHeight: '1.4' }],
           xs: ['0.8125rem', { lineHeight: '1.4' }],
           sm: ['0.9375rem', { lineHeight: '1.7' }],
           base: ['1.125rem', { lineHeight: '2.0' }],
@@ -116,7 +117,7 @@
   </script>
   <!--
   @tailwind-config
-  {"theme.extend.colors.primary":{"50":"#f0f5ff","100":"#dde8ff","200":"#c0d4ff","300":"#95b6ff","400":"#6492ff","500":"#2b70ef","600":"#2250df","700":"#1a40b5","800":"#13318d","900":"#0e266a","950":"#07194e"},"theme.extend.colors.body":"#3d4b5f","theme.extend.colors.wf":{"bg":"#FFFFFF","surface":"#F5F5F5","border":"#E0E0E0","text":"#333333","text-sub":"#888888","accent":"#666666"},"theme.extend.fontSize":{"xs":["0.8125rem",{"lineHeight":"1.4"}],"sm":["0.9375rem",{"lineHeight":"1.7"}],"base":["1.125rem",{"lineHeight":"2.0"}],"lg":["1.25rem",{"lineHeight":"1.5"}],"xl":["1.375rem",{"lineHeight":"1.4"}],"2xl":["1.625rem",{"lineHeight":"1.4"}],"3xl":["2rem",{"lineHeight":"1.4"}]}}
+  {"theme.extend.colors.primary":{"50":"#f0f5ff","100":"#dde8ff","200":"#c0d4ff","300":"#95b6ff","400":"#6492ff","500":"#2b70ef","600":"#2250df","700":"#1a40b5","800":"#13318d","900":"#0e266a","950":"#07194e"},"theme.extend.colors.body":"#3d4b5f","theme.extend.colors.wf":{"bg":"#FFFFFF","surface":"#F5F5F5","border":"#E0E0E0","text":"#333333","text-sub":"#888888","accent":"#666666"},"theme.extend.fontSize":{"xxs":["0.625rem",{"lineHeight":"1.4"}],"xs":["0.8125rem",{"lineHeight":"1.4"}],"sm":["0.9375rem",{"lineHeight":"1.7"}],"base":["1.125rem",{"lineHeight":"2.0"}],"lg":["1.25rem",{"lineHeight":"1.5"}],"xl":["1.375rem",{"lineHeight":"1.4"}],"2xl":["1.625rem",{"lineHeight":"1.4"}],"3xl":["2rem",{"lineHeight":"1.4"}]}}
   -->
   <link rel="stylesheet" href="../scripts/ds-theme.css">
   <link rel="stylesheet" href="../scripts/ds-showcase.css">
@@ -536,7 +537,7 @@
                   </div>
                   <div class="rounded-lg border p-3" style="border-color:var(--border-default);">
                     <p class="text-xs font-semibold mb-1" style="color:var(--text-heading);">Layer 2: 仕様</p>
-                    <p class="text-xs" style="color:var(--text-default);"><code class="bg-slate-100 px-1 py-0.5 rounded" style="background:var(--bg-surface-alt);">contracts/</code> — 28 コンポーネント + 99 ルール + 99 トークンの厳密仕様</p>
+                    <p class="text-xs" style="color:var(--text-default);"><code class="bg-slate-100 px-1 py-0.5 rounded" style="background:var(--bg-surface-alt);">contracts/</code> — 28 コンポーネント + 99 ルール + 101 トークンの厳密仕様</p>
                   </div>
                   <div class="rounded-lg border p-3" style="border-color:var(--border-default);">
                     <p class="text-xs font-semibold mb-1" style="color:var(--text-heading);">Layer 3: 検証</p>

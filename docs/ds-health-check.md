@@ -131,7 +131,7 @@ Lv.0: DS 関連記述なし
   ]
   ```
 - **SSOT を宣言**: どのファイルが正規版か明記する（README や authority.md で）
-- **参考**: melta-ui では `design/contracts/rules.json`（99 ルール）, `design/contracts/tokens.json`（99 トークン）, `design/contracts/components/*.contract.json`（40 contract）。DESIGN.md 自体も contracts から自動生成し、逆転（ドキュメントが正、JSON が写し）を構造的に防いでいる
+- **参考**: melta-ui では `design/contracts/rules.json`（99 ルール）, `design/contracts/tokens.json`（101 トークン）, `design/contracts/components/*.contract.json`（40 contract）。DESIGN.md 自体も contracts から自動生成し、逆転（ドキュメントが正、JSON が写し）を構造的に防いでいる
 
 ### Lv.3 → Lv.4: 検証を自動化する
 
@@ -158,7 +158,7 @@ Lv.4 まで来たら、**「DS が AI に本当に使われているか」を観
 |------|---------|
 | AI 設定 | `AGENTS.md` — 全エージェント共通の作業ルール SSOT。`CLAUDE.md` は Claude Code 固有の挙動のみを薄く記述し AGENTS.md を参照 |
 | DS ドキュメント | `DESIGN.md` — Google DESIGN.md spec 準拠。contracts から**自動生成**（手書き禁止、ドリフトが構造的に起きない） |
-| トークン JSON | `design/contracts/tokens.json` (99 トークン) + DTCG 形式ミラー `tokens.dtcg.json` |
+| トークン JSON | `design/contracts/tokens.json` (101 トークン) + DTCG 形式ミラー `tokens.dtcg.json` |
 | ルール JSON | `design/contracts/rules.json` (99 ルール — ID + severity + detector) |
 | コンポーネント仕様 | `design/contracts/components/*.contract.json` (40 個 — web 28 + app 先行 12。variant + size + states + a11y) |
 | プラットフォーム具象 | `design/contracts/recipes/` — web: Tailwind 生成ミラー / app: RN styleRefs |
