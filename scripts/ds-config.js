@@ -30,6 +30,7 @@ tailwind.config = {
         mono: ['JetBrains Mono','SF Mono','monospace'],
       },
       fontSize: {
+        xxs: ['0.625rem', { lineHeight: '1.4' }],
         xs: ['0.8125rem', { lineHeight: '1.4' }],
         sm: ['0.9375rem', { lineHeight: '1.7' }],
         base: ['1.125rem', { lineHeight: '2.0' }],

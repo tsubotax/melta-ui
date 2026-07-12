@@ -3706,6 +3706,10 @@
       ],
       "variants": [
         {
+          "name": "xxs",
+          "tailwind": ""
+        },
+        {
           "name": "xs",
           "tailwind": ""
         },

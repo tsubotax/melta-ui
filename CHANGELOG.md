@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+#### Added（contracts 0.4.3）
+
+rally-nav（melta-app 初の dogfood 消費者）からのフィードバック 2 件をトークン契約に反映。
+
+- **semantic color `text-accent`** — light `#2b70ef`（primary-500）/ dark `#6492ff`（primary-400）。タブ active 状態・リンク的テキスト用。`foundations/color.md` に既記載だった概念を tokens.json に契約化（light の 4.50:1 は 1.3.1 で明文化済みの axe 基準を踏襲）
+- **fontSize `xxs`** — 10px / 0.625rem / lh 1.4。タブラベル等の最小ラベル専用（本文には使わない）。text contract に variant `xxs` 追加（text 0.2.0）
+
 ## [1.3.1] - 2026-07-03
 
 ### DESIGN.md 品質ループ（Google 公式ツール導入 + contrast 判断）

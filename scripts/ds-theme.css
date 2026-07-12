@@ -20,6 +20,7 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.4; letter-spacing: 0.01em; }
   --border-strong: #cbd5e1;
   --input-bg: #ffffff;
   --input-border: #cbd5e1;
+  --text-accent: #2b70ef;
   --text-on-accent: #ffffff;
   --sidebar-active-color: #2b70ef;
   --sidebar-active-bg: #f0f5ff;
@@ -45,6 +46,7 @@ html[data-theme="dark"] {
   --border-strong: #475569;
   --input-bg: #0f172a;
   --input-border: #475569;
+  --text-accent: #6492ff;
   --text-on-accent: #ffffff;
   --sidebar-active-color: #95b6ff;
   --sidebar-active-bg: #0e266a;

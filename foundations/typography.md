@@ -28,6 +28,7 @@ Tailwind CSS 4のデフォルト`font-sans`を使用。日本語環境ではシ�
 | Body | `text-base` | 18px (1.125rem) | 200% | 2% | 本文（ベース） |
 | Small | `text-sm` | 15px (0.9375rem) | 170% | 2% | ラベル / ナビ |
 | Caption | `text-xs font-medium` | 13px (0.8125rem) | 140% | 2% | メタデータ / 補足 |
+| Label (min) | `text-xxs font-medium` | 10px (0.625rem) | 140% | 2% | タブラベル / 最小ラベル（本文には使わない） |
 
 ---
 

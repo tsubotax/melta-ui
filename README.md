@@ -33,7 +33,7 @@ Layer 1: 憲法（AI が最初に読む入口）
 
 Layer 2: 仕様（Machine-Readable SSOT）
   design/contracts/   ← npm: melta-contracts（web / APP 両実装が購読）
-    ├── tokens.json   ← 99 デザイントークン
+    ├── tokens.json   ← 101 デザイントークン
     ├── rules.json    ← 99 禁止ルール（ID + severity + detector）
     ├── components/   ← 40 contract（web 28 + app 先行 12。variant + size + a11y + rules）
     └── recipes/      ← プラットフォーム具象（web: Tailwind 生成ミラー / app: RN styleRefs）
@@ -296,7 +296,7 @@ melta-ui/
 ├── design/
 │   ├── authority.md                 # SSOT 宣言
 │   ├── contracts/
-│   │   ├── tokens.json              # 99 デザイントークン
+│   │   ├── tokens.json              # 101 デザイントークン
 │   │   ├── rules.json               # 99 禁止ルール registry
 │   │   └── components/              # 40 contract（web 28 + app 先行 12）
 │   ├── schemas/                     # JSON Schema（rule + component-contract）

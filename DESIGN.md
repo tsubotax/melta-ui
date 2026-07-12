@@ -408,7 +408,7 @@ components:
 
 > プロトタイプ = この CDN テンプレ（Tailwind v3 構文）/ プロダクション = `foundations/theme.md` の v4 `@theme`。
 > 値の SSOT は `design/contracts/tokens.json`（`scripts/ds-config.js` / `ds-theme.css` と同期）。
-> **fontSize は 7 段すべて Tailwind デフォルトと異なる**（本文 18px / 行間 2.0 が melta の核）。省略すると DS のタイポグラフィが再現されない。
+> **fontSize は 8 段すべて Tailwind デフォルトと異なる**（本文 18px / 行間 2.0 が melta の核。xxs はタブラベル等の最小ラベル専用）。省略すると DS のタイポグラフィが再現されない。
 
 ```html
 <script src="https://cdn.tailwindcss.com"></script>
@@ -430,6 +430,7 @@ tailwind.config = {
         mono: ['JetBrains Mono','SF Mono','monospace']
       },
       fontSize: {
+        xxs: ['0.625rem', { lineHeight: '1.4' }],
         xs: ['0.8125rem', { lineHeight: '1.4' }],
         sm: ['0.9375rem', { lineHeight: '1.7' }],
         base: ['1.125rem', { lineHeight: '2.0' }],

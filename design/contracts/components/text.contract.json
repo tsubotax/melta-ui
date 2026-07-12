@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/component-contract.schema.json",
   "id": "text",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Text",
   "category": "data-display",
   "appStatus": "implemented",
@@ -11,6 +11,11 @@
   "webStatus": "pending",
   "anatomy": ["textNode"],
   "variants": {
+    "xxs": {
+      "description": "最小ラベル（タブラベル等の 10px。本文には使わない）",
+      "tokenRefs": { "fontSize": "typography.fontSize.xxs" },
+      "tailwind": ""
+    },
     "xs": {
       "description": "キャプション/補助テキスト",
       "tokenRefs": { "fontSize": "typography.fontSize.xs" },

@@ -159,6 +159,15 @@
     }
   },
   {
+    "name": "melta-text-accent",
+    "type": "color",
+    "value": "#2b70ef",
+    "themes": {
+      "Light": "#2b70ef",
+      "Dark": "#6492ff"
+    }
+  },
+  {
     "name": "melta-text-on-accent",
     "type": "color",
     "value": "#ffffff",
@@ -216,7 +225,7 @@
   {
     "name": "melta-danger",
     "type": "color",
-    "value": "#ef4444"
+    "value": "#dc2626"
   },
   {
     "name": "melta-danger-subtle",
@@ -224,15 +233,15 @@
     "value": "#fef2f2",
     "themes": {
       "Light": "#fef2f2",
-      "Dark": "#EF44441F"
+      "Dark": "#DC26261F"
     }
   },
   {
     "name": "melta-danger-text",
     "type": "color",
-    "value": "#dc2626",
+    "value": "#b91c1c",
     "themes": {
-      "Light": "#dc2626",
+      "Light": "#b91c1c",
       "Dark": "#fca5a5"
     }
   },
@@ -245,6 +254,11 @@
     "name": "melta-font-mono",
     "type": "string",
     "value": "JetBrains Mono, SF Mono, monospace"
+  },
+  {
+    "name": "melta-font-xxs",
+    "type": "number",
+    "value": 10
   },
   {
     "name": "melta-font-xs",

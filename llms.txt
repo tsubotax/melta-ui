@@ -1,6 +1,6 @@
 # melta UI
 
-> 人間にも AI にも読めるデザインシステム（AI-Ready 2.0）。Tailwind CSS ベースで、28 コンポーネント（contract は全 40 contract = web 28 + app 先行 12）、99 デザイントークン、99 禁止ルール、検証ハーネス（CI / lint / hook）、MCP サーバーを同梱する。
+> 人間にも AI にも読めるデザインシステム（AI-Ready 2.0）。Tailwind CSS ベースで、28 コンポーネント（contract は全 40 contract = web 28 + app 先行 12）、101 デザイントークン、99 禁止ルール、検証ハーネス（CI / lint / hook）、MCP サーバーを同梱する。
 
 UI を生成する前に DESIGN.md を読むこと。exact value は design/contracts/ の JSON が SSOT（値競合時は contracts > DESIGN.md Quick Reference > 各 md の順で優先）。
 
@@ -9,7 +9,7 @@ UI を生成する前に DESIGN.md を読むこと。exact value は design/cont
 - [DESIGN.md](https://melta.tsubotax.com/DESIGN.md): デザイン憲法 + Quick Reference。これだけで基本 UI を生成可能
 - [AGENTS.md](https://melta.tsubotax.com/AGENTS.md): AI エージェント向け作業ガイド（読み込みモード・作業ルール・タスク別ガイド）
 - [authority.md](https://melta.tsubotax.com/design/authority.md): SSOT 宣言と値競合時の優先順位
-- [tokens.json](https://melta.tsubotax.com/design/contracts/tokens.json): 99 デザイントークン（exact value + tailwind class）
+- [tokens.json](https://melta.tsubotax.com/design/contracts/tokens.json): 101 デザイントークン（exact value + tailwind class）
 - [rules.json](https://melta.tsubotax.com/design/contracts/rules.json): 99 禁止ルール（ID + severity + detector + alternative）
 - [theme.md](https://melta.tsubotax.com/foundations/theme.md): テーマ・CSS 変数・カラーパレット
 

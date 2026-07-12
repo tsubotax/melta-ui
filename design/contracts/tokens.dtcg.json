@@ -407,6 +407,24 @@
           }
         }
       },
+      "text-accent": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.1686,
+            0.4392,
+            0.9373
+          ],
+          "alpha": 1,
+          "hex": "#2b70ef"
+        },
+        "$extensions": {
+          "com.melta": {
+            "tailwind": "text-primary-500",
+            "cssVar": "--text-accent"
+          }
+        }
+      },
       "text-on-accent": {
         "$value": {
           "colorSpace": "srgb",
@@ -622,6 +640,24 @@
           "com.melta": {
             "tailwind": "border-slate-600",
             "cssVar": "--input-border"
+          }
+        }
+      },
+      "text-accent": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.3922,
+            0.5725,
+            1
+          ],
+          "alpha": 1,
+          "hex": "#6492ff"
+        },
+        "$extensions": {
+          "com.melta": {
+            "tailwind": "text-primary-400",
+            "cssVar": "--text-accent"
           }
         }
       },
@@ -1092,6 +1128,19 @@
   },
   "fontSize": {
     "$type": "dimension",
+    "xxs": {
+      "$value": {
+        "value": 0.625,
+        "unit": "rem"
+      },
+      "$extensions": {
+        "com.melta": {
+          "px": 10,
+          "lineHeight": "1.4",
+          "tailwind": "text-xxs"
+        }
+      }
+    },
     "xs": {
       "$value": {
         "value": 0.8125,

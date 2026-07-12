@@ -2,9 +2,12 @@
   "$schema": "../../../schemas/recipe.schema.json",
   "id": "text",
   "platform": "web",
-  "contractVersion": "0.1.0",
+  "contractVersion": "0.2.0",
   "generatedFrom": "components/text.contract.json",
   "variants": {
+    "xxs": {
+      "tailwind": ""
+    },
     "xs": {
       "tailwind": ""
     },
