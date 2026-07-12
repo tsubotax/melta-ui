@@ -18,7 +18,10 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, "../..");
+// アセット root。vendor 先では MELTA_ROOT で上書き（src/utils/loader.ts と同じ規約）
+const root = process.env.MELTA_ROOT
+  ? resolve(process.env.MELTA_ROOT)
+  : resolve(__dirname, "../..");
 
 const EXT = "com.melta";
 

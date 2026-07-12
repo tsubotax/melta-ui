@@ -13,10 +13,12 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+// engine root — loader.ts 等、エンジン自身の資産。vendor 先でもスクリプト位置から解決する
+const engineRoot = resolve(__dirname, "../..");
 // アセット root。vendor 先では MELTA_ROOT で上書き（src/utils/loader.ts と同じ規約）
 const root = process.env.MELTA_ROOT
   ? resolve(process.env.MELTA_ROOT)
-  : resolve(__dirname, "../..");
+  : engineRoot;
 
 // --- 型定義（既存 metadata/components.json 互換） ---
 
@@ -334,8 +336,8 @@ console.log(`\n  ✅ metadata/components.json を更新: ${mergedComponents.leng
 const legacyRules = rulesToLegacyProhibitions(rulesData);
 console.log(`\n  rules.json → ProhibitionRule[] 互換: ${legacyRules.length} パターン`);
 
-// loader.ts のハードコードとの差分表示
-const loaderPath = resolve(root, "src/utils/loader.ts");
+// loader.ts のハードコードとの差分表示（loader.ts はエンジン自身の資産なので engine root から）
+const loaderPath = resolve(engineRoot, "src/utils/loader.ts");
 if (existsSync(loaderPath)) {
   const loaderContent = readFileSync(loaderPath, "utf-8");
   const patternMatches = loaderContent.match(/pattern:\s*"([^"]+)"/g);

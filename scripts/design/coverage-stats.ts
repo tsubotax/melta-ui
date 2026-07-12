@@ -248,7 +248,11 @@ if (isCli) {
 
   // stateSpec カバレッジ（P2-1 Phase1b の backlog 計器）
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  const root = resolve(__dirname, "../..");
+  // engine root（README はエンジン自身の資産）とアセット root（vendor 先では MELTA_ROOT）を分離
+  const engineRoot = resolve(__dirname, "../..");
+  const root = process.env.MELTA_ROOT
+    ? resolve(process.env.MELTA_ROOT)
+    : engineRoot;
   const sc = computeStateSpecCoverage(resolve(root, "design/contracts/components"));
   const scPct = sc.disabledRequired > 0 ? `${((sc.disabledCovered / sc.disabledRequired) * 100).toFixed(0)}%` : "—";
   console.log(`=== stateSpec カバレッジ（P2-1）===\n`);
@@ -258,8 +262,8 @@ if (isCli) {
 
   // README.md（日本語）/ README.en.md（英語）の経路別マトリクスを再生成
   const targets: Array<[string, string, string, () => string]> = [
-    [resolve(root, "README.md"), COVERAGE_BEGIN, COVERAGE_END, renderCoverageBlock],
-    [resolve(root, "README.en.md"), COVERAGE_EN_BEGIN, COVERAGE_EN_END, renderCoverageBlockEn],
+    [resolve(engineRoot, "README.md"), COVERAGE_BEGIN, COVERAGE_END, renderCoverageBlock],
+    [resolve(engineRoot, "README.en.md"), COVERAGE_EN_BEGIN, COVERAGE_EN_END, renderCoverageBlockEn],
   ];
   for (const [path, begin, end, render] of targets) {
     const name = path.endsWith("README.en.md") ? "README.en.md" : "README.md";

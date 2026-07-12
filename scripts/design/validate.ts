@@ -21,10 +21,28 @@ import { serializeWebRecipe, WEB_RECIPES_DIR } from "./export-recipes.js";
 import { tokenNodeAt, isTokenLeaf } from "./contract-compat.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+// engine root — schema / loader 等、エンジン自身の資産。vendor 先でもスクリプト位置から解決する
+const engineRoot = resolve(__dirname, "../..");
 // アセット root。vendor 先では MELTA_ROOT で上書き（src/utils/loader.ts と同じ規約）
 const root = process.env.MELTA_ROOT
   ? resolve(process.env.MELTA_ROOT)
-  : resolve(__dirname, "../..");
+  : engineRoot;
+
+// 検査の capability 単位無効化（MELTA_VALIDATE_SKIP=dtcg,recipes-app）。
+// vendor 先のアセットが melta のトークン構造を持たない場合に該当検査だけ外す:
+//  - dtcg: DTCG serializer は color.primary 等 melta の token 構造を前提とする
+//  - recipes-app: app recipe の styleRefs token 参照はブランド固有の token パスを指す
+const VALID_SKIP_CAPABILITIES = new Set(["dtcg", "recipes-app"]);
+const skipCapabilities = new Set(
+  (process.env.MELTA_VALIDATE_SKIP ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+);
+
+function isSkipped(cap: string): boolean {
+  return skipCapabilities.has(cap);
+}
 
 let errors = 0;
 let warnings = 0;
@@ -45,6 +63,19 @@ function ok(msg: string): void {
 
 function section(title: string): void {
   console.log(`\n=== ${title} ===\n`);
+}
+
+function noteSkipped(cap: string, what: string): void {
+  console.log(`  ⏭️  SKIP: ${what}（MELTA_VALIDATE_SKIP=${cap}）`);
+}
+
+// 未知の capability 名は error（typo で検査が黙って残る/消える事故を塞ぐ）
+for (const cap of skipCapabilities) {
+  if (!VALID_SKIP_CAPABILITIES.has(cap)) {
+    error(
+      `MELTA_VALIDATE_SKIP に未知の capability "${cap}"（有効: ${[...VALID_SKIP_CAPABILITIES].join(", ")}）`
+    );
+  }
 }
 
 // --- 簡易 JSON Schema バリデーション（外部ライブラリ不要） ---
@@ -154,8 +185,8 @@ function validateAgainstSchema(
 
 // --- ファイル読み込み ---
 
-function loadJSON(path: string): unknown {
-  const fullPath = resolve(root, path);
+function loadJSON(path: string, base: string = root): unknown {
+  const fullPath = resolve(base, path);
   if (!existsSync(fullPath)) {
     error(`ファイルが見つかりません: ${path}`);
     return null;
@@ -177,9 +208,9 @@ const rulesData = loadJSON("design/contracts/rules.json") as RulesFile | null;
 // 自動検出可否の判定は matcher.isAutoDetectable に一本化（segment 含む）。
 // contract lint の enforce/warn 抽出は matches() 経由なので boolean で十分。
 
-// JSON Schema を読み込み
-const ruleSchema = loadJSON("design/schemas/rule.schema.json") as SimpleSchema | null;
-const contractSchema = loadJSON("design/schemas/component-contract.schema.json") as SimpleSchema | null;
+// JSON Schema を読み込み（schema はエンジン自身の資産なので engine root から。アセット root と分離）
+const ruleSchema = loadJSON("design/schemas/rule.schema.json", engineRoot) as SimpleSchema | null;
+const contractSchema = loadJSON("design/schemas/component-contract.schema.json", engineRoot) as SimpleSchema | null;
 
 if (rulesData && ruleSchema) {
   // Schema バリデーション
@@ -454,7 +485,8 @@ if (existsSync(contractDir)) {
 section("4. MCP check_rule の rules.json 駆動確認");
 
 if (rulesData) {
-  const loaderPath = resolve(root, "src/utils/loader.ts");
+  // loader.ts はエンジン自身の資産なので engine root から読む
+  const loaderPath = resolve(engineRoot, "src/utils/loader.ts");
   if (existsSync(loaderPath)) {
     const loaderContent = readFileSync(loaderPath, "utf-8");
 
@@ -501,15 +533,19 @@ if (tokensData) {
 // tokens.json を変更したのに再生成し忘れると drift するため、ここで一致を担保する。
 section("tokens.dtcg.json 鮮度（W3C DTCG エクスポート）");
 
-const dtcgPath = resolve(root, DTCG_PATH);
-if (!existsSync(dtcgPath)) {
-  error(`${DTCG_PATH} が存在しません（npm run design:dtcg で生成）`);
+if (isSkipped("dtcg")) {
+  noteSkipped("dtcg", "tokens.dtcg.json 鮮度検査（DTCG serializer は melta のトークン構造前提）");
 } else {
-  const onDisk = readFileSync(dtcgPath, "utf-8");
-  if (onDisk !== serializeDtcg()) {
-    error(`${DTCG_PATH} が tokens.json と不一致（npm run design:dtcg で再生成）`);
+  const dtcgPath = resolve(root, DTCG_PATH);
+  if (!existsSync(dtcgPath)) {
+    error(`${DTCG_PATH} が存在しません（npm run design:dtcg で生成）`);
   } else {
-    ok(`${DTCG_PATH} は tokens.json から再生成した内容と一致（W3C DTCG 2025.10）`);
+    const onDisk = readFileSync(dtcgPath, "utf-8");
+    if (onDisk !== serializeDtcg()) {
+      error(`${DTCG_PATH} が tokens.json と不一致（npm run design:dtcg で再生成）`);
+    } else {
+      ok(`${DTCG_PATH} は tokens.json から再生成した内容と一致（W3C DTCG 2025.10）`);
+    }
   }
 }
 
@@ -912,7 +948,9 @@ section("9. recipes（web 鮮度 + app styleRefs 検証）");
     }
   }
 
-  if (!existsSync(appDir)) {
+  if (isSkipped("recipes-app")) {
+    noteSkipped("recipes-app", "app recipes 検査（styleRefs の token 参照はブランド固有）");
+  } else if (!existsSync(appDir)) {
     warn("recipes/app/ が未作成（app recipe は RN 実装の styleRefs authoring source）");
   } else {
     let appIssues = 0;
