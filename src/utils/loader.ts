@@ -13,7 +13,15 @@ import type {
 } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, "../..");
+
+/**
+ * アセット root の解決。既定は「dist/src の2階層上」（melta-ui リポ構造）。
+ * vendor 先（別リポに engine を組み込む場合）は MELTA_ROOT 環境変数で
+ * design/contracts・metadata・package.json を持つディレクトリを指定して上書きする。
+ */
+const root = process.env.MELTA_ROOT
+  ? resolve(process.env.MELTA_ROOT)
+  : resolve(__dirname, "../..");
 
 let tokensCache: Tokens | null = null;
 let componentsCache: ComponentsData | null = null;

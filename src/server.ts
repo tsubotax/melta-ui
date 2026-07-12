@@ -21,13 +21,23 @@ import { checkHtml, type SourceType } from "./tools/check-html.js";
 import { search } from "./tools/search.js";
 import type { RuleFilter } from "./utils/types.js";
 
+/**
+ * server name / URI スキームの設定。既定は melta-ui / melta://（後方互換）。
+ * vendor 先では MELTA_SERVER_NAME / MELTA_URI_SCHEME で差し替える
+ * （例: soluban-ds / soluban:// → リソース URI が soluban://tokens になる）。
+ */
+const SERVER_NAME = process.env.MELTA_SERVER_NAME ?? "melta-ui";
+const URI_SCHEME = process.env.MELTA_URI_SCHEME ?? "melta";
+
 export function createServer(): Server {
   const pkg = loadPackage();
   const components = loadComponents();
   const rules = loadRules();
 
+  const uriOf = (path: string) => `${URI_SCHEME}://${path}`;
+
   const server = new Server(
-    { name: "melta-ui", version: pkg.version },
+    { name: SERVER_NAME, version: pkg.version },
     { capabilities: { resources: {}, tools: {} } }
   );
 
@@ -36,25 +46,25 @@ export function createServer(): Server {
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: [
       {
-        uri: "melta://tokens",
+        uri: uriOf("tokens"),
         name: "Design Tokens",
-        description: "melta UI design tokens (colors, typography, spacing, etc.)",
+        description: "Design tokens (colors, typography, spacing, etc.)",
         mimeType: "application/json",
       },
       {
-        uri: "melta://components",
+        uri: uriOf("components"),
         name: "Components",
         description: `All ${components.components.length} component metadata with Tailwind classes`,
         mimeType: "application/json",
       },
       {
-        uri: "melta://rules",
+        uri: uriOf("rules"),
         name: "Prohibition Rules (all)",
         description: `All ${rules.rules.length} prohibition rules including manual ones (full SSOT for AI reference)`,
         mimeType: "application/json",
       },
       {
-        uri: "melta://rules/auto-detectable",
+        uri: uriOf("rules/auto-detectable"),
         name: "Prohibition Rules (auto-detectable subset)",
         description: "Subset of rules that check_rule can auto-detect from Tailwind class strings",
         mimeType: "application/json",
@@ -65,8 +75,10 @@ export function createServer(): Server {
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const { uri } = request.params;
 
-    // Handle melta://components/{id}
-    const componentMatch = uri.match(/^melta:\/\/components\/(.+)$/);
+    // Handle {scheme}://components/{id}
+    const componentMatch = uri.match(
+      new RegExp(`^${URI_SCHEME}:\\/\\/components\\/(.+)$`)
+    );
     if (componentMatch) {
       const id = componentMatch[1];
       const comp = getComponent(id);
@@ -85,7 +97,7 @@ export function createServer(): Server {
     }
 
     switch (uri) {
-      case "melta://tokens":
+      case uriOf("tokens"):
         return {
           contents: [
             {
@@ -96,7 +108,7 @@ export function createServer(): Server {
           ],
         };
 
-      case "melta://components":
+      case uriOf("components"):
         return {
           contents: [
             {
@@ -107,7 +119,7 @@ export function createServer(): Server {
           ],
         };
 
-      case "melta://rules":
+      case uriOf("rules"):
         return {
           contents: [
             {
@@ -118,7 +130,7 @@ export function createServer(): Server {
           ],
         };
 
-      case "melta://rules/auto-detectable":
+      case uriOf("rules/auto-detectable"):
         return {
           contents: [
             {
