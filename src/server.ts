@@ -75,10 +75,11 @@ export function createServer(): Server {
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const { uri } = request.params;
 
-    // Handle {scheme}://components/{id}
-    const componentMatch = uri.match(
-      new RegExp(`^${URI_SCHEME}:\\/\\/components\\/(.+)$`)
-    );
+    // Handle {scheme}://components/{id}（scheme は正規表現に埋め込まず prefix 判定）
+    const componentsPrefix = `${URI_SCHEME}://components/`;
+    const componentMatch = uri.startsWith(componentsPrefix)
+      ? [uri, uri.slice(componentsPrefix.length)]
+      : null;
     if (componentMatch) {
       const id = componentMatch[1];
       const comp = getComponent(id);
