@@ -11,6 +11,7 @@ import {
   loadComponents,
   loadRules,
   loadPackage,
+  loadDesignConstitution,
   getProhibitionRules,
   getAllRules,
 } from "./utils/loader.js";
@@ -20,6 +21,7 @@ import { checkRule } from "./tools/check-rule.js";
 import { checkHtml, type SourceType } from "./tools/check-html.js";
 import { search } from "./tools/search.js";
 import type { RuleFilter } from "./utils/types.js";
+import { buildMcpInstructions } from "./guidance.js";
 
 /**
  * server name / URI スキームの設定。既定は melta-ui / melta://（後方互換）。
@@ -38,13 +40,23 @@ export function createServer(): Server {
 
   const server = new Server(
     { name: SERVER_NAME, version: pkg.version },
-    { capabilities: { resources: {}, tools: {} } }
+    {
+      capabilities: { resources: {}, tools: {} },
+      instructions: buildMcpInstructions(SERVER_NAME, URI_SCHEME),
+    }
   );
 
   // --- Resources ---
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: [
+      {
+        uri: uriOf("design-constitution"),
+        name: "Design Constitution (DESIGN.md)",
+        description:
+          "Start here before UI work: brand identity, non-negotiable principles, Quick Reference, prohibited Top 10, and source-of-truth order",
+        mimeType: "text/markdown",
+      },
       {
         uri: uriOf("tokens"),
         name: "Design Tokens",
@@ -98,6 +110,17 @@ export function createServer(): Server {
     }
 
     switch (uri) {
+      case uriOf("design-constitution"):
+        return {
+          contents: [
+            {
+              uri,
+              mimeType: "text/markdown",
+              text: loadDesignConstitution(),
+            },
+          ],
+        };
+
       case uriOf("tokens"):
         return {
           contents: [

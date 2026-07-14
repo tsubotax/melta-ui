@@ -27,6 +27,7 @@ let tokensCache: Tokens | null = null;
 let componentsCache: ComponentsData | null = null;
 let screensCache: ScreensData | null = null;
 let packageCache: { name: string; version: string } | null = null;
+let designConstitutionCache: string | null = null;
 
 /**
  * package.json を runtime 読みで取得する。
@@ -40,6 +41,24 @@ export function loadPackage(): { name: string; version: string } {
     );
   }
   return packageCache!;
+}
+
+/**
+ * AI 向け入口である DESIGN.md をそのまま返す。
+ * package.json の files に DESIGN.md が含まれるため、repo / npm の両経路で同じ内容を読む。
+ */
+export function loadDesignConstitution(): string {
+  if (designConstitutionCache === null) {
+    const designPath = resolve(root, "DESIGN.md");
+    try {
+      designConstitutionCache = readFileSync(designPath, "utf-8");
+    } catch (e) {
+      throw new Error(
+        `[melta-ui] DESIGN.md の読み込みに失敗しました (${designPath}): ${(e as Error).message}`
+      );
+    }
+  }
+  return designConstitutionCache;
 }
 
 export function loadTokens(): Tokens {

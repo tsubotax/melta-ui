@@ -224,8 +224,8 @@ than rewrite policy.
 | Trigger | Weekly schedule, release candidate, `DESIGN.md` / contracts / MCP tool changes |
 | Substrate | local cron, Claude schedule, or manual run |
 | Context | `design/benchmarks/`, latest report, benchmark prompts and scoring code |
-| Action | Run benchmark conditions, compare with previous report, summarize changes |
-| Verify | Benchmark report exists and includes cold / designmd / contracts / full conditions |
+| Action | Run benchmark conditions, compare only with reports sharing the same `benchmarkProtocolVersion`, summarize changes |
+| Verify | Benchmark report includes its protocol version and cold / designmd / contracts / mcp-raw / full conditions |
 | Stop | Report produced; no autonomous product or rule change |
 | Human Gate | Score interpretation, rubric changes, priority decisions |
 | Escalation payload | Regression summary, changed prompts or score code, suggested investigation path |

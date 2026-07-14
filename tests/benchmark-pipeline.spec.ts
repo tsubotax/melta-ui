@@ -20,13 +20,16 @@ import {
   type Cell,
 } from "../design/benchmarks/runner.js";
 import {
+  BENCHMARK_PROTOCOL_VERSION,
   buildProvenance,
   extractGenerationSummary,
+  hashBenchmarkTreatment,
   sha256,
   type GitInfo,
   type ProviderInfo,
 } from "../design/benchmarks/provenance.js";
 import { prompts as benchmarkPrompts } from "../design/benchmarks/prompts.js";
+import { MCP_INSTRUCTIONS } from "../src/guidance.js";
 
 test.describe("stats: 集計純関数", () => {
   test("summarize は mean/min/max/stdev/ci95/n を返す", () => {
@@ -75,23 +78,30 @@ test.describe("score: DS 準拠 proxy の gaming 耐性", () => {
 test.describe("mock provider × scoreHTML: 条件切替の smoke", () => {
   const DESIGNMD = "あなたは melta UI デザインシステムに準拠した UI を生成するエキスパートです。Design Constitution";
   const CONTRACTS = DESIGNMD + "\n## Component Contracts（参考）";
+  const FULL = `${MCP_INSTRUCTIONS}\n\n${CONTRACTS}`;
   const COLD = "あなたは UI を生成するエキスパートです。";
 
-  test("cold < designmd ≤ contracts ≤ full", async () => {
+  test("cold < designmd ≤ contracts ≤ mcp-raw ≤ full", async () => {
     const p = createMockProvider();
     const cold = scoreHTML((await p.generate(COLD, "x", { useTools: false })).text).totalScore;
     const dm = scoreHTML((await p.generate(DESIGNMD, "x", { useTools: false })).text).totalScore;
     const ct = scoreHTML((await p.generate(CONTRACTS, "x", { useTools: false })).text).totalScore;
-    const full = scoreHTML((await p.generate(CONTRACTS, "x", { useTools: true })).text).totalScore;
+    const raw = scoreHTML((await p.generate(CONTRACTS, "x", { useTools: true })).text).totalScore;
+    const full = scoreHTML((await p.generate(FULL, "x", { useTools: true })).text).totalScore;
     expect(cold).toBeLessThan(dm);
     expect(dm).toBeLessThanOrEqual(ct);
-    expect(ct).toBeLessThanOrEqual(full);
+    expect(ct).toBeLessThanOrEqual(raw);
+    expect(raw).toBeLessThanOrEqual(full);
   });
 
-  test("full は tools 使用・cold は不使用（useTools 切替が効く）", async () => {
+  test("initialize instructions が check_html 自己検証への到達を分離する", async () => {
     const p = createMockProvider();
-    const full = await p.generate(CONTRACTS, "x", { useTools: true });
+    const raw = await p.generate(CONTRACTS, "x", { useTools: true });
+    const full = await p.generate(FULL, "x", { useTools: true });
     const cold = await p.generate(COLD, "x", { useTools: false });
+    expect(raw.toolCalls?.map((call) => call.name)).toEqual(["get_component"]);
+    expect(raw.toolCalls?.map((call) => call.name)).not.toContain("check_html");
+    expect(full.toolCalls?.map((call) => call.name)).toContain("check_html");
     expect((full.toolCalls ?? []).length).toBeGreaterThan(0);
     expect((cold.toolCalls ?? []).length).toBe(0);
   });
@@ -99,7 +109,7 @@ test.describe("mock provider × scoreHTML: 条件切替の smoke", () => {
 
 test.describe("buildReport: 集約・lift・prompt 等重み", () => {
   // 2 prompt（standard / red-team）× 2 条件の合成 Cell
-  function cell(promptId: string, conditionId: "cold" | "full", scores: number[]): Cell {
+  function cell(promptId: string, conditionId: "cold" | "mcp-raw" | "full", scores: number[]): Cell {
     return {
       promptId,
       conditionId,
@@ -108,6 +118,7 @@ test.describe("buildReport: 集約・lift・prompt 等重み", () => {
       trials: scores.map((s) => ({
         score: { totalScore: s, ruleViolations: 0, violationDetails: [], prohibitedPatterns: 0, patternDetails: [] },
         toolCalls: conditionId === "full" ? 1 : 0,
+        toolNames: conditionId === "full" ? ["check_html"] : [],
         resources: [],
         htmlPath: "",
       })),
@@ -153,7 +164,10 @@ test.describe("buildReport: 集約・lift・prompt 等重み", () => {
     expect(groups.standard.full.mean).toBe(90);
     expect(groups.redteam.full.mean).toBe(80);
     expect(report).toContain("限界寄与");
-    expect(report).toContain("自己検証"); // contracts→full の交絡注記が出る
+    expect(report).toContain("initialize instructions");
+    expect(report).toContain("check_html 到達");
+    expect(report).toContain("MOCK FIXTURE — NOT EVIDENCE");
+    expect(report).toContain("resource が MCP-only 利用者へ情報を届ける効果を測りません");
   });
 });
 
@@ -173,6 +187,7 @@ test.describe("provenance: 計測来歴（施策6A）", () => {
       mode: "generate",
       git: GIT,
       contextHashes: { cold: sha256("") },
+      treatmentHashes: { cold: hashBenchmarkTreatment("system", false) },
       fileHashes: { "design/contracts/rules.json": sha256("{}") },
       scoredFilesDigest: null,
       provider: PROVIDER,
@@ -186,18 +201,32 @@ test.describe("provenance: 計測来歴（施策6A）", () => {
 
   test("buildProvenance は必須キーを揃え、dirty / temperatureSource が伝播する", () => {
     const p = prov();
-    expect(p.schemaVersion).toBe(1);
+    expect(p.schemaVersion).toBe(2);
+    expect(p.benchmarkProtocolVersion).toBe(BENCHMARK_PROTOCOL_VERSION);
     expect(p.git.dirty).toBe(true);
     expect(p.git.dirtyFiles).toEqual(["DESIGN.md"]);
     expect(p.provider.temperature).toBeNull();
     expect(p.provider.temperatureSource).toBe("provider-default"); // null は「provider 既定」の明示
     expect(p.inputHashes.contextByCondition.cold).toMatch(/^[0-9a-f]{64}$/);
+    expect(p.inputHashes.treatmentByCondition.cold).toMatch(/^[0-9a-f]{64}$/);
     expect(p.generation).toBeNull();
+  });
+
+  test("treatment hash は instructions と tools 有無を独立変数として捕捉する", () => {
+    const raw = hashBenchmarkTreatment("base system", true);
+    const withInstructions = hashBenchmarkTreatment(
+      `${MCP_INSTRUCTIONS}\n\nbase system`,
+      true
+    );
+    const withoutTools = hashBenchmarkTreatment("base system", false);
+    expect(withInstructions).not.toBe(raw);
+    expect(withoutTools).not.toBe(raw);
   });
 
   test("extractGenerationSummary: generate 由来からは git/provider/inputHashes/date を要約", () => {
     const g = extractGenerationSummary(prov());
     expect(g?.date).toBe("2026-01-01T00:00:00.000Z");
+    expect(g?.benchmarkProtocolVersion).toBe(BENCHMARK_PROTOCOL_VERSION);
     expect(g?.git.commit).toBe(GIT.commit);
     expect(g?.provider.model).toBe(PROVIDER.model);
   });
@@ -216,6 +245,15 @@ test.describe("provenance: 計測来歴（施策6A）", () => {
     expect(extractGenerationSummary("broken")).toBeNull();
     expect(extractGenerationSummary({ mode: "generate" })).toBeNull(); // date/git/provider 欠落
     expect(extractGenerationSummary({ mode: "score-dir" })).toBeNull(); // 生成元不明の score-dir
+  });
+
+  test("extractGenerationSummary: 旧 provenance の protocol は推測せず null", () => {
+    const legacy = {
+      ...prov(),
+      schemaVersion: 1,
+      benchmarkProtocolVersion: undefined,
+    };
+    expect(extractGenerationSummary(legacy)?.benchmarkProtocolVersion).toBeNull();
   });
 
   test("buildReport: provenance 付きで commit 短縮 SHA と生成元不明の注記が出る", () => {

@@ -210,6 +210,11 @@ npm install
 claude mcp add melta-ui -- npx tsx src/index.ts
 ```
 
+接続時には MCP `instructions` が常駐ガイダンスとして渡される。Melta が完成 CSS
+ライブラリではなく contracts / rules / lint 型の DS であること、最初に Design
+Constitution を読むこと、生成後に `check_html` で自己検証することを、利用側が毎回
+プロンプトに書かなくても AI が把握できる。
+
 | ツール | 説明 | 入力例 |
 |--------|------|--------|
 | `get_token` | トークン検索 | `{ "path": "color.primary.600" }` |
@@ -221,6 +226,7 @@ claude mcp add melta-ui -- npx tsx src/index.ts
 
 | Resource | 内容 |
 |----------|------|
+| `melta://design-constitution` | `DESIGN.md` 全文。UI 作業前の入口（原則・Quick Reference・禁止 Top 10・SSOT 読み順） |
 | `melta://tokens` | トークン全体 |
 | `melta://components` | 28 コンポーネント仕様 |
 | `melta://components/{id}` | 個別コンポーネント |
@@ -320,18 +326,20 @@ melta-ui/
 
 ## Benchmark — DS を読ませると DS 準拠スコアが何点上がるか
 
-`design/benchmarks/` は **3 条件で同一 prompt から UI を生成し、共通 lint core（`check_html` と同じ採点）で DS 準拠スコアを測る**ハーネス。「context engine を足すと精度が上がる」式の限界寄与（lift）を自前の一次データとして出す。
+`design/benchmarks/` は **5 条件で同一 prompt から UI を生成し、共通 lint core（`check_html` と同じ採点）で DS 準拠スコアを測る**ハーネス。「context engine を足すと精度が上がる」式の限界寄与（lift）を自前の一次データとして出す。
 
 | 条件 | 与えるもの | tools |
 |------|-----------|-------|
 | `cold` | DS コンテキスト無し（素の LLM のベースライン） | なし |
 | `designmd` | `DESIGN.md` のみ（静的コンテキスト） | なし |
-| `full` | `DESIGN.md` + contracts 要約 + MCP（生成後 `check_html` で自己検証） | あり |
+| `contracts` | `DESIGN.md` + contracts 要約 | なし |
+| `mcp-raw` | 上記 + MCP tools、接続時 instructions 無し | あり |
+| `full` | 上記 + 接続時 instructions（実際の Melta MCP workflow） | あり |
 
-各セル（prompt × 条件）を N トライアル実行し、mean±range と条件間 lift を `report.md` に出力。`design/benchmarks/history.json` に時系列で追記する。
+各セル（prompt × 条件）を N トライアル実行し、mean±range と条件間 lift を `report.md` に出力。実際の system prompt + tools 有無を条件別に hash し、実験定義の世代 `benchmarkProtocolVersion` とともに `design/benchmarks/history.json` へ追記する。時系列比較は同じ protocol version の run 同士に限定する。
 
 ```bash
-# 全 prompt × 4 条件 × 3 trials（ANTHROPIC_API_KEY が必要）
+# 全 prompt × 5 条件 × 3 trials（ANTHROPIC_API_KEY が必要）
 npm run benchmark
 
 # トライアル数・prompt・条件を絞る
@@ -346,13 +354,14 @@ npm run benchmark -- --score-dir design/benchmarks/results/<dir> --trials 3
 npm run benchmark -- --provider mock
 ```
 
-**provider-pluggable**: `ModelProvider` インターフェースで anthropic（実装済み・MCP 6 tool を Claude API の tool use として渡す）/ mock（オフライン検証）/ openai（placeholder、未実装）を切替。full 条件では AI が何回どの tool を呼び、どの resource を参照したかを記録する — これが「AI-Ready DS が本当に効いているか」の研究目的の核。
+**provider-pluggable**: `ModelProvider` インターフェースで anthropic（実装済み・MCP 6 tool を Claude API の tool use として渡す）/ mock（オフライン検証）/ openai（placeholder、未実装）を切替。tools 条件では AI が何回どの tool を呼び、どの resource を参照したかに加え、`check_html` 到達率を記録する。`mcp-raw→full` の差が initialize instructions の寄与になる。
 
 red-team prompt は5本（neon / heavy shadow / color bar / placeholder-only form / icon-only buttons）。standard と red-team はスコアの意味が違う（前者=準拠生成、後者=悪い指示への抵抗）ため report で分離集計する。CI は live API を叩かず、`tests/benchmark-pipeline.spec.ts` が stats・採点の gaming 耐性・集約ロジックの回帰を守る。
 
 **測定しているもの / 限界（発信時の前提）**:
 - スコアは **DS 準拠の proxy**（lint core 違反 + class/属性ベースの準拠シグナル）であって、見た目の美しさそのものではない。準拠シグナルはコメント等への文字列埋め込みでは稼げない（実 class 属性のみ集計）。
-- `full` 条件は生成後の `check_html` 自己検証（多ターン）を含むため、`contracts→full` の lift は「contracts 単体」ではなく「MCP workflow（自己修正込み）」の寄与。各層を分離するため `designmd / contracts` を別条件にしている。
+- tools 条件は多ターンの tool use を含み得る。`contracts→mcp-raw` は MCP tools 自体、`mcp-raw→full` は initialize instructions の寄与として分離する。スコア差と `check_html` 到達率を併読する。
+- `mcp-raw` / `full` はどちらも `DESIGN.md` と contracts を静的 context に持つ。この比較は `melta://design-constitution` resource が、Melta 知識を MCP からしか得ない利用者へ情報を届ける効果を測らない。
 - n は trial 数。headline には mean ± 95%CI を併記し、small-n の不確実性を隠さない。人手評価との相関検証は未実施（既知の限界）。
 
 > 詳細仕様: `docs/ai-ready-quality-gate-plan.md` の P4 セクション。

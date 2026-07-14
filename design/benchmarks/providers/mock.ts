@@ -1,8 +1,8 @@
 /**
  * mock provider — API 不要のオフライン検証用。
  *
- * 目的は「runner の 3 条件 × N トライアル → 集計 → レポート → history」という
- * パイプライン機構そのものの回帰テスト。生成内容は実 LLM ではなく、与えられた
+ * 目的は「runner の複数条件 × N トライアル → 集計 → レポート」という
+ * パイプライン機構そのものの回帰テスト（実測 history への追記はしない）。生成内容は実 LLM ではなく、与えられた
  * 条件（system に DS コンテキストが含まれるか / useTools か）に応じて DS 準拠度の
  * 異なる HTML を合成する。trial 間は呼び出しカウンタで決定論的に微変動させる。
  *
@@ -15,14 +15,17 @@ import type {
   GenerationResult,
   GenerateOptions,
 } from "../../../src/utils/types.js";
+import { MCP_INSTRUCTIONS } from "../../../src/guidance.js";
 
-type Quality = "cold" | "designmd" | "contracts" | "full";
+type Quality = "cold" | "designmd" | "contracts" | "mcp-raw" | "full";
 
 /** system プロンプトと useTools から条件の質を推定する */
 function inferQuality(system: string, useTools: boolean): Quality {
   const hasDs = system.includes("melta UI デザインシステム") || system.includes("Design Constitution");
   const hasContracts = system.includes("Component Contracts");
-  if (hasDs && useTools) return "full";
+  const hasInstructions = system.includes(MCP_INSTRUCTIONS);
+  if (hasDs && useTools && hasInstructions) return "full";
+  if (hasDs && useTools) return "mcp-raw";
   if (hasDs && hasContracts) return "contracts";
   if (hasDs) return "designmd";
   return "cold";
@@ -99,7 +102,7 @@ export function createMockProvider(options: MockProviderOptions = {}): ModelProv
           ? coldHtml(jitter)
           : quality === "designmd"
             ? designmdHtml(jitter)
-            : quality === "contracts"
+            : quality === "contracts" || quality === "mcp-raw"
               ? contractsHtml(jitter)
               : fullHtml(jitter);
 
@@ -108,10 +111,17 @@ export function createMockProvider(options: MockProviderOptions = {}): ModelProv
         toolCalls:
           quality === "full"
             ? [{ name: "check_html", arguments: {}, result: { passed: true } }]
+            : quality === "mcp-raw"
+              ? [{ name: "get_component", arguments: { id: "card" }, result: {} }]
             : [],
         usage: { inputTokens: 0, outputTokens: 0 },
         latencyMs: 0,
-        resourcesAccessed: quality === "full" ? ["melta://rules/auto-detectable"] : [],
+        resourcesAccessed:
+          quality === "full"
+            ? ["melta://rules/auto-detectable"]
+            : quality === "mcp-raw"
+              ? ["melta://components/card"]
+              : [],
       };
     },
   };

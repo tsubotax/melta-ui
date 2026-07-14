@@ -18,6 +18,12 @@ import { createHash } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
+/**
+ * 条件名の意味や処置の組み立てが変わったときに上げる実験プロトコル世代。
+ * history の時系列比較は同じ version の run 同士に限定する。
+ */
+export const BENCHMARK_PROTOCOL_VERSION = 2;
+
 export interface GitInfo {
   /** HEAD の commit SHA。git 取得失敗（CI 外・shallow 等）は null でベンチは止めない */
   commit: string | null;
@@ -38,19 +44,24 @@ export interface ProviderInfo {
 /** score-dir 実行時に generation へ引き継ぐ生成時来歴の要約（再帰させない固定形） */
 export interface GenerationSummary {
   date: string;
+  /** 旧 provenance など世代不明の場合は null。異なる世代を暗黙比較しない。 */
+  benchmarkProtocolVersion: number | null;
   git: GitInfo;
   provider: ProviderInfo;
   inputHashes: Record<string, unknown>;
 }
 
 export interface Provenance {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  benchmarkProtocolVersion: number;
   date: string;
   mode: "generate" | "score-dir";
   git: GitInfo;
-  /** 実際に送る組み立て済み context の hash（DESIGN.md・埋め込み contracts の変化を自動で拾う）+ 主要入力ファイルの hash */
+  /** 静的 context・実際の処置（system + tools）・主要入力ファイルの hash */
   inputHashes: {
     contextByCondition: Record<string, string>;
+    /** system prompt + tools 有無を含む、LLM に与えた実処置の hash */
+    treatmentByCondition: Record<string, string>;
     files: Record<string, string>;
   };
   /** score-dir 時のみ: 採点対象 HTML 群の結合 hash（パス順ソートで安定） */
@@ -70,6 +81,7 @@ export function buildProvenance(input: {
   mode: "generate" | "score-dir";
   git: GitInfo;
   contextHashes: Record<string, string>;
+  treatmentHashes: Record<string, string>;
   fileHashes: Record<string, string>;
   scoredFilesDigest: string | null;
   provider: ProviderInfo;
@@ -79,12 +91,14 @@ export function buildProvenance(input: {
   generation: GenerationSummary | null;
 }): Provenance {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    benchmarkProtocolVersion: BENCHMARK_PROTOCOL_VERSION,
     date: input.date,
     mode: input.mode,
     git: input.git,
     inputHashes: {
       contextByCondition: input.contextHashes,
+      treatmentByCondition: input.treatmentHashes,
       files: input.fileHashes,
     },
     scoredFilesDigest: input.scoredFilesDigest,
@@ -112,6 +126,10 @@ export function extractGenerationSummary(parsed: unknown): GenerationSummary | n
   if (typeof p.date !== "string" || p.git == null || p.provider == null) return null;
   return {
     date: p.date,
+    benchmarkProtocolVersion:
+      typeof p.benchmarkProtocolVersion === "number"
+        ? p.benchmarkProtocolVersion
+        : null,
     git: p.git as GitInfo,
     provider: p.provider as ProviderInfo,
     inputHashes: (p.inputHashes ?? {}) as Record<string, unknown>,
@@ -120,6 +138,14 @@ export function extractGenerationSummary(parsed: unknown): GenerationSummary | n
 
 export function sha256(text: string): string {
   return createHash("sha256").update(text, "utf-8").digest("hex");
+}
+
+/**
+ * condition.context だけでなく、実際に送る system prompt と tools の有無を固定する。
+ * instructions 文や tool routing 条件の変更を provenance 上で区別するための hash。
+ */
+export function hashBenchmarkTreatment(system: string, useTools: boolean): string {
+  return sha256(JSON.stringify({ system, useTools }));
 }
 
 // ---------- 副作用（git / ファイル IO） ----------

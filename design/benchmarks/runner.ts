@@ -9,10 +9,11 @@
  *   cold      : DS コンテキスト無し（素の LLM。melta を一切示さない真のベースライン）
  *   designmd  : DESIGN.md のみ（静的・tools 無し）
  *   contracts : DESIGN.md + contracts 要約（静的・tools 無し）
- *   full      : 上記 + MCP tools（生成後 check_html で自己検証）← 実際の melta workflow
+ *   mcp-raw   : 上記 + MCP tools（initialize instructions 無し）
+ *   full      : 上記 + MCP tools + initialize instructions ← 実際の melta workflow
  *
- * ⚠️ full だけ多ターンの自己検証が入るため、contracts→full の lift は
- * 「contracts 単体」ではなく「MCP workflow（自己検証含む）」の寄与。report に明記する。
+ * contracts→mcp-raw で tools 自体、mcp-raw→full で接続時ガイダンスの寄与を分離する。
+ * tools 条件は多ターンになり得るため、スコアは静的コンテキスト量だけの差ではない。
  * スコアは DS 準拠の proxy であり、見た目の美しさそのものではない。
  *
  * 使い方:
@@ -32,10 +33,13 @@ import { summarize, computeLift, formatSummary, formatLift, type Summary } from 
 import { createAnthropicProvider } from "./providers/anthropic.js";
 import { createOpenAIProvider } from "./providers/openai.js";
 import { createMockProvider } from "./providers/mock.js";
+import { MCP_INSTRUCTIONS } from "../../src/guidance.js";
 import {
+  BENCHMARK_PROTOCOL_VERSION,
   buildProvenance,
   getGitInfo,
   hashFile,
+  hashBenchmarkTreatment,
   digestFiles,
   readGenerationProvenance,
   sha256,
@@ -47,7 +51,7 @@ const root = resolve(__dirname, "../..");
 const resultsDir = resolve(__dirname, "results");
 const historyPath = resolve(__dirname, "history.json");
 
-const CONDITION_IDS = ["cold", "designmd", "contracts", "full"] as const;
+const CONDITION_IDS = ["cold", "designmd", "contracts", "mcp-raw", "full"] as const;
 type ConditionId = (typeof CONDITION_IDS)[number];
 
 // ---------- 純粋な集計・レポート（テストから import するため副作用なし） ----------
@@ -57,11 +61,15 @@ export interface Condition {
   label: string;
   context: string;
   useTools: boolean;
+  /** MCP initialize result の instructions を system context に載せるか */
+  useInstructions?: boolean;
 }
 
 export interface Trial {
   score: Score;
   toolCalls: number;
+  /** check_html 到達率など、tool 選択の差を測るための呼び出し名 */
+  toolNames?: string[];
   resources: string[];
   htmlPath: string;
 }
@@ -133,6 +141,10 @@ export function buildReport(input: ReportInput): {
   let report = `# melta UI Benchmark — 条件別 DS 準拠スコア\n\n`;
   report += `**日時**: ${isoDate}\n`;
   report += `**Provider**: ${providerId}${modelName ? ` (${modelName})` : ""}\n`;
+  report += `**Benchmark protocol**: v${provenance?.benchmarkProtocolVersion ?? BENCHMARK_PROTOCOL_VERSION}\n`;
+  if (providerId === "mock") {
+    report += `\n> **MOCK FIXTURE — NOT EVIDENCE**: この数値はパイプライン回帰確認用に合成されたもので、Melta や instructions の効果を示しません。\n\n`;
+  }
   if (provenance) {
     const g = provenance.git;
     const commitStr = g.commit
@@ -141,7 +153,7 @@ export function buildReport(input: ReportInput): {
     report += `**Commit**: ${commitStr}\n`;
     if (provenance.mode === "score-dir") {
       report += provenance.generation
-        ? `**生成元**: ${provenance.generation.date} / ${provenance.generation.provider.id}${provenance.generation.provider.model ? ` (${provenance.generation.provider.model})` : ""} / commit ${provenance.generation.git.commit?.slice(0, 7) ?? "不明"}\n`
+        ? `**生成元**: ${provenance.generation.date} / ${provenance.generation.provider.id}${provenance.generation.provider.model ? ` (${provenance.generation.provider.model})` : ""} / protocol ${provenance.generation.benchmarkProtocolVersion == null ? "legacy/不明" : `v${provenance.generation.benchmarkProtocolVersion}`} / commit ${provenance.generation.git.commit?.slice(0, 7) ?? "不明"}\n`
         : `**生成元**: provenance 不明（score-dir に provenance.json が無い。生成時の model / commit は復元不能）\n`;
     }
   }
@@ -151,7 +163,8 @@ export function buildReport(input: ReportInput): {
   report += `**集約**: prompt 等重み（各 prompt の trial 平均を取り、prompt 間で平均）。CI/σ は prompt 間ばらつき。\n\n`;
 
   // 注記（交絡の明示）
-  report += `> **条件の読み方**: cold→designmd→contracts は静的コンテキスト量の差。contracts→full は MCP tools + 生成後の \`check_html\` 自己検証を含む（= 実際の melta workflow）。full の上振れには自己修正の寄与が含まれる。\n\n`;
+  report += `> **条件の読み方**: cold→designmd→contracts は静的コンテキスト量の差。contracts→mcp-raw は MCP tools 自体、mcp-raw→full は initialize instructions の寄与。tools 条件は多ターンになり得るため、上振れには tool 利用・自己修正の寄与が含まれる。\n\n`;
+  report += `> **resource の測定範囲**: mcp-raw / full はどちらも DESIGN.md と contracts を静的 context として持つため、この比較は \`melta://design-constitution\` resource が MCP-only 利用者へ情報を届ける効果を測りません。\n\n`;
 
   for (const g of groupDefs) {
     const base = conditions[0];
@@ -195,17 +208,30 @@ export function buildReport(input: ReportInput): {
   }
   report += `\n`;
 
-  // full の tool 活用（score-dir モードは生成時の tool 呼び出しを記録しないので集計が
-  // 全て 0 になる。誤解を招くため、tool データがある時のみ出す）
-  const fullCells = cells.filter((c) => c.conditionId === "full");
-  const allFullTrials = fullCells.flatMap((c) => c.trials);
-  const totalToolCalls = allFullTrials.reduce((a, t) => a + t.toolCalls, 0);
-  if (fullCells.length > 0 && totalToolCalls > 0) {
-    report += `## full 条件の MCP tool 活用\n\n`;
-    report += `- 平均 tool 呼び出し/生成: ${(totalToolCalls / allFullTrials.length).toFixed(1)}\n`;
-    const resources = new Set(allFullTrials.flatMap((t) => t.resources));
-    report += `- 参照リソース: ${resources.size > 0 ? [...resources].join(", ") : "(なし)"}\n\n`;
-  } else if (fullCells.length > 0 && providerId === "score-dir") {
+  // tools 条件の利用差。特に mcp-raw→full の check_html 到達率を施策評価に使う。
+  // score-dir は生成時の tool 呼び出しを持たないため、誤って 0% と報告しない。
+  const toolConditions = conditions.filter((c) => c.useTools);
+  if (toolConditions.length > 0 && providerId !== "score-dir") {
+    report += `## MCP tool 活用\n\n`;
+    report += `| 条件 | 平均呼び出し/生成 | check_html 到達 | 参照リソース |\n`;
+    report += `|------|------|------|------|\n`;
+    for (const cond of toolConditions) {
+      const condTrials = cells
+        .filter((c) => c.conditionId === cond.id)
+        .flatMap((c) => c.trials);
+      const totalToolCalls = condTrials.reduce((a, t) => a + t.toolCalls, 0);
+      const checkHtmlReached = condTrials.filter((t) =>
+        (t.toolNames ?? []).includes("check_html")
+      ).length;
+      const resources = new Set(condTrials.flatMap((t) => t.resources));
+      const avg = condTrials.length > 0 ? (totalToolCalls / condTrials.length).toFixed(1) : "—";
+      const reach = condTrials.length > 0
+        ? `${checkHtmlReached}/${condTrials.length} (${((checkHtmlReached / condTrials.length) * 100).toFixed(0)}%)`
+        : "—";
+      report += `| **${cond.id}** | ${avg} | ${reach} | ${resources.size > 0 ? [...resources].join(", ") : "(なし)"} |\n`;
+    }
+    report += `\n`;
+  } else if (toolConditions.length > 0 && providerId === "score-dir") {
     report += `> （tool 使用統計は生成時に記録され、score-dir 採点モードには持ち込まれない）\n\n`;
   }
 
@@ -249,7 +275,20 @@ function buildConditions(filter: string[]): Condition[] {
     { id: "cold", label: "No DS context", context: "", useTools: false },
     { id: "designmd", label: "DESIGN.md only", context: designMd, useTools: false },
     { id: "contracts", label: "DESIGN.md + contracts", context: withContracts, useTools: false },
-    { id: "full", label: "+ MCP tools (self-verify)", context: withContracts, useTools: true },
+    {
+      id: "mcp-raw",
+      label: "+ MCP tools (no initialize instructions)",
+      context: withContracts,
+      useTools: true,
+      useInstructions: false,
+    },
+    {
+      id: "full",
+      label: "+ MCP tools + initialize instructions",
+      context: withContracts,
+      useTools: true,
+      useInstructions: true,
+    },
   ];
   if (filter.length === 0) return all;
   return all.filter((c) => filter.includes(c.id));
@@ -259,12 +298,10 @@ function buildSystem(condition: Condition): string {
   if (condition.id === "cold") {
     return "あなたは UI を生成するエキスパートです。指示に従い、単一の HTML ファイル（Tailwind CDN 使用）として完結する UI を生成してください。";
   }
-  const toolNote = condition.useTools
-    ? "不明な点は提供されたツール（get_token / get_component / check_rule / check_html / get_rules / search）で確認し、生成後は check_html で自己検証してから提示してください。\n\n"
-    : "";
+  const instructions = condition.useInstructions ? `${MCP_INSTRUCTIONS}\n\n` : "";
   return `あなたは melta UI デザインシステムに準拠した UI を生成するエキスパートです。
 以下のデザインシステム仕様を必ず遵守してください。
-${toolNote}${condition.context}`;
+${instructions}${condition.context}`;
 }
 
 async function runCell(
@@ -299,6 +336,7 @@ async function runCell(
     trialResults.push({
       score,
       toolCalls: (result.toolCalls ?? []).length,
+      toolNames: (result.toolCalls ?? []).map((call) => call.name),
       resources: result.resourcesAccessed ?? [],
       htmlPath,
     });
@@ -349,7 +387,7 @@ function scoreCell(
     }
     const score = scoreHTML(html);
     scores.push(score.totalScore);
-    trialResults.push({ score, toolCalls: 0, resources: [], htmlPath });
+    trialResults.push({ score, toolCalls: 0, toolNames: [], resources: [], htmlPath });
   }
 
   return {
@@ -364,6 +402,8 @@ function scoreCell(
 
 interface HistoryRecord {
   date: string;
+  /** 同じ version の run 同士だけを時系列比較する。旧 entry は欠落 = legacy。 */
+  benchmarkProtocolVersion?: number | null;
   provider: string;
   model: string | null;
   trials: number;
@@ -498,12 +538,20 @@ async function main(): Promise<void> {
     date: isoDate,
     mode: scoreDir ? "score-dir" : "generate",
     git: getGitInfo(root),
-    // 実際に送る組み立て済み context を hash（DESIGN.md・埋め込み contracts の変化を自動で拾う）
+    // 静的 context を hash（DESIGN.md・埋め込み contracts の変化を自動で拾う）
     contextHashes: Object.fromEntries(conditions.map((c) => [c.id, sha256(c.context)])),
+    // instructions と tools 有無を含む実処置。mcp-raw / full は必ず異なる hash になる。
+    treatmentHashes: Object.fromEntries(
+      conditions.map((c) => [
+        c.id,
+        hashBenchmarkTreatment(buildSystem(c), c.useTools),
+      ])
+    ),
     fileHashes: Object.fromEntries(
       [
         "design/benchmarks/prompts.ts",
         "design/contracts/rules.json", // scorer（共通 lint core）の入力
+        "src/guidance.ts", // initialize instructions の authoring source
       ].map((p) => [p, hashFile(resolve(root, p)) ?? "(missing)"])
     ),
     scoredFilesDigest: scoreDir ? digestFiles(scoredPaths) : null,
@@ -553,6 +601,9 @@ async function main(): Promise<void> {
     }
     appendHistory({
       date: isoDate,
+      benchmarkProtocolVersion: scoreDir
+        ? provenance.generation?.benchmarkProtocolVersion ?? null
+        : provenance.benchmarkProtocolVersion,
       provider: effectiveProvider,
       model: recordedModel,
       trials,
@@ -579,6 +630,8 @@ async function main(): Promise<void> {
       generation: provenance.generation,
     });
     console.log(`\n  history: ${historyPath.replace(root + "/", "")} に追記`);
+  } else if (writeHistory && effectiveProvider === "mock") {
+    console.log(`\n  history: mock fixture のため追記をスキップ`);
   }
   console.log(`  provenance: ${provenancePath.replace(root + "/", "")}`);
   console.log(`  レポート: ${reportPath.replace(root + "/", "")}`);

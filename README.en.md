@@ -114,6 +114,11 @@ One contract package feeds two implementations: web (this repo, HTML + Tailwind)
 { "mcpServers": { "melta-ui": { "command": "npx", "args": ["-y", "melta-ds-mcp"] } } }
 ```
 
+On connect, MCP `instructions` explain that melta is a contracts/rules/lint-driven
+system rather than a ready-made CSS component library. Agents are directed to read
+`melta://design-constitution`, use the existing lookup tools, and run `check_html`
+before presenting generated HTML/JSX/Vue as a `lint-clean draft / brand-unapproved`.
+
 **Contracts only** — `npm install melta-contracts` and read `tokens.json` / `rules.json` / `components/*.contract.json` directly.
 
 ---

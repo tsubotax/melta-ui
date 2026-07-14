@@ -1,7 +1,7 @@
 /**
  * stats.ts — ベンチ集計の純関数（runner から分離してテスト可能にする）
  *
- * P1-4 Slice 2: 3 条件（cold / designmd / full）× N トライアルの分布を
+ * P1-4 Slice 2: 複数条件 × N トライアルの分布を
  * mean±range で集計し、条件間の限界寄与（lift）を出す。
  * Atlassian「context engine で +52%」式の「DS を足すと準拠スコアが何点上がるか」を
  * 自前の一次データとして提示するための土台。
