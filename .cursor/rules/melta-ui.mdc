@@ -45,7 +45,7 @@ globs: ["**/*.html", "**/*.tsx", "**/*.jsx", "**/*.vue", "**/*.svelte"]
 - `py-0.5` on buttons → use `h-8`+ (S: `h-8` / M: `h-10` / L: `h-12`)
 
 ## Reference
-- Full tokens: `tokens/tokens.json`
+- Full tokens: `design/contracts/tokens.json`
 - Component specs: `metadata/components.json`
 - Prohibition rules: `foundations/prohibited.md`
 - Design philosophy: `foundations/design_philosophy.md`

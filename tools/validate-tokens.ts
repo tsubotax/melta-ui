@@ -23,7 +23,7 @@ function info(msg: string): void {
 
 // --- Load tokens ---
 const tokens = JSON.parse(
-  readFileSync(resolve(root, "tokens/tokens.json"), "utf-8")
+  readFileSync(resolve(root, "design/contracts/tokens.json"), "utf-8")
 );
 
 // --- Validate against ds-config.js ---

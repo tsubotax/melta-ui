@@ -10,7 +10,7 @@
  * 6. MCP check_rule のハードコード件数 vs rules.json の自動検出可能ルール件数
  */
 
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync, lstatSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tokenize, matches, isAutoDetectable } from "../../src/utils/matcher.js";
@@ -524,8 +524,32 @@ section("5. tokens.json の存在チェック");
 const tokensData = loadJSON("design/contracts/tokens.json");
 if (tokensData) {
   ok("tokens.json 読み込み成功: design/contracts/tokens.json");
-} else {
-  error("tokens.json が見つかりません");
+}
+
+// deprecated path 不在 invariant。
+// 旧 SSOT tokens/tokens.json は design/contracts/ 移行時に互換 symlink として残っていたが、
+// 旧パス依存が再び生まれる（将来 symlink が実ファイルに分岐しうる）入口なので撤去した。
+// engineRoot 固定 — これは melta-ui 自身の移行不変条件であり、vendor 先のアセットには適用しない。
+// lstatSync はリンクを追従しないので、実ファイル・生きた symlink・壊れた symlink をすべて検出する。
+const LEGACY_TOKENS_PATH = "tokens/tokens.json";
+try {
+  const legacyEntry = lstatSync(resolve(engineRoot, LEGACY_TOKENS_PATH), {
+    throwIfNoEntry: false,
+  });
+  if (legacyEntry) {
+    const kind = legacyEntry.isSymbolicLink()
+      ? "symlink"
+      : legacyEntry.isFile()
+        ? "ファイル"
+        : "エントリ";
+    error(
+      `deprecated tokens path ${LEGACY_TOKENS_PATH} が ${kind} として復活しています（SSOT は design/contracts/tokens.json のみ）`
+    );
+  } else {
+    ok(`deprecated tokens path 不在: ${LEGACY_TOKENS_PATH}`);
+  }
+} catch (e) {
+  error(`${LEGACY_TOKENS_PATH} の不在を確認できません: ${(e as Error).message}`);
 }
 
 // --- tokens.dtcg.json の鮮度（W3C DTCG エクスポートの再生成漏れ検知） ---

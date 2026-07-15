@@ -45,4 +45,5 @@
 3. **contracts 未移行のコンポーネント**は当面 `metadata/components.json` の既存データが SSOT
 4. **禁止ルール**の SSOT は `design/contracts/rules.json`。`foundations/prohibited.md` は人間向けの説明文書
 5. **drift が発生したら**、authoring source を正として generated view を再生成する
+6. **deprecated compatibility path `tokens/tokens.json` は存在してはならない**。tokens の SSOT は `design/contracts/tokens.json` のみで、旧パスの復活はファイル・symlink を問わず `npm run design:check` が検出する
 6. **ドキュメント間で値が競合したら**、`design/contracts/` > `DESIGN.md` Quick Reference > `patterns/` / `components/` md の順で優先する

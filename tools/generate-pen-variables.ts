@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const tokens = JSON.parse(
-  readFileSync(resolve(root, "tokens/tokens.json"), "utf-8")
+  readFileSync(resolve(root, "design/contracts/tokens.json"), "utf-8")
 );
 
 // ── Types ──────────────────────────────────────────────

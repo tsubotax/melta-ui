@@ -32,7 +32,7 @@ interface Tokens {
 }
 
 const tokens: Tokens = JSON.parse(
-  readFileSync(resolve(root, "tokens/tokens.json"), "utf-8")
+  readFileSync(resolve(root, "design/contracts/tokens.json"), "utf-8")
 );
 
 // Build CSS variable blocks
