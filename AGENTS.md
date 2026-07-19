@@ -66,6 +66,7 @@ npm run design:compat         # 互換ゲート（npm 公開版 vs HEAD、breaki
 npm run design:recipes        # 契約 → recipes/web/ 生成（app recipe は手書き）
 npm run design:build          # contract → metadata/components.json + llms.txt 生成
 npm run validate              # tokens.json vs ds-config.js / ds-theme.css の整合性
+npm run test:reset-vrt        # リセットCSS 5種差し替え VRT（pixelmatch diff 0 検証、opt-in）
 npm run build                 # TypeScript → dist/（MCP サーバー）
 ```
 

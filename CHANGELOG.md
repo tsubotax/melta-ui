@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-19
+
+### DADS 取り込み — Baseline 線引き + disabled 併記 + 44px タップ領域 + リセットCSS VRT
+
+デジタル庁デザインシステム（DADS）4 リポの深掘り調査から採用を決めた 4 項目を導入（設計と Codex レビュー反映は `docs/dads-adoption-plan.md`）。ルールは 99 → **105 件**、contracts は **0.5.0**（npm publish 済）。
+
+#### Added
+
+- **BASELINE_* ルール 5 件（warn）** — CSS/HTML 機能を Baseline **Widely available** に限定する原則を DESIGN.md 原則 8 に明文化し、AI が出しがちな未普及機能（Anchor Positioning / Invoker Commands / popover / View Transitions / text-box-trim）を denylist 検知。attr-lint に新 kind `attr-present`（開始タグ抽出 + 引用符内除去で属性値内の同名語を誤検知しない）
+- **A11Y_DISABLED_REQUIRES_ARIA（warn）** — 契約既存の規範（button stateSpecs.disabled = `disabled` + `aria-disabled` 併用）を composition lint で HTML に機械強制。タブ順維持が要る文脈の `aria-disabled` 単独 + JS ガードパターンは DESIGN.md に注記
+- **リセットCSS差し替え VRT**（`npm run test:reset-vrt`）— Normalize / Bootstrap Reboot / Tailwind Preflight / Eric Meyer / kiso.css の 5 種を melta スタックより前に注入し、pixelmatch threshold 0 + includeAA の literal 比較で **diff 0px** を検証。fixture は契約 htmlSample から実行時組み立て（コピー drift なし）、スナップショット無しの同一セッション内比較 + A/A 決定性テスト（DADS 方式）。CI には non-blocking で組み込み（安定確認後に required 昇格）
+- **Host-Reset Defense 層（ds-theme.css）** — 監査で発見した 3 系統の漏れを封鎖: ① Reboot 系の body 直指定 font/color が Preflight の html レベル指定を貫通 ② Meyer 系の要素セレクタ `border: 0` が Preflight の `*`（specificity 0）に常勝して枠線消失 ③ kiso.css の日本語タイポプロパティ（text-autospace 等）継承でテキスト幅シフト
+- **タップ領域拡張の受け入れテスト**（`tests/tap-target.spec.ts`）— ジオメトリ不変 / elementFromPoint 拡張帯ヒット / overflow クリップ制約 / disabled 無効化を実ブラウザで固定
+
+#### Changed（contracts 0.5.0 / button 2.1.0）
+
+- **BTN_MIN_TAP_TARGET を manual → composition 自動検出に昇格**（新 kind `dom-class-required` + `excludeWhen: icon-only`。無防備 error 43 → 42）。button 契約 sizes.small/medium に `after:` 擬似要素のタップ領域拡張を追加（見た目不変・実効 44px、WCAG 2.2 基準）。touchTarget prose の「web は h-8 まで許容」との矛盾を解消。icon-only の幅拡張は第二弾
+- 社内コーパス migration: aria-disabled 併記 10 箇所 + タップ領域拡張 167 箇所 + 契約 htmlSample 5 箇所（examples / docs/index.html / verification）
+- 新規則で既存合法 HTML の判定が変わる変更を行動互換性破壊とみなし contracts を 0.5.0 に（プロジェクト判断。compat 機械分類は additive でも minor bump）
+
 #### Added（contracts 0.4.3）
 
 rally-nav（melta-app 初の dogfood 消費者）からのフィードバック 2 件をトークン契約に反映。
