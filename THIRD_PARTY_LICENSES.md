@@ -218,3 +218,17 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
+
+## Reset CSS fixtures (tests/fixtures/resets/ — テスト専用 vendor、配布物には含まれない)
+
+リセットCSS差し替え VRT（`npm run test:reset-vrt`）の検証入力として、以下のリセットCSS を
+`tests/fixtures/resets/` に vendor している。各ファイル冒頭に取得元 URL・バージョン・
+オリジナルの SHA-256 を記載。いずれも melta UI の配布物（npm / サイト）には含まれない。
+
+| ファイル | upstream | バージョン | ライセンス |
+|---------|----------|-----------|-----------|
+| normalize.css | necolas/normalize.css | 8.0.1 | MIT |
+| bootstrap-reboot.css | twbs/bootstrap | 5.3.3 | MIT |
+| tailwind-preflight.css | tailwindlabs/tailwindcss | 3.4.17 | MIT |
+| meyer-reset.css | Eric Meyer Reset CSS（reset-css npm パッケージ経由） | 2.0 (reset-css@5.0.2) | Public Domain |
+| kiso.css | tak-dcxi/kiso.css | 1.2.4 | MIT |

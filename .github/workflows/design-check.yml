@@ -85,3 +85,33 @@ jobs:
 
       - name: Playwright + axe Tests
         run: npm test
+
+  reset-vrt:
+    # リセットCSS差し替え VRT（DADS 取り込み V1）。
+    # CI Linux での決定性（A/A テスト）の安定を確認するまで non-blocking。
+    # 安定したら continue-on-error を外して required に昇格する（docs/dads-adoption-plan.md V1）
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Reset-swap VRT (5 リセットCSS × pixelmatch diff 0)
+        run: npm run test:reset-vrt
+
+      - name: Upload diff artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reset-vrt-diffs
+          path: test-results/
+          retention-days: 7

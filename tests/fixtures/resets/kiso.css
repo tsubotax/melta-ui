@@ -1,0 +1,30 @@
+/*!
+ * vendored for reset-swap VRT (tests/reset-vrt.spec.ts) — DO NOT EDIT
+ * source: https://cdn.jsdelivr.net/npm/kiso.css@latest/dist/kiso.min.css
+ * upstream: kiso.css v1.2.4 / license: MIT
+ * sha256(original): eb692ddbe55be103654e42512fb2f68759b76e05cc9e291df1e8f0d682fe0c9b
+ * fetched: 2026-07-19
+ */
+/**
+ * Minified by jsDelivr using clean-css v5.3.3.
+ * Original file: /npm/kiso.css@1.2.4/kiso.css
+ *
+ * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
+ */
+/*! kiso.css v1.2.4 | MIT License | https://github.com/tak-dcxi/kiso.css */
+*,::after,::before{box-sizing:border-box}:where(:root){font-family:sans-serif;line-height:1.5;text-spacing-trim:trim-start;text-autospace:normal;line-break:strict;overflow-wrap:anywhere;-webkit-text-size-adjust:100%;text-size-adjust:100%;scrollbar-gutter:stable;-webkit-tap-highlight-color:transparent}:where(body){min-block-size:100dvb;margin:unset}:where(:is(h1,h2,h3,h4,h5,h6):lang(en)){text-wrap:pretty}:where(h1){margin-block:0.67em;font-size:2em}:where(h2,h3,h4,h5,h6){margin-block:unset}:where(search){display:block flow}:where(p,blockquote,figure,pre,address,ul,ol,dl,menu){margin-block:unset}:where(blockquote,figure){margin-inline:unset}:where(p:lang(en)){text-wrap:pretty}:where(address:lang(ja)){font-style:unset}:where(ul,ol,menu){padding-inline-start:unset;list-style-type:""}:where(dt){font-weight:bolder}:where(dd){margin-inline-start:unset}:where(pre){text-spacing-trim:space-all;text-autospace:no-autospace}@media print{:where(pre){text-wrap-mode:unset}}:where(em:lang(ja)){font-weight:bolder}:where(:is(i,cite,em,dfn):lang(ja)){font-style:unset}:where(u,s,del,ins){text-decoration-inset:auto}:where(code,kbd,samp){font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-feature-settings:initial;font-variation-settings:initial;font-size:unset;font-variant-ligatures:none}:where(abbr[title]){text-decoration-line:underline;text-decoration-style:dotted;text-decoration-inset:auto;cursor:help}:where(time){text-autospace:no-autospace}@media (forced-colors:active){:where(mark){background-color:Highlight;color:HighlightText}}@media print{:where(mark){border-width:1px;border-style:dotted}}:where(a){color:unset}:where(a:any-link){text-decoration-line:unset;text-decoration-thickness:from-font;text-decoration-inset:auto}:where(img,svg,picture,video,audio,canvas,model,iframe,embed,object){max-inline-size:100%;vertical-align:bottom}:where(img,svg,picture,video,canvas,model,iframe,embed,object){block-size:auto}:where(iframe){border:unset}:where(table){border-collapse:collapse}:where(caption,th){text-align:unset}:where(caption:lang(en)){text-wrap:pretty}::file-selector-button,:where(button,input,select,textarea){border-width:1px;border-style:solid;border-color:unset;border-radius:unset;color:unset;font:unset;letter-spacing:unset;text-align:unset}:where(input:is([type=radio i],[type=checkbox i])){margin:unset}:where(input[type=file i]){border:unset}:where(input[type=search i]){-webkit-appearance:textfield}@supports (-webkit-touch-callout:none){:where(input[type=search i]){background-color:Canvas}}:where(
+input:is(
+[type=tel i],[type=url i],[type=email i],[type=number i]
+):not(:placeholder-shown)
+){direction:ltr}:where(textarea){margin-block:unset;resize:block}:where(
+input:not([type=button i],[type=submit i],[type=reset i]),textarea,[contenteditable]
+){text-autospace:no-autospace}::file-selector-button,:where(
+button,input:is([type=button i],[type=submit i],[type=reset i])
+){background-color:unset}::file-selector-button,:where(
+button,input:is([type=button i],[type=submit i],[type=reset i]),[role=tab i],[role=button i],[role=option i]
+){touch-action:manipulation}:where(
+button:enabled,label[for],select:enabled,input:is(
+[type=button i],[type=submit i],[type=reset i],[type=radio i],[type=checkbox i]
+):enabled,[role=tab i],[role=button i],[role=option i]
+),:where(:enabled)::file-selector-button{cursor:pointer}:where(fieldset){min-inline-size:0;margin-inline:unset;padding:unset;border:unset}:where(legend){padding-inline:unset}:where(progress){vertical-align:unset}::placeholder{opacity:unset}:where(summary){list-style-type:"";cursor:pointer}:where(summary)::-webkit-details-marker{display:none}:where(dialog,[popover]){overscroll-behavior-block:contain;padding:unset;border:unset}:where(dialog:not([open],[popover]),[popover]:not(:popover-open)){display:none!important}:where(dialog){max-inline-size:unset;max-block-size:unset}:where(dialog)::backdrop{background-color:oklch(0% 0 0deg / 30%)}:where([popover]){margin:unset}:where(:focus-visible){outline-offset:3px}[tabindex="-1"]:focus{outline:0!important}:where(:disabled,[aria-disabled=true i]){cursor:default}[hidden]:not([hidden=until-found i]){display:none!important}
+/*# sourceMappingURL=/sm/126714abd6fbc8419f9e170d6888bf0ddd47a626803b2123250c789f822255fc.map */

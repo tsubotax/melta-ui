@@ -56,7 +56,8 @@
     "start": "node dist/index.js",
     "design:compat": "tsx scripts/design/contract-compat.ts",
     "design:recipes": "tsx scripts/design/export-recipes.ts",
-    "site:build": "rm -rf site-public && mkdir -p site-public/docs site-public/scripts site-public/examples site-public/assets site-public/verification && cp docs/index.html docs/icons.html docs/meltan-bounce.html docs/og-image.png docs/Meltan.svg docs/Meltan_favicon.svg site-public/docs/ && cp scripts/ds-theme.css scripts/ds-showcase.css scripts/ds-scrollspy.js scripts/ds-showcase.js scripts/ds-dark-mode.js scripts/ds-config.js site-public/scripts/ && cp -R assets/. site-public/assets/ && cp examples/*.html site-public/examples/ && cp verification/*.html site-public/verification/"
+    "site:build": "rm -rf site-public && mkdir -p site-public/docs site-public/scripts site-public/examples site-public/assets site-public/verification && cp docs/index.html docs/icons.html docs/meltan-bounce.html docs/og-image.png docs/Meltan.svg docs/Meltan_favicon.svg site-public/docs/ && cp scripts/ds-theme.css scripts/ds-showcase.css scripts/ds-scrollspy.js scripts/ds-showcase.js scripts/ds-dark-mode.js scripts/ds-config.js site-public/scripts/ && cp -R assets/. site-public/assets/ && cp examples/*.html site-public/examples/ && cp verification/*.html site-public/verification/",
+    "test:reset-vrt": "playwright test -c playwright.reset-vrt.config.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
@@ -67,7 +68,11 @@
     "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.3.3",
+    "@types/pixelmatch": "^5.2.6",
+    "@types/pngjs": "^6.0.5",
     "http-server": "^14.1.1",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.4.0"
   },
