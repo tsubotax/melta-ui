@@ -168,7 +168,12 @@ export type HtmlAttrCheck =
   /** tag[attr=attrValue] が存在したら違反（例: <input type="date"> の native datepicker） */
   | { kind: "element-present"; tag: string; attr: string; attrValue: string }
   /** tag が存在するだけで違反（例: 生 CSS の <style> ブロック） */
-  | { kind: "tag-present"; tag: string };
+  | { kind: "tag-present"; tag: string }
+  /**
+   * attr が任意の要素（tag 指定時はその要素）に存在するだけで違反（例: popover / commandfor）。
+   * attr は正規表現の選択肢（(?:commandfor|command) 等）を許す（Baseline 検知で複数属性を1ルールに束ねるため）
+   */
+  | { kind: "attr-present"; attr: string; tag?: string };
 
 /**
  * 合成検出（S2）の機械可読 spec。

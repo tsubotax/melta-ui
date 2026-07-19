@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "melta UI 禁止ルール registry。foundations/prohibited.md の machine-readable 版（SSOT）。",
   "rules": [
     {
@@ -1165,6 +1165,61 @@
       "alternative": "レスポンシブに対応",
       "contractLint": "skip",
       "automationStatus": "human-only"
+    },
+    {
+      "id": "BASELINE_NO_ANCHOR_POSITIONING",
+      "category": "baseline",
+      "severity": "warn",
+      "description": "CSS Anchor Positioning は Baseline Limited（2026-07 時点, webstatus.dev）。fallback なしでは非対応ブラウザで配置が崩壊する。Baseline Widely available 未達機能は fallback 併記 + コメント明示宣言がない限り使わない",
+      "detector": "tailwind-class-prefix",
+      "pattern": "[anchor-name:",
+      "prefixPatterns": ["[position-anchor:", "[position-area:", "[position-try"],
+      "alternative": "absolute + top/left トークン系ユーティリティによる従来配置（DESIGN.md の配置パターン準拠）",
+      "contractLint": "warn"
+    },
+    {
+      "id": "BASELINE_NO_INVOKER_COMMANDS",
+      "category": "baseline",
+      "severity": "warn",
+      "description": "Invoker Commands（commandfor / command 属性）は Baseline Limited（2026-07 時点）。非対応ブラウザではボタンが完全に無反応になる",
+      "detector": "html-attr",
+      "pattern": null,
+      "alternative": "明示的な JS イベントリスナー、または dialog は showModal() 呼び出しで開閉する",
+      "contractLint": "skip",
+      "htmlAttrCheck": { "kind": "attr-present", "attr": "(?:commandfor|command)" }
+    },
+    {
+      "id": "BASELINE_NO_POPOVER_ATTR",
+      "category": "baseline",
+      "severity": "warn",
+      "description": "popover 属性は Baseline Newly → Widely 境界（2026-07 時点）。polyfill なしの生成では古い環境で開閉不能になる。使う場合は fallback かコメント明示宣言を伴うこと",
+      "detector": "html-attr",
+      "pattern": null,
+      "alternative": "dropdown/tooltip contract の実装パターン（絶対配置 + JS toggle）を使う",
+      "contractLint": "skip",
+      "htmlAttrCheck": { "kind": "attr-present", "attr": "popover" }
+    },
+    {
+      "id": "BASELINE_NO_VIEW_TRANSITION",
+      "category": "baseline",
+      "severity": "warn",
+      "description": "View Transitions は same-document が Baseline Newly / cross-document が Limited（2026-07 時点）。演出前提の UI 構造にすると非対応環境で意味が壊れる",
+      "detector": "tailwind-class-prefix",
+      "pattern": "[view-transition-name:",
+      "prefixPatterns": ["[view-transition-class:"],
+      "alternative": "motion トークン（duration/easing）による CSS transition で代替する",
+      "contractLint": "warn"
+    },
+    {
+      "id": "BASELINE_NO_TEXT_BOX_TRIM",
+      "category": "baseline",
+      "severity": "warn",
+      "description": "text-box-trim / text-box-edge は Baseline Newly（2026-07 時点）。行ボックスの光学調整に依存したレイアウトは非対応環境で余白がズレる",
+      "detector": "tailwind-class-prefix",
+      "pattern": "[text-box-trim:",
+      "prefixPatterns": ["[text-box-edge:", "[text-box:"],
+      "alternative": "spacing トークン（py-* / leading-*）で余白を明示指定する",
+      "contractLint": "warn"
     }
   ]
 }

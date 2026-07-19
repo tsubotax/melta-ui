@@ -262,3 +262,61 @@ test.describe("lint-core P0-1: 任意値の回避経路（rgb/hsl/oklch/named co
     expect(ruleIds('<button class="text-[1rem]">OK</button>')).toEqual([]);
   });
 });
+
+test.describe("lint-core B1: Baseline Widely available ルール（DADS 取り込み）", () => {
+  test("[anchor-name:--menu] は BASELINE_NO_ANCHOR_POSITIONING で検知", () => {
+    expect(ruleIds('<div class="[anchor-name:--menu]"></div>')).toContain(
+      "BASELINE_NO_ANCHOR_POSITIONING"
+    );
+  });
+
+  test("[position-area:bottom] も prefixPatterns で検知", () => {
+    expect(ruleIds('<div class="[position-area:bottom]"></div>')).toContain(
+      "BASELINE_NO_ANCHOR_POSITIONING"
+    );
+  });
+
+  test("popover 属性は BASELINE_NO_POPOVER_ATTR で検知（値付き/値なし両方）", () => {
+    expect(ruleIds('<div popover id="menu"></div>')).toContain(
+      "BASELINE_NO_POPOVER_ATTR"
+    );
+    expect(ruleIds('<div popover="manual"></div>')).toContain(
+      "BASELINE_NO_POPOVER_ATTR"
+    );
+  });
+
+  test("commandfor / command 属性は BASELINE_NO_INVOKER_COMMANDS で検知", () => {
+    expect(
+      ruleIds('<button commandfor="dlg" command="show-modal">開く</button>')
+    ).toContain("BASELINE_NO_INVOKER_COMMANDS");
+    expect(ruleIds('<button command="close">閉じる</button>')).toContain(
+      "BASELINE_NO_INVOKER_COMMANDS"
+    );
+  });
+
+  test("[view-transition-name:hero] は BASELINE_NO_VIEW_TRANSITION で検知", () => {
+    expect(ruleIds('<img class="[view-transition-name:hero]" src="a.png" alt="">')).toContain(
+      "BASELINE_NO_VIEW_TRANSITION"
+    );
+  });
+
+  test("[text-box-trim:both] は BASELINE_NO_TEXT_BOX_TRIM で検知", () => {
+    expect(ruleIds('<h1 class="[text-box-trim:both]">見出し</h1>')).toContain(
+      "BASELINE_NO_TEXT_BOX_TRIM"
+    );
+  });
+
+  test("負例: 属性値文字列内の popover は検知されない（attr-present の引用符除去）", () => {
+    expect(ruleIds('<button title="popover を開く" aria-label="popover">開く</button>')).toEqual(
+      []
+    );
+  });
+
+  test("負例: data-popover / data-command は ATTR_BOUNDARY で検知されない", () => {
+    expect(ruleIds('<div data-popover="x" data-command="y"></div>')).toEqual([]);
+  });
+
+  test("負例: class 値の中の popover-content 等（引用符内）は検知されない", () => {
+    expect(ruleIds('<div class="popover-content rounded-lg p-4"></div>')).toEqual([]);
+  });
+});

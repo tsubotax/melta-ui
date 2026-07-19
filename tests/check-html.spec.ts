@@ -56,7 +56,8 @@ test.describe("check_html: lint-generated と同一判定", () => {
     const result = checkHtml('<div class="p-4">clean</div>');
     expect(result.passed).toBe(true);
     expect(result.violations).toEqual([]);
-    expect(result.coverage.automated).toMatch(/99 ルール中 \d+ 件を自動検査/);
+    // ルール総数は焼き付けない（rules.json への追加でこのテストが壊れないように。実数は rules.length 由来）
+    expect(result.coverage.automated).toMatch(/\d+ ルール中 \d+ 件を自動検査/);
     expect(result.coverage.notAutomated).toContain("manual");
     expect(result.coverage.notAutomated).toContain("get_rules");
   });

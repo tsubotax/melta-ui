@@ -68,6 +68,22 @@ function runCheck(check: HtmlAttrCheck, source: string): string[] {
     return hits;
   }
 
+  if (check.kind === "attr-present") {
+    // 属性が存在するだけで違反（例: popover / commandfor = Baseline 未達機能）。
+    // 属性値文字列内の同名語（title="popover を開く" 等）を拾わないよう、
+    // 開始タグを抽出したうえで引用符内の値を潰してから属性名を照合する。
+    // attr は正規表現の選択肢（(?:commandfor|command)）を許す。長い方を先に書く前提。
+    const tagName = check.tag ?? "[a-zA-Z][\\w-]*";
+    const tagRe = new RegExp(`<(?:${tagName})\\b([^>]*)>`, "g");
+    const attrRe = new RegExp(`${ATTR_BOUNDARY}(?:${check.attr})(?![\\w-])`, "i");
+    let m: RegExpExecArray | null;
+    while ((m = tagRe.exec(source)) !== null) {
+      const attrsOnly = m[1].replace(/"[^"]*"|'[^']*'/g, '""');
+      if (attrRe.test(attrsOnly)) hits.push(snippet(m[0]));
+    }
+    return hits;
+  }
+
   if (check.kind === "tag-present") {
     // 例: <style> ブロックの存在。1 ファイルに複数あっても token を畳んで1件にする。
     const re = new RegExp(`<${check.tag}\\b`, "i");

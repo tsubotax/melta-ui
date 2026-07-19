@@ -19,7 +19,7 @@
           },
           "category": {
             "type": "string",
-            "enum": ["color", "philosophy", "motion", "typography", "spacing", "ai-pattern", "button", "form", "modal", "list", "table", "tag", "divider", "stepper", "datepicker", "skeleton", "accessibility"]
+            "enum": ["color", "philosophy", "motion", "typography", "spacing", "ai-pattern", "button", "form", "modal", "list", "table", "tag", "divider", "stepper", "datepicker", "skeleton", "accessibility", "baseline"]
           },
           "severity": {
             "type": "string",
@@ -60,8 +60,8 @@
             "description": "detector=html-attr のうち機械判定できるものに付与（Q5）。正規表現ベースの属性検査 spec",
             "required": ["kind"],
             "properties": {
-              "kind": { "type": "string", "enum": ["attr-value-forbidden", "attr-value-contains", "tag-missing-attr", "element-present", "tag-present"] },
-              "attr": { "type": "string" },
+              "kind": { "type": "string", "enum": ["attr-value-forbidden", "attr-value-contains", "tag-missing-attr", "element-present", "tag-present", "attr-present"] },
+              "attr": { "type": "string", "description": "検査する属性名。attr-present では正規表現の選択肢（(?:commandfor|command) 等）も可" },
               "valueRegex": { "type": "string" },
               "tag": { "type": "string" },
               "requiredAttr": { "type": "string" },

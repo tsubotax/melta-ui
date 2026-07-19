@@ -34,7 +34,7 @@ Layer 1: 憲法（AI が最初に読む入口）
 Layer 2: 仕様（Machine-Readable SSOT）
   design/contracts/   ← npm: melta-contracts（web / APP 両実装が購読）
     ├── tokens.json   ← 101 デザイントークン
-    ├── rules.json    ← 99 禁止ルール（ID + severity + detector）
+    ├── rules.json    ← 104 禁止ルール（ID + severity + detector）
     ├── components/   ← 40 contract（web 28 + app 先行 12。variant + size + a11y + rules）
     └── recipes/      ← プラットフォーム具象（web: Tailwind 生成ミラー / app: RN styleRefs）
 
@@ -48,7 +48,7 @@ Layer 3: 検証（破っても通さない）
 |---------|------|--------|------|
 | **DESIGN.md** | Markdown | AI（全エージェント） | デザイン憲法 + Quick Reference。これだけで基本 UI を生成可能 |
 | **CLAUDE.md** | Markdown | AI (Claude Code) | 作業手順・読み込みガイド・npm scripts |
-| **contracts/** | JSON | AI + harness | 40 contract（web 28）+ 99 ルール + 101 トークンの厳密仕様 |
+| **contracts/** | JSON | AI + harness | 40 contract（web 28）+ 104 ルール + 101 トークンの厳密仕様 |
 | **harness** | TypeScript | CI | Schema 検証・drift 検出・Playwright + axe |
 | **components/*.md** | Markdown | 人間 | 設計意図・使い方・判断基準を自然言語で記述 |
 | **docs/index.html** | HTML | 人間 | 全コンポーネントのインタラクティブショーケース |
@@ -86,7 +86,7 @@ Layer 3: 検証（破っても通さない）
 }
 ```
 
-### 3. 99 ルールの禁止パターン — AI が間違えても検知される
+### 3. 104 ルールの禁止パターン — AI が間違えても検知される
 
 ```jsonc
 // design/contracts/rules.json
@@ -128,12 +128,12 @@ AI (内部):
 
 #### 検証カバレッジ（`npm run design:coverage` で再生成）
 
-「宣言だけ」を排し、99 ルールが**どの経路で検証されているか**を経路別に出す。
+「宣言だけ」を排し、104 ルールが**どの経路で検証されているか**を経路別に出す。
 
 <!-- BEGIN:coverage (npm run design:coverage で再生成) -->
 | 経路 | 件数 | 内容 |
 |------|------|------|
-| 静的自動検証 | **41 / 99** | class マッチ 31（MCP `check_rule` 同経路）+ html-attr 5 + composition 5（ネスト + a11y DOM） |
+| 静的自動検証 | **46 / 104** | class マッチ 34（MCP `check_rule` 同経路）+ html-attr 7 + composition 5（ネスト + a11y DOM） |
 | interaction test | 3 | `tests/modal.spec.ts` が focus trap / Escape / focus 復帰を実機検証 |
 | 静的検出 不能 | 3（うち error 3） | `impossible-static`（active/selected/current の特定が意味依存） |
 | LLM 審査候補 | 43（うち error 31） | `llm-judge-candidate`（shadow judge 導入までは自動検証なし） |
@@ -221,7 +221,7 @@ Constitution を読むこと、生成後に `check_html` で自己検証する�
 | `get_component` | コンポーネント仕様取得 | `{ "id": "button" }` |
 | `check_rule` | クラス文字列の禁止パターンチェック（31パターン自動検出。文脈依存は conditional 付き） | `{ "classes": "text-black shadow-2xl" }` |
 | `check_html` | 生成 HTML/JSX 全体を CI / hook と同一ロジックで lint。生成→自己検証→修正のループ用 | `{ "source": "<div class=...>" }` |
-| `get_rules` | 99 ルール参照（manual 含む全件、filter 対応） | `{ "category": "accessibility" }` |
+| `get_rules` | 104 ルール参照（manual 含む全件、filter 対応） | `{ "category": "accessibility" }` |
 | `search` | 全文検索（最大 20 件 + truncated 通知） | `{ "query": "card" }` |
 
 | Resource | 内容 |
@@ -230,7 +230,7 @@ Constitution を読むこと、生成後に `check_html` で自己検証する�
 | `melta://tokens` | トークン全体 |
 | `melta://components` | 28 コンポーネント仕様 |
 | `melta://components/{id}` | 個別コンポーネント |
-| `melta://rules` | 99 禁止ルール全件（manual含む） |
+| `melta://rules` | 104 禁止ルール全件（manual含む） |
 | `melta://rules/auto-detectable` | 自動検出可能サブセット（check_rule 用） |
 
 ### Cursor
@@ -303,7 +303,7 @@ melta-ui/
 │   ├── authority.md                 # SSOT 宣言
 │   ├── contracts/
 │   │   ├── tokens.json              # 101 デザイントークン
-│   │   ├── rules.json               # 99 禁止ルール registry
+│   │   ├── rules.json               # 104 禁止ルール registry
 │   │   └── components/              # 40 contract（web 28 + app 先行 12）
 │   ├── schemas/                     # JSON Schema（rule + component-contract）
 │   └── benchmarks/                  # Agent benchmark（prompt + rubric）

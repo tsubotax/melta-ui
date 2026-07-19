@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "components": [
     {
       "id": "accordion",
@@ -3748,9 +3748,19 @@
           "$schema": "../../../schemas/recipe.schema.json",
           "id": "text",
           "platform": "app",
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.2.0",
           "description": "RN 実装（src/primitives/Text.tsx）の具象レシピ（styleRefs 形式）。variant = fontSize 段階。fontSize token は fontSize/lineHeight の複合値として解決する。letterSpacing は typography.letterSpacing.{heading|body}（em 比率）を fontSize から pt 換算して適用（role prop で切替、default body）。文字色は prop（semantic token キー限定、default color.semantic.light.text-default）、weight も prop（typography.fontWeight.* キー限定）で、variant には依存しない。",
           "variants": {
+            "xxs": {
+              "style": {
+                "fontSize": {
+                  "token": "typography.fontSize.xxs"
+                },
+                "letterSpacing": {
+                  "token": "typography.letterSpacing.body"
+                }
+              }
+            },
             "xs": {
               "style": {
                 "fontSize": {
