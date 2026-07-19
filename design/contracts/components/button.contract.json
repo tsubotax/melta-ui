@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/component-contract.schema.json",
   "id": "button",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "name": "Button",
   "category": "form-input",
   "appStatus": "implemented",
@@ -77,8 +77,8 @@
     }
   },
   "sizes": {
-    "small":  { "height": 32, "tailwind": "h-8 px-3 text-[0.875rem]", "icon": 16 },
-    "medium": { "height": 40, "tailwind": "h-10 px-4 text-[1rem]", "icon": 20 },
+    "small":  { "height": 32, "tailwind": "h-8 px-3 text-[0.875rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2", "icon": 16 },
+    "medium": { "height": 40, "tailwind": "h-10 px-4 text-[1rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2", "icon": 20 },
     "large":  { "height": 48, "tailwind": "h-12 px-6 text-[1rem]", "icon": 20 }
   },
   "iconButton": {
@@ -95,7 +95,7 @@
   "platformSemantics": {
     "hover": "web のみ。app には hover が存在せず pressed が対応する（recipes/app の pressedStyle が写像先）",
     "elevation": "web は box-shadow、app は iOS shadow* + Android elevation に分解される。トークン（elevation.*）は共有",
-    "touchTarget": "app はタッチターゲット最小 44pt を size 側で保証する。web はポインタ前提で h-8（32px）まで許容",
+    "touchTarget": "app はタッチターゲット最小 44pt を size 側で保証する。web も after: 擬似要素拡張で実効タップ領域 44px を保証する（見た目の高さは h-8/h-10 のまま。BTN_MIN_TAP_TARGET が検知）。縦積みで gap-2（8px）以下の隣接は判定が重なるため拡張を外してよい（DOM 後勝ち）。icon-only は幅拡張が別式のため第一弾対象外",
     "focus": "web は focus ring クラス、app は FocusRing overlay コンポーネント（キーボード/TV フォーカス時）"
   },
   "stateSpecs": {
@@ -125,9 +125,9 @@
     { "id": "BTN_NO_LIGHTED_SOLO", "severity": "warn" }
   ],
   "htmlSample": {
-    "contained": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer\">保存</button>",
-    "outlined": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer\">キャンセル</button>",
-    "brand-outline": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer\">フォロー</button>",
+    "contained": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2\">保存</button>",
+    "outlined": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2\">キャンセル</button>",
+    "brand-outline": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2\">フォロー</button>",
     "iconOnly": "<button class=\"w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-gray-50 cursor-pointer\" aria-label=\"閉じる\"><svg class=\"w-5 h-5 fill-current text-body\" viewBox=\"0 0 24 24\"><use href=\"assets/icons/Close.svg#icon\"/></svg></button>"
   }
 }

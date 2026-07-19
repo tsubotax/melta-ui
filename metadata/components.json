@@ -808,12 +808,12 @@
       "sizes": [
         {
           "name": "small",
-          "tailwind": "h-8 px-3 text-[0.875rem]",
+          "tailwind": "h-8 px-3 text-[0.875rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2",
           "height": "32px"
         },
         {
           "name": "medium",
-          "tailwind": "h-10 px-4 text-[1rem]",
+          "tailwind": "h-10 px-4 text-[1rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2",
           "height": "40px"
         },
         {
@@ -876,7 +876,7 @@
       "platformSemantics": {
         "hover": "web のみ。app には hover が存在せず pressed が対応する（recipes/app の pressedStyle が写像先）",
         "elevation": "web は box-shadow、app は iOS shadow* + Android elevation に分解される。トークン（elevation.*）は共有",
-        "touchTarget": "app はタッチターゲット最小 44pt を size 側で保証する。web はポインタ前提で h-8（32px）まで許容",
+        "touchTarget": "app はタッチターゲット最小 44pt を size 側で保証する。web も after: 擬似要素拡張で実効タップ領域 44px を保証する（見た目の高さは h-8/h-10 のまま。BTN_MIN_TAP_TARGET が検知）。縦積みで gap-2（8px）以下の隣接は判定が重なるため拡張を外してよい（DOM 後勝ち）。icon-only は幅拡張が別式のため第一弾対象外",
         "focus": "web は focus ring クラス、app は FocusRing overlay コンポーネント（キーボード/TV フォーカス時）"
       },
       "appStatus": "implemented",
@@ -885,7 +885,7 @@
           "$schema": "../../../schemas/recipe.schema.json",
           "id": "button",
           "platform": "app",
-          "contractVersion": "2.0.0",
+          "contractVersion": "2.1.0",
           "description": "RN 実装（src/primitives/Button.tsx）の具象レシピ（styleRefs 形式）。pressedStyle は Pressable pressed 時差分（web hover 対応）。contained/brand-outline 以外の pressedBg は contract に native token が無いため実装が hover tailwind と同値のトークンで近似したもの。focus は FocusRing overlay（絶対配置 inset -3 / borderWidth 2 / color.primary.500 / borderRadius = radius.md + 3）で表現し element style には現れない。gap は icon-label 間（spacing.2）。iconOnly 時は paddingHorizontal の代わりに width = iconOnlyWidth の正方形。",
           "variants": {
             "contained": {
@@ -1122,14 +1122,14 @@
       "prohibited": [
         "タップターゲットが小さすぎる",
         "操作内容がスクリーンリーダーに伝わらない",
-        "操作困難（インラインテキストリンクを除く）",
+        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（DADS 取り込み B3、2026-07-19 昇格）",
         "重要度の区別がつかない（Neutralのみ例外）",
         "トグル状態の対比がないと意味不明"
       ],
       "htmlSample": {
-        "contained": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer\">保存</button>",
-        "outlined": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer\">キャンセル</button>",
-        "brand-outline": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer\">フォロー</button>",
+        "contained": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2\">保存</button>",
+        "outlined": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2\">キャンセル</button>",
+        "brand-outline": "<button class=\"inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2\">フォロー</button>",
         "iconOnly": "<button class=\"w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-gray-50 cursor-pointer\" aria-label=\"閉じる\"><svg class=\"w-5 h-5 fill-current text-body\" viewBox=\"0 0 24 24\"><use href=\"assets/icons/Close.svg#icon\"/></svg></button>"
       }
     },
@@ -2457,7 +2457,7 @@
         "モーダルの中にモーダルを開くとUXが複雑になりすぎる。合法な部品だけで構成しても合成として崩壊する"
       ],
       "htmlSample": {
-        "confirmation": "<div role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-title\" class=\"fixed inset-0 flex items-center justify-center z-50\"><div class=\"bg-black/50 absolute inset-0\"></div><div class=\"bg-white rounded-xl p-6 w-96 shadow-xl relative z-10\"><h2 id=\"modal-title\" class=\"text-2xl font-bold text-slate-900\">確認</h2><p class=\"text-body mt-2\">この操作を実行しますか？</p><div class=\"flex justify-end gap-3 mt-6\"><button class=\"inline-flex items-center justify-center h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 cursor-pointer\">キャンセル</button><button class=\"inline-flex items-center justify-center h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 cursor-pointer\">実行</button></div></div></div>"
+        "confirmation": "<div role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-title\" class=\"fixed inset-0 flex items-center justify-center z-50\"><div class=\"bg-black/50 absolute inset-0\"></div><div class=\"bg-white rounded-xl p-6 w-96 shadow-xl relative z-10\"><h2 id=\"modal-title\" class=\"text-2xl font-bold text-slate-900\">確認</h2><p class=\"text-body mt-2\">この操作を実行しますか？</p><div class=\"flex justify-end gap-3 mt-6\"><button class=\"inline-flex items-center justify-center h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 cursor-pointer relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2\">キャンセル</button><button class=\"inline-flex items-center justify-center h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 cursor-pointer relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2\">実行</button></div></div></div>"
       }
     },
     {
@@ -2507,7 +2507,7 @@
         "focusRing": "focus:ring-2 focus:ring-primary-500/50"
       },
       "prohibited": [
-        "操作困難（インラインテキストリンクを除く）"
+        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（DADS 取り込み B3、2026-07-19 昇格）"
       ],
       "htmlSample": "<nav aria-label=\"ページネーション\"><ul class=\"flex items-center gap-1\"><li><button class=\"w-10 h-10 inline-flex items-center justify-center text-base font-medium text-white bg-primary-500 rounded-lg\" aria-current=\"page\" aria-label=\"ページ 1\">1</button></li></ul></nav>"
     },

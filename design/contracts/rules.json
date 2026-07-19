@@ -556,12 +556,18 @@
       "id": "BTN_MIN_TAP_TARGET",
       "category": "button",
       "severity": "error",
-      "description": "操作困難（インラインテキストリンクを除く）",
-      "detector": "manual",
+      "description": "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（DADS 取り込み B3、2026-07-19 昇格）",
+      "detector": "composition",
       "pattern": null,
-      "alternative": "パディングでタップ領域 44px 以上を確保",
+      "alternative": "relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 を付与（button recipe 準拠なら自動で付く）",
       "contractLint": "skip",
-      "automationStatus": "llm-judge-candidate"
+      "compositionCheck": {
+        "kind": "dom-class-required",
+        "selector": "button.h-6, button.h-7, button.h-8, button.h-9, button.h-10",
+        "requireAnyClass": ["after:h-11", "min-h-11"],
+        "excludeWhen": "icon-only"
+      },
+      "automationStatus": "auto"
     },
     {
       "id": "FORM_SELECT_APPEARANCE_NONE",

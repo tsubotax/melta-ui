@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/recipe.schema.json",
   "id": "button",
   "platform": "web",
-  "contractVersion": "2.0.0",
+  "contractVersion": "2.1.0",
   "generatedFrom": "components/button.contract.json",
   "variants": {
     "contained": {
@@ -29,10 +29,10 @@
   },
   "sizes": {
     "small": {
-      "tailwind": "h-8 px-3 text-[0.875rem]"
+      "tailwind": "h-8 px-3 text-[0.875rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2"
     },
     "medium": {
-      "tailwind": "h-10 px-4 text-[1rem]"
+      "tailwind": "h-10 px-4 text-[1rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2"
     },
     "large": {
       "tailwind": "h-12 px-6 text-[1rem]"

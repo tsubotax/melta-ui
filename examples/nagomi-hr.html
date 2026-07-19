@@ -237,7 +237,7 @@
                     <p class="text-sm font-medium text-slate-900">フレックスタイム制</p>
                     <p class="mt-1 text-sm text-slate-500">コアタイム（10:00-15:00）を設け、それ以外の時間帯は従業員が自由に勤務開始・終了時刻を選択できます。</p>
                   </div>
-                  <button type="button" class="w-11 h-6 rounded-full bg-primary-500 relative transition-colors duration-200 cursor-pointer flex-shrink-0 mt-0.5" role="switch" aria-checked="true" aria-label="フレックスタイム制" onclick="toggleSwitch(this)">
+                  <button type="button" class="w-11 h-6 rounded-full bg-primary-500 relative transition-colors duration-200 cursor-pointer flex-shrink-0 mt-0.5 after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2" role="switch" aria-checked="true" aria-label="フレックスタイム制" onclick="toggleSwitch(this)">
                     <span class="block w-5 h-5 rounded-full bg-white shadow-sm transform translate-x-5 transition-transform duration-200"></span>
                   </button>
                 </div>
@@ -250,7 +250,7 @@
                     <p class="text-sm font-medium text-slate-900">リモートワーク許可</p>
                     <p class="mt-1 text-sm text-slate-500">メンバーがリモートワークを申請できるようにします。申請には上長の事前承認が必要です。</p>
                   </div>
-                  <button type="button" class="w-11 h-6 rounded-full bg-primary-500 relative transition-colors duration-200 cursor-pointer flex-shrink-0 mt-0.5" role="switch" aria-checked="true" aria-label="リモートワーク許可" onclick="toggleSwitch(this)">
+                  <button type="button" class="w-11 h-6 rounded-full bg-primary-500 relative transition-colors duration-200 cursor-pointer flex-shrink-0 mt-0.5 after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2" role="switch" aria-checked="true" aria-label="リモートワーク許可" onclick="toggleSwitch(this)">
                     <span class="block w-5 h-5 rounded-full bg-white shadow-sm transform translate-x-5 transition-transform duration-200"></span>
                   </button>
                 </div>
@@ -263,7 +263,7 @@
                     <p class="text-sm font-medium text-slate-900">時間外労働の自動アラート</p>
                     <p class="mt-1 text-sm text-slate-500">月間の時間外労働が上限に近づいた場合、該当メンバーと管理者に自動で通知を送信します。労働基準法に基づく36協定の遵守に役立ちます。</p>
                   </div>
-                  <button type="button" class="w-11 h-6 rounded-full bg-slate-200 relative transition-colors duration-200 cursor-pointer flex-shrink-0 mt-0.5" role="switch" aria-checked="false" aria-label="時間外労働の自動アラート" onclick="toggleSwitch(this)">
+                  <button type="button" class="w-11 h-6 rounded-full bg-slate-200 relative transition-colors duration-200 cursor-pointer flex-shrink-0 mt-0.5 after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2" role="switch" aria-checked="false" aria-label="時間外労働の自動アラート" onclick="toggleSwitch(this)">
                     <span class="block w-5 h-5 rounded-full bg-white shadow-sm transform translate-x-0.5 transition-transform duration-200"></span>
                   </button>
                 </div>
@@ -356,13 +356,13 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                  <button type="button" class="inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                  <button type="button" class="inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
                     データをエクスポート
                   </button>
-                  <button type="button" class="inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                  <button type="button" class="inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                     </svg>
@@ -388,10 +388,10 @@
 
         <!-- Bottom Buttons -->
         <div class="flex items-center justify-end gap-3">
-          <button type="button" class="inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+          <button type="button" class="inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2">
             キャンセル
           </button>
-          <button type="button" class="inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 cursor-pointer transition-colors">
+          <button type="button" class="inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 cursor-pointer transition-colors relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2">
             変更を保存
           </button>
         </div>

@@ -96,6 +96,21 @@ function runCheck(check: CompositionCheck, root: HTMLElement): string[] {
     return nested.length > 0 ? [`${check.selector}（ネスト ${nested.length} 箇所）`] : [];
   }
 
+  if (check.kind === "dom-class-required") {
+    // selector マッチ要素のうち excludeWhen 述語に該当しないものを候補とし、
+    // requireAnyClass のいずれの class も持たないものを違反にする
+    // （例: h-8/h-10 ボタンにタップ領域拡張 after:h-11 が無い）。
+    const glyphs = check.glyphs ?? [];
+    const hits: string[] = [];
+    for (const el of root.querySelectorAll(check.selector)) {
+      if (check.excludeWhen && qualifies(el, check.excludeWhen, glyphs)) continue;
+      const classes = (el.getAttribute("class") ?? "").split(/\s+/);
+      if (check.requireAnyClass.some((c) => classes.includes(c))) continue;
+      hits.push(tagSnippet(el));
+    }
+    return hits;
+  }
+
   if (check.kind === "dom-attr-required") {
     // selector マッチ要素のうち when 述語を満たすものを候補とし、
     // requireAnyAttr のいずれも（scope 次第で祖先も含めて）持たないものを違反にする。

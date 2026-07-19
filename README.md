@@ -133,10 +133,10 @@ AI (内部):
 <!-- BEGIN:coverage (npm run design:coverage で再生成) -->
 | 経路 | 件数 | 内容 |
 |------|------|------|
-| 静的自動検証 | **47 / 105** | class マッチ 34（MCP `check_rule` 同経路）+ html-attr 7 + composition 6（ネスト + a11y DOM） |
+| 静的自動検証 | **48 / 105** | class マッチ 34（MCP `check_rule` 同経路）+ html-attr 7 + composition 7（ネスト + a11y DOM） |
 | interaction test | 3 | `tests/modal.spec.ts` が focus trap / Escape / focus 復帰を実機検証 |
 | 静的検出 不能 | 3（うち error 3） | `impossible-static`（active/selected/current の特定が意味依存） |
-| LLM 審査候補 | 43（うち error 31） | `llm-judge-candidate`（shadow judge 導入までは自動検証なし） |
+| LLM 審査候補 | 42（うち error 30） | `llm-judge-candidate`（shadow judge 導入までは自動検証なし） |
 | human-only | 9（うち error 9） | 人間レビューでのみ守る。`get_rules` で AI に提示 |
 | 未分類 | 0（うち error 0） | 棚卸し未了（automationStatus 未宣言） |
 <!-- END:coverage -->

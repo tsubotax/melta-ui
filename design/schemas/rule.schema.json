@@ -73,9 +73,11 @@
             "description": "detector=composition に付与（S2）。DOM をパースして合成（ネスト/関係/a11y属性）を判定する spec",
             "required": ["kind"],
             "properties": {
-              "kind": { "type": "string", "enum": ["nested-selector", "dom-attr-required"] },
+              "kind": { "type": "string", "enum": ["nested-selector", "dom-attr-required", "dom-class-required"] },
               "selector": { "type": "string" },
               "requireAnyAttr": { "type": "array", "items": { "type": "string" }, "description": "dom-attr-required: このいずれかの属性が必須" },
+              "requireAnyClass": { "type": "array", "items": { "type": "string" }, "description": "dom-class-required: このいずれかの class が必須" },
+              "excludeWhen": { "type": "string", "enum": ["icon-only", "text-glyph"], "description": "dom-class-required: 候補から除外する述語" },
               "scope": { "type": "string", "enum": ["self", "ancestor-or-self"], "description": "dom-attr-required: 属性の存在場所（既定 self）" },
               "when": { "type": "string", "enum": ["icon-only", "text-glyph"], "description": "dom-attr-required: 候補を絞る述語" },
               "glyphs": { "type": "array", "items": { "type": "string" }, "description": "when=text-glyph 用のグリフ集合" }

@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/recipe.schema.json",
   "id": "button",
   "platform": "app",
-  "contractVersion": "2.0.0",
+  "contractVersion": "2.1.0",
   "description": "RN 実装（src/primitives/Button.tsx）の具象レシピ（styleRefs 形式）。pressedStyle は Pressable pressed 時差分（web hover 対応）。contained/brand-outline 以外の pressedBg は contract に native token が無いため実装が hover tailwind と同値のトークンで近似したもの。focus は FocusRing overlay（絶対配置 inset -3 / borderWidth 2 / color.primary.500 / borderRadius = radius.md + 3）で表現し element style には現れない。gap は icon-label 間（spacing.2）。iconOnly 時は paddingHorizontal の代わりに width = iconOnlyWidth の正方形。",
   "variants": {
     "contained": {

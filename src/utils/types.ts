@@ -197,6 +197,18 @@ export type CompositionCheck =
       scope?: "self" | "ancestor-or-self";
       when?: "icon-only" | "text-glyph";
       glyphs?: string[];
+    }
+  /**
+   * selector にマッチする要素が requireAnyClass のいずれの class も持たなければ違反
+   * （例: 小サイズボタンのタップ領域拡張 after:h-11 の欠落）。
+   * - excludeWhen: 候補から除外する述語（icon-only = 幅拡張が別式のため第一弾対象外）
+   */
+  | {
+      kind: "dom-class-required";
+      selector: string;
+      requireAnyClass: string[];
+      excludeWhen?: "icon-only" | "text-glyph";
+      glyphs?: string[];
     };
 
 /** rules.json の rule entry（SSOT raw 型） */

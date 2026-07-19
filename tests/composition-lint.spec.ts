@@ -245,3 +245,41 @@ test.describe("composition B2: A11Y_DISABLED_REQUIRES_ARIA（DADS 取り込み�
     expect(v.map((x) => x.ruleId)).not.toContain("A11Y_DISABLED_REQUIRES_ARIA");
   });
 });
+
+test.describe("composition B3: BTN_MIN_TAP_TARGET 自動検出化（dom-class-required）", () => {
+  const EXPANSION = "relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2";
+
+  test("h-8 テキストボタンに拡張クラスが無ければ error 検知", () => {
+    const v = lintComposition('<button class="h-8 px-3 text-[0.875rem]">保存</button>');
+    const hit = v.find((x) => x.ruleId === "BTN_MIN_TAP_TARGET");
+    expect(hit).toBeTruthy();
+    expect(hit!.severity).toBe("error");
+  });
+
+  test("h-10（medium 40px）も 44px 未達なので検知対象", () => {
+    const v = lintComposition('<button class="h-10 px-4">保存</button>');
+    expect(v.map((x) => x.ruleId)).toContain("BTN_MIN_TAP_TARGET");
+  });
+
+  test("拡張クラス（after:h-11）があれば clean", () => {
+    const v = lintComposition(`<button class="h-8 px-3 ${EXPANSION}">保存</button>`);
+    expect(v.map((x) => x.ruleId)).not.toContain("BTN_MIN_TAP_TARGET");
+  });
+
+  test("h-12（48px）はそもそも selector 対象外", () => {
+    const v = lintComposition('<button class="h-12 px-6">保存</button>');
+    expect(v.map((x) => x.ruleId)).not.toContain("BTN_MIN_TAP_TARGET");
+  });
+
+  test("icon-only ボタン（テキスト無し + svg）は excludeWhen で第一弾対象外", () => {
+    const v = lintComposition(
+      '<button class="w-10 h-10" aria-label="閉じる"><svg viewBox="0 0 24 24"></svg></button>'
+    );
+    expect(v.map((x) => x.ruleId)).not.toContain("BTN_MIN_TAP_TARGET");
+  });
+
+  test("min-h-11 でも要件を満たす（requireAnyClass の別解）", () => {
+    const v = lintComposition('<button class="h-8 min-h-11 px-3">保存</button>');
+    expect(v.map((x) => x.ruleId)).not.toContain("BTN_MIN_TAP_TARGET");
+  });
+});
