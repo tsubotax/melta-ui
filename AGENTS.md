@@ -11,7 +11,7 @@
 この DS は 3 層構造（AI-Ready 2.0）で運用されている。
 
 - **Layer 1: 憲法** — `DESIGN.md` が AI 向け入口。原則 + Quick Reference。これだけで基本 UI を生成可能
-- **Layer 2: 仕様** — `design/contracts/` に 40 contract（web 28 + app 先行 12）+ 104 禁止ルール + 101 トークンの JSON 仕様。これが SSOT
+- **Layer 2: 仕様** — `design/contracts/` に 40 contract（web 28 + app 先行 12）+ 105 禁止ルール + 101 トークンの JSON 仕様。これが SSOT
 - **Layer 3: 検証** — `scripts/design/` の harness が Schema 整合・drift・a11y を自動検証。CI + hook で守る
 
 > 詳細: `design/authority.md`（SSOT 宣言・値競合時の優先順位）、`README.md`（全体構造）
@@ -47,7 +47,7 @@
 1. **UI タスク開始時**に `DESIGN.md` を読む
 2. **exact value** が必要なら `design/contracts/` を参照する
 3. **コンポーネント仕様**は `*.contract.json` を優先（なければ `components/*.md` → `metadata/components.json`）
-4. **禁止ルール**の SSOT は `design/contracts/rules.json`（104 ルール）
+4. **禁止ルール**の SSOT は `design/contracts/rules.json`（105 ルール）
 5. **finish 前**に `npm run design:check` と `npm run design:lint-generated -- <生成ファイル>` を走らせる
 6. **generated file**（`metadata/components.json`、`llms.txt` / `llms-full.txt`、`design/contracts/recipes/web/`）を直接編集しない → `npm run design:build` で再生成
 7. **新しい component** を作る場合、まず `design/contracts/components/` に contract を書く

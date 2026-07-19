@@ -450,7 +450,7 @@
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 flex-shrink-0"></span>
-                  <span>104ルールの禁止パターンで「やってはいけないこと」を明示</span>
+                  <span>105ルールの禁止パターンで「やってはいけないこと」を明示</span>
                 </li>
               </ul>
             </div>
@@ -494,7 +494,7 @@
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 flex-shrink-0"></span>
-                  <span><code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded" style="background:var(--bg-surface-alt);">rules.json</code>: 104ルールの禁止パターン registry（機械検出可能）</span>
+                  <span><code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded" style="background:var(--bg-surface-alt);">rules.json</code>: 105ルールの禁止パターン registry（機械検出可能）</span>
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 flex-shrink-0"></span>
@@ -537,7 +537,7 @@
                   </div>
                   <div class="rounded-lg border p-3" style="border-color:var(--border-default);">
                     <p class="text-xs font-semibold mb-1" style="color:var(--text-heading);">Layer 2: 仕様</p>
-                    <p class="text-xs" style="color:var(--text-default);"><code class="bg-slate-100 px-1 py-0.5 rounded" style="background:var(--bg-surface-alt);">contracts/</code> — 28 コンポーネント + 104 ルール + 101 トークンの厳密仕様</p>
+                    <p class="text-xs" style="color:var(--text-default);"><code class="bg-slate-100 px-1 py-0.5 rounded" style="background:var(--bg-surface-alt);">contracts/</code> — 28 コンポーネント + 105 ルール + 101 トークンの厳密仕様</p>
                   </div>
                   <div class="rounded-lg border p-3" style="border-color:var(--border-default);">
                     <p class="text-xs font-semibold mb-1" style="color:var(--text-heading);">Layer 3: 検証</p>
@@ -1307,13 +1307,13 @@
               </tr>
               <tr>
                 <td class="py-3 px-4 text-sm font-medium text-slate-900">Disabled</td>
-                <td class="py-3 px-4"><button class="bg-primary-500 text-white h-10 px-4 rounded-lg text-[1rem] font-medium opacity-50 cursor-not-allowed" disabled>保存する</button></td>
+                <td class="py-3 px-4"><button class="bg-primary-500 text-white h-10 px-4 rounded-lg text-[1rem] font-medium opacity-50 cursor-not-allowed" disabled aria-disabled="true">保存する</button></td>
                 <td class="py-3 px-4"><code class="text-xs font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">opacity-50 cursor-not-allowed disabled</code></td>
               </tr>
               <!-- @variant: loading -->
               <tr>
                 <td class="py-3 px-4 text-sm font-medium text-slate-900">Loading</td>
-                <td class="py-3 px-4"><button class="inline-flex items-center gap-2 bg-primary-500 text-white h-10 px-4 rounded-lg text-[1rem] font-medium opacity-75 cursor-not-allowed" disabled><div class="inline-spinner"></div> 送信中...</button></td>
+                <td class="py-3 px-4"><button class="inline-flex items-center gap-2 bg-primary-500 text-white h-10 px-4 rounded-lg text-[1rem] font-medium opacity-75 cursor-not-allowed" disabled aria-disabled="true"><div class="inline-spinner"></div> 送信中...</button></td>
                 <td class="py-3 px-4"><code class="text-xs font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">opacity-75 + inline-spinner</code></td>
               </tr>
             </tbody>
@@ -2545,7 +2545,7 @@
 
         <div class="ds-preview ds-showcase-variant" data-variant="default" data-component="pagination">
           <nav aria-label="ページネーション" class="flex items-center justify-center gap-2">
-            <button aria-label="前のページ" disabled class="w-10 h-10 rounded-lg bg-white border border-slate-200 inline-flex items-center justify-center text-slate-400 cursor-not-allowed">
+            <button aria-label="前のページ" disabled aria-disabled="true" class="w-10 h-10 rounded-lg bg-white border border-slate-200 inline-flex items-center justify-center text-slate-400 cursor-not-allowed">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
             </button>
             <button aria-current="page" class="w-10 h-10 rounded-lg bg-primary-500 text-white font-medium text-sm">1</button>
@@ -3500,11 +3500,11 @@ btn.addEventListener('click', () =&gt; {
         <h3 class="text-xl font-semibold text-slate-900 mb-4 mt-8" style="color:var(--text-heading);">インラインスピナー</h3>
         <div class="ds-preview mb-4">
           <div class="flex items-center gap-4">
-            <button disabled class="inline-flex items-center gap-2 h-10 px-4 text-[1rem] font-medium text-white bg-primary-500 rounded-lg opacity-75 cursor-not-allowed">
+            <button disabled aria-disabled="true" class="inline-flex items-center gap-2 h-10 px-4 text-[1rem] font-medium text-white bg-primary-500 rounded-lg opacity-75 cursor-not-allowed">
               <div class="inline-spinner"></div>
               送信中...
             </button>
-            <button disabled class="inline-flex items-center gap-2 bg-white text-slate-700 border border-slate-200 h-10 px-4 rounded-lg text-[1rem] font-medium opacity-75 cursor-not-allowed">
+            <button disabled aria-disabled="true" class="inline-flex items-center gap-2 bg-white text-slate-700 border border-slate-200 h-10 px-4 rounded-lg text-[1rem] font-medium opacity-75 cursor-not-allowed">
               <div class="inline-spinner"></div>
               読み込み中...
             </button>
@@ -3876,7 +3876,7 @@ btn.addEventListener('click', () =&gt; {
             </div>
             <!-- Inline Spinner -->
             <div class="px-6 pb-4">
-              <button disabled class="inline-flex items-center gap-2 h-10 px-4 text-[1rem] font-medium text-white bg-primary-500 rounded-lg opacity-75 cursor-not-allowed">
+              <button disabled aria-disabled="true" class="inline-flex items-center gap-2 h-10 px-4 text-[1rem] font-medium text-white bg-primary-500 rounded-lg opacity-75 cursor-not-allowed">
                 <div class="inline-spinner"></div> 送信中...
               </button>
             </div>
@@ -4242,7 +4242,7 @@ btn.addEventListener('click', () =&gt; {
         </div>
         <!-- @grid:do-dont:end — ↑ここでグリッド終了。新しいペアは↑の </div> の直前に追加 -->
 
-        <div class="ds-source-ref"><p class="text-sm flex items-center gap-1.5" style="color:var(--text-muted);"><svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>全104ルール: <code class="font-mono">design/contracts/rules.json</code></p></div>
+        <div class="ds-source-ref"><p class="text-sm flex items-center gap-1.5" style="color:var(--text-muted);"><svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>全105ルール: <code class="font-mono">design/contracts/rules.json</code></p></div>
       </section>
       <!-- @end: do-dont -->
 

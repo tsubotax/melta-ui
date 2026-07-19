@@ -397,6 +397,8 @@ components:
 7. **No AI-ish Decoration** — カード上部/左端のカラーバー禁止。全周ボーダーで構成
 8. **Baseline Widely Available** — CSS/HTML 機能は Baseline **Widely available** のみ使用。Newly / Limited（Anchor Positioning・Invoker Commands・popover 等）は fallback を併記しコメントで明示宣言した場合のみ許可（`BASELINE_*` ルールが検知）
 
+> **disabled の規範（2026-07-19）**: `disabled` 属性には `aria-disabled="true"` を併記する（`A11Y_DISABLED_REQUIRES_ARIA` が検知）。タブ順を維持したい文脈（ツールバー・ページネーション等）では native `disabled` を使わず **`aria-disabled` 単独 + JS click ガード（preventDefault）** でフォーカス可能なまま無効を伝えてよい。ただし `aria-disabled` は click / Enter / submit を止めないため JS ガード必須、フォーム送信除外も効かない（送信除外が必要なら native `disabled` を維持する）。
+
 > **コントラストの既知境界（意図宣言, 2026-07-03）**: `primary-500 × 白`（contained ボタン / brand-outline 文字 / pagination active）は実測 4.50:1 の AA 境界上。axe の判定（4.5 ちょうど = pass）を採用し、ブランド基準色を優先して**意図的に維持**する。より高いコントラストが必要な文脈では `primary-600` を使う（lighted 系の文字・avatar initials は 600 に引き上げ済み、danger base は `#dc2626` に引き上げ済み）。disabled 状態のコントラストは WCAG 1.4.3 の除外対象で対応不要。
 
 ---
@@ -539,7 +541,7 @@ Lucide             : w-5 h-5 stroke="currentColor" fill="none" ← assets/icons/
 | `py-0.5` for buttons | `h-8` 以上 |
 | `bg-green-*` / `bg-yellow-*` | `bg-emerald-*` / `bg-amber-*` |
 
-> 全ルール（104 件）: `design/contracts/rules.json`（machine-readable）
+> 全ルール（105 件）: `design/contracts/rules.json`（machine-readable）
 > 人間向け解説: `foundations/prohibited.md`
 
 ---

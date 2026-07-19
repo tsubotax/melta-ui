@@ -219,3 +219,29 @@ test.describe("composition-lint P1-5: impossible-static 分類", () => {
     }
   });
 });
+
+test.describe("composition B2: A11Y_DISABLED_REQUIRES_ARIA（DADS 取り込み・disabled 併記規範）", () => {
+  test("<button disabled> 単独は warn 検知", () => {
+    const v = lintComposition('<button disabled class="h-10 px-4">保存</button>');
+    const hit = v.find((x) => x.ruleId === "A11Y_DISABLED_REQUIRES_ARIA");
+    expect(hit).toBeTruthy();
+    expect(hit!.severity).toBe("warn");
+  });
+
+  test("aria-disabled=\"true\" 併記なら clean", () => {
+    const v = lintComposition(
+      '<button disabled aria-disabled="true" class="opacity-50 cursor-not-allowed h-10 px-4">保存</button>'
+    );
+    expect(v.map((x) => x.ruleId)).not.toContain("A11Y_DISABLED_REQUIRES_ARIA");
+  });
+
+  test("aria-disabled 単独（native なし = タブ順維持パターン）はこのルールの対象外", () => {
+    const v = lintComposition('<button aria-disabled="true" class="h-10 px-4">保存</button>');
+    expect(v.map((x) => x.ruleId)).not.toContain("A11Y_DISABLED_REQUIRES_ARIA");
+  });
+
+  test("button 以外（input 等）は対象外（フォーム送信除外のネイティブ用途を残す）", () => {
+    const v = lintComposition('<input disabled value="x"><div disabled>x</div>');
+    expect(v.map((x) => x.ruleId)).not.toContain("A11Y_DISABLED_REQUIRES_ARIA");
+  });
+});

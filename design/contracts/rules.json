@@ -1167,6 +1167,21 @@
       "automationStatus": "human-only"
     },
     {
+      "id": "A11Y_DISABLED_REQUIRES_ARIA",
+      "category": "accessibility",
+      "severity": "warn",
+      "description": "disabled 属性単独では支援技術への状態通知が実装依存になる。契約（button stateSpecs.disabled）の規範どおり aria-disabled=\"true\" を併記し、視覚状態クラス（opacity-50 cursor-not-allowed）とセットにする。タブ順維持が要る文脈（ツールバー/ページネーション）では aria-disabled 単独 + JS click ガードも可（DESIGN.md 注記参照）",
+      "detector": "composition",
+      "pattern": null,
+      "alternative": "disabled aria-disabled=\"true\" class=\"opacity-50 cursor-not-allowed ...\"（契約 stateSpecs.disabled の tailwind 準拠）",
+      "contractLint": "skip",
+      "compositionCheck": {
+        "kind": "dom-attr-required",
+        "selector": "button[disabled]",
+        "requireAnyAttr": ["aria-disabled"]
+      }
+    },
+    {
       "id": "BASELINE_NO_ANCHOR_POSITIONING",
       "category": "baseline",
       "severity": "warn",
