@@ -380,6 +380,17 @@ melta の `DESIGN.md`（2026-04-10 導入）と Google Labs の [design.md spec]
 
 ---
 
+## Related — melta のツール群
+
+- **[melta-screendiff](https://github.com/tsubotax/melta-screendiff)** — UI変更PRを Before/After の実キャプチャで視覚比較する Claude Code plugin。melta UI の enforcement が「機械で検知できる違反」を潰すのに対し、screendiff は「意図どおりに見えているか」を人間が判断するレビュー側を埋める。melta UI には依存せず、任意のリポジトリで単体で使える。
+
+  ```
+  /plugin marketplace add tsubotax/melta-screendiff
+  /plugin install screendiff@melta
+  ```
+
+---
+
 ## License
 
 MIT License — [LICENSE](./LICENSE)
