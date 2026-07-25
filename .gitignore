@@ -1,7 +1,9 @@
 .DS_Store
-# .claude/ は settings.json（hook 登録 = DS の enforcement 層）だけ配布する
+# .claude/ は settings.json（hook 登録 = DS の enforcement 層）と
+# screendiff.json（melta-screendiff のPR視覚比較設定）だけ配布する
 .claude/*
 !.claude/settings.json
+!.claude/screendiff.json
 .vscode/
 .netlify/
 node_modules/
@@ -18,6 +20,9 @@ skills-lock.json
 
 # ベンチマーク生成物
 design/benchmarks/results/
+
+# melta-screendiff の撮影・比較HTML出力
+output/screendiff/
 
 # loop ランタイム監査ログ（playbook の Audit Log: .melta-loop/runs.jsonl）
 .melta-loop/

@@ -1,0 +1,20 @@
+{
+  "backend": "web",
+  "target_file_patterns": ["^(examples|docs)/.*\\.html$", "^scripts/.*\\.(css|js)$"],
+  "output_dir": "output/screendiff",
+  "web": {
+    "serve_command": "python3 -m http.server 8946",
+    "serve_url": "http://localhost:8946",
+    "ready_timeout_sec": 30,
+    "viewport": "1280x900",
+    "full_page": true,
+    "settle_ms": 1200
+  },
+  "screens": {
+    "route_map": [
+      { "file_pattern": "^examples/ec-home\\.html$", "id": "ec-home", "path": "/examples/ec-home.html", "title": "ECホーム（デモ）" },
+      { "file_pattern": "^examples/aozora-booking\\.html$", "id": "aozora-booking", "path": "/examples/aozora-booking.html", "title": "アオゾラ予約（デモ）" },
+      { "file_pattern": "^docs/index\\.html$", "id": "docs-home", "path": "/docs/index.html", "title": "ドキュメント" }
+    ]
+  }
+}
