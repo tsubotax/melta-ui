@@ -368,7 +368,7 @@ red-team prompt は5本（neon / heavy shadow / color bar / placeholder-only for
 - `mcp-raw` / `full` はどちらも `DESIGN.md` と contracts を静的 context に持つ。この比較は `melta://design-constitution` resource が、Melta 知識を MCP からしか得ない利用者へ情報を届ける効果を測らない。
 - n は trial 数。headline には mean ± 95%CI を併記し、small-n の不確実性を隠さない。人手評価との相関検証は未実施（既知の限界）。
 
-> 詳細仕様: `docs/ai-ready-quality-gate-plan.md` の P4 セクション。
+> ベンチマークの実装は `design/benchmarks/` と `tools/` を参照。
 
 ---
 
