@@ -26,7 +26,7 @@ import { buildMcpInstructions } from "./guidance.js";
 /**
  * server name / URI スキームの設定。既定は melta-ui / melta://（後方互換）。
  * vendor 先では MELTA_SERVER_NAME / MELTA_URI_SCHEME で差し替える
- * （例: soluban-ds / soluban:// → リソース URI が soluban://tokens になる）。
+ * （例: acme-ds / acme:// → リソース URI が acme://tokens になる）。
  */
 const SERVER_NAME = process.env.MELTA_SERVER_NAME ?? "melta-ui";
 const URI_SCHEME = process.env.MELTA_URI_SCHEME ?? "melta";

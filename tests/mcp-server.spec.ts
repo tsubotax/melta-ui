@@ -68,9 +68,9 @@ test.describe("MCP onboarding", () => {
   });
 
   test("vendor 名と URI scheme を同じ instructions に反映する", () => {
-    const instructions = buildMcpInstructions("soluban-ds", "soluban");
-    expect(instructions).toContain("soluban-ds は完成済み CSS コンポーネント集ではなく");
-    expect(instructions).toContain("soluban://design-constitution");
+    const instructions = buildMcpInstructions("acme-ds", "acme");
+    expect(instructions).toContain("acme-ds は完成済み CSS コンポーネント集ではなく");
+    expect(instructions).toContain("acme://design-constitution");
     expect(instructions).not.toContain("melta://design-constitution");
   });
 
