@@ -2,50 +2,100 @@
   "$schema": "../../../schemas/recipe.schema.json",
   "id": "card",
   "platform": "app",
-  "contractVersion": "2.0.0",
+  "contractVersion": "2.1.0",
   "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus 時は FocusRing overlay（borderWidth 2 / color.primary.500 / inset -3 / borderRadius = radius.lg + 3）。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。",
   "variants": {
     "basic": {
       "style": {
-        "backgroundColor": { "token": "color.semantic.light.bg-surface" },
-        "borderRadius": { "token": "radius.lg" },
+        "backgroundColor": {
+          "token": "color.semantic.light.bg-surface"
+        },
+        "borderRadius": {
+          "token": "radius.lg"
+        },
         "borderWidth": 1,
-        "borderColor": { "token": "color.semantic.light.border-default" },
-        "padding": { "token": "spacing.6" },
-        "elevation": { "token": "elevation.sm" }
+        "borderColor": {
+          "token": "color.semantic.light.border-default"
+        },
+        "padding": {
+          "token": "spacing.6"
+        },
+        "elevation": {
+          "token": "elevation.sm"
+        }
       }
     },
     "media": {
       "style": {
-        "backgroundColor": { "token": "color.semantic.light.bg-surface" },
-        "borderRadius": { "token": "radius.lg" },
+        "backgroundColor": {
+          "token": "color.semantic.light.bg-surface"
+        },
+        "borderRadius": {
+          "token": "radius.lg"
+        },
         "borderWidth": 1,
-        "borderColor": { "token": "color.semantic.light.border-default" },
-        "elevation": { "token": "elevation.sm" }
+        "borderColor": {
+          "token": "color.semantic.light.border-default"
+        },
+        "elevation": {
+          "token": "elevation.sm"
+        }
       },
-      "bodyStyle": { "padding": { "token": "spacing.6" } }
+      "bodyStyle": {
+        "padding": {
+          "token": "spacing.6"
+        }
+      }
     },
     "action": {
       "style": {
-        "backgroundColor": { "token": "color.semantic.light.bg-surface" },
-        "borderRadius": { "token": "radius.lg" },
+        "backgroundColor": {
+          "token": "color.semantic.light.bg-surface"
+        },
+        "borderRadius": {
+          "token": "radius.lg"
+        },
         "borderWidth": 1,
-        "borderColor": { "token": "color.semantic.light.border-default" },
-        "padding": { "token": "spacing.6" },
-        "elevation": { "token": "elevation.sm" }
+        "borderColor": {
+          "token": "color.semantic.light.border-default"
+        },
+        "padding": {
+          "token": "spacing.6"
+        },
+        "elevation": {
+          "token": "elevation.sm"
+        }
       },
-      "pressedStyle": { "elevation": { "token": "elevation.md" } }
+      "pressedStyle": {
+        "elevation": {
+          "token": "elevation.md"
+        }
+      }
     },
     "link": {
       "style": {
-        "backgroundColor": { "token": "color.semantic.light.bg-surface" },
-        "borderRadius": { "token": "radius.lg" },
+        "backgroundColor": {
+          "token": "color.semantic.light.bg-surface"
+        },
+        "borderRadius": {
+          "token": "radius.lg"
+        },
         "borderWidth": 1,
-        "borderColor": { "token": "color.semantic.light.border-default" },
-        "padding": { "token": "spacing.6" },
-        "elevation": { "token": "elevation.sm" }
+        "borderColor": {
+          "token": "color.semantic.light.border-default"
+        },
+        "padding": {
+          "token": "spacing.6"
+        },
+        "elevation": {
+          "token": "elevation.sm"
+        }
       },
-      "pressedStyle": { "elevation": { "token": "elevation.md" } }
+      "pressedStyle": {
+        "elevation": {
+          "token": "elevation.md"
+        }
+      }
     }
   },
   "sizes": {},

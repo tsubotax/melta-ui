@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/component-contract.schema.json",
   "id": "card",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "name": "Card",
   "category": "data-display",
   "appStatus": "implemented",
@@ -54,7 +54,11 @@
   "states": ["default", "hover", "focus-within"],
   "a11y": {
     "role": "article",
-    "required": [],
+    "required": [
+      "action / link は主アクションの操作要素（button / a）を内包する。カード面自体を操作要素にしない（RN: 面に accessibilityRole=\"button\" を付けない）",
+      "面のクリック・タップはポインタ向けの近道。キーボード / スクリーンリーダーからの到達は内包した操作要素が担う",
+      "内包する操作要素が2つ以上ある場合、面のクリックはそのうち1つ（主アクション）と同じ遷移先にする"
+    ],
     "keyboard": [],
     "focusRing": "focus-within:ring-2 focus-within:ring-primary-500/50"
   },

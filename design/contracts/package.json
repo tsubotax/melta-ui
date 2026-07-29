@@ -1,6 +1,6 @@
 {
   "name": "melta-contracts",
-  "version": "0.5.0",
+  "version": "0.6.0-rc.1",
   "description": "melta UI design contracts (design tokens / prohibited rules / component contracts) — single source of truth, JSON only, framework-agnostic. Consumed by melta-ui (web) and melta-app (React Native).",
   "license": "MIT",
   "homepage": "https://melta.tsubotax.com",

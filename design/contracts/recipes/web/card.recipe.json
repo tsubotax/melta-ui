@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/recipe.schema.json",
   "id": "card",
   "platform": "web",
-  "contractVersion": "2.0.0",
+  "contractVersion": "2.1.0",
   "generatedFrom": "components/card.contract.json",
   "variants": {
     "basic": {
