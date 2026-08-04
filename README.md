@@ -207,7 +207,9 @@ import rules from "melta-contracts/rules" with { type: "json" };
 
 #### パッケージ構成の今後について
 
-将来、検証エンジン（`melta`）とルールセット（`melta-contracts`）を eslint 型に分離する方向で検討している。`melta-ds-mcp` は互換を維持したまま段階的に移行する予定で、現在の entry（`melta-ds-mcp` / `melta-ds-mcp/lint-core` / `melta-ds-mcp/loader` および `dist/*`・`design/*`・`metadata/*` の deep import）を予告なく壊すことはしない。時期・パッケージ名は未確定。
+将来、検証エンジン（`melta`）とルールセット（`melta-contracts`）を eslint 型に分離する方向で検討している。`melta-ds-mcp` は互換を維持したまま段階的に移行する予定で、現在の entry（`melta-ds-mcp/lint-core` および `dist/*`・`design/*`・`metadata/*` の deep import）を予告なく壊すことはしない。時期・パッケージ名は未確定。
+
+なお `melta-ds-mcp` 自体の bare import（`import "melta-ds-mcp"`）は非サポート。entry は import しただけで stdio サーバーが起動する CLI なので、利用は `npx melta-ds-mcp`（MCP サーバー）か上記 subpath 経由にすること。
 
 ### MCP サーバー（このリポジトリを clone した場合）
 

@@ -9,10 +9,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { test, expect } from "@playwright/test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { CliArgError, parseMeltaRootArg } from "../src/cli-args.js";
 import { buildMcpInstructions } from "../src/guidance.js";
 import { createServer } from "../src/server.js";
 
@@ -65,37 +66,13 @@ function runTsxWithMeltaRoot(fixtureRoot: string, source: string): string {
   );
 }
 
-/**
- * `--melta-root=<path>` 引数経路の実行。
- * `node -e` は残り引数の index がずれるため、probe を実ファイルとして書き出して
- * 実運用と同じ `node <script> --melta-root=<path>` の argv 形状で走らせる。
- */
-function runTsxWithMeltaRootArg(
-  fixtureRoot: string,
-  source: string,
-  env: NodeJS.ProcessEnv = {}
-): string {
-  const probeDir = mkdtempSync(join(tmpdir(), "melta-mcp-probe-"));
-  const probePath = join(probeDir, "probe.mjs");
-  const loaderUrl = pathToFileURL(resolve("src/utils/loader.ts")).href;
-  writeFileSync(
-    probePath,
-    `const loader = await import(${JSON.stringify(loaderUrl)});\n${source}`,
-    "utf-8"
-  );
-  try {
-    return execFileSync(
-      process.execPath,
-      ["--import", "tsx", probePath, `--melta-root=${fixtureRoot}`],
-      {
-        cwd: resolve("."),
-        env: { ...process.env, ...env },
-        encoding: "utf-8",
-      }
-    );
-  } finally {
-    rmSync(probeDir, { recursive: true, force: true });
-  }
+/** `node src/index.ts --melta-root=<path>` を stdio MCP サーバーとして起動する transport */
+function createCliTransport(args: string[]): StdioClientTransport {
+  return new StdioClientTransport({
+    command: process.execPath,
+    args: ["--import", "tsx", resolve("src/index.ts"), ...args],
+    cwd: resolve("."),
+  });
 }
 
 test.describe("MCP onboarding", () => {
@@ -284,21 +261,75 @@ test.describe("アセット root の差し替え（vendor 経路）", () => {
     }
   });
 
-  test("--melta-root 引数が MELTA_ROOT より優先される", () => {
-    const argRoot = createMeltaRootFixture(undefined, "#111111");
+  test("setMeltaRoot は MELTA_ROOT より優先され、読み込み済みキャッシュも破棄する", () => {
+    const explicitRoot = createMeltaRootFixture(undefined, "#111111");
     const envRoot = createMeltaRootFixture(undefined, "#222222");
     try {
-      const output = runTsxWithMeltaRootArg(
-        argRoot,
-        `process.stdout.write(JSON.stringify(loader.loadTokens().color.sentinel));`,
-        { MELTA_ROOT: envRoot }
+      const output = runTsxWithMeltaRoot(
+        envRoot,
+        `
+          import { setMeltaRoot, loadTokens } from "./src/utils/loader.ts";
+          // 先に env 経路で読ませてキャッシュを作ってから差し替える
+          const before = loadTokens().color.sentinel.value;
+          setMeltaRoot(${JSON.stringify(explicitRoot)});
+          const after = loadTokens().color.sentinel.value;
+          process.stdout.write(JSON.stringify({ before, after }));
+        `
       );
-      // 引数が最優先。env だけの既存経路（#222222）に落ちない
-      expect(JSON.parse(output)).toEqual({ value: "#111111", tailwind: "text-sentinel" });
+      expect(JSON.parse(output)).toEqual({ before: "#222222", after: "#111111" });
     } finally {
-      rmSync(argRoot, { recursive: true, force: true });
+      rmSync(explicitRoot, { recursive: true, force: true });
       rmSync(envRoot, { recursive: true, force: true });
     }
+  });
+
+  test("parseMeltaRootArg は = / スペース区切りを受け、値なしは設定エラーで落ちる", () => {
+    expect(parseMeltaRootArg(["--melta-root=/tmp/vendor"])).toBe("/tmp/vendor");
+    expect(parseMeltaRootArg(["--melta-root", "/tmp/vendor"])).toBe("/tmp/vendor");
+    expect(parseMeltaRootArg([])).toBeNull();
+    // ホスト側の無関係な引数は拾わない
+    expect(parseMeltaRootArg(["--root", "/tmp/other", "--verbose"])).toBeNull();
+    // 値なしは黙って env / パッケージ相対に fallback せず失敗する
+    expect(() => parseMeltaRootArg(["--melta-root"])).toThrow(CliArgError);
+    expect(() => parseMeltaRootArg(["--melta-root", "--verbose"])).toThrow(CliArgError);
+    expect(() => parseMeltaRootArg(["--melta-root="])).toThrow(CliArgError);
+  });
+
+  test("CLI 起動 `--melta-root=<path>` で MCP サーバーが fixture のアセットを配る", async () => {
+    const fixtureRoot = createMeltaRootFixture(undefined, "#333333");
+    const client = new Client({ name: "melta-cli-test", version: "1.0.0" });
+    try {
+      await client.connect(createCliTransport([`--melta-root=${fixtureRoot}`]));
+      const result = (await client.callTool({
+        name: "get_token",
+        arguments: { path: "color.sentinel" },
+      })) as { content: Array<{ text?: string }> };
+      expect(JSON.parse(result.content[0]?.text ?? "null")).toEqual({
+        value: "#333333",
+        tailwind: "text-sentinel",
+      });
+    } finally {
+      await client.close();
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
+  test("値なしの --melta-root は起動せず設定エラーで落ちる", () => {
+    let stderr = "";
+    let status: number | null = null;
+    try {
+      execFileSync(
+        process.execPath,
+        ["--import", "tsx", resolve("src/index.ts"), "--melta-root"],
+        { cwd: resolve("."), encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"], timeout: 20000 }
+      );
+    } catch (e) {
+      const err = e as { status: number | null; stderr: string };
+      status = err.status;
+      stderr = err.stderr;
+    }
+    expect(status).toBe(1);
+    expect(stderr).toContain("--melta-root に値がありません");
   });
 
   test("tokens.json が無い root は期待パスと root 差し替え方法を含む診断を返す", () => {

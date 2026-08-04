@@ -25,9 +25,7 @@
     "melta-ds-mcp": "./dist/index.js"
   },
   "exports": {
-    ".": "./dist/index.js",
     "./lint-core": "./dist/utils/lint-core.js",
-    "./loader": "./dist/utils/loader.js",
     "./package.json": "./package.json",
     "./dist/*": "./dist/*",
     "./design/*": "./design/*",

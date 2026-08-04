@@ -10,13 +10,14 @@ npm 上の 1.4.0 が 7/19 時点の contracts 0.5.0 を同梱したまま stale 
 
 #### Added
 
-- **consumer pack smoke test（`npm run check:pack`）** — `npm pack` した tarball を展開し、① 同梱 `design/contracts/package.json` の version がリポの contracts version と一致するか ② 展開先の `dist/utils/lint-core.js` を deep import して lint が実際に動くか、を消費者視点で検査する。CI（design-check）の必須ステップに追加し、stale 配布を物理的に再発させない（`scripts/design/pack-smoke.ts`）
+- **consumer pack smoke test（`npm run check:pack`）** — `npm pack` した tarball について、① registry の `melta-contracts` version とリポの contracts version の同期（registry が先行 = リポが stale なら fail、リポが先行なら「contracts を先に publish せよ」の warn、取得不能なら warn 継続）② 同梱スキーマ 3 種の存在と JSON parse ③ tmp consumer に `npm install <tarball>` して `melta-ds-mcp/lint-core`（公開 entry）と `melta-ds-mcp/dist/utils/lint-core.js`（互換 passthrough）の両 specifier で lint が発火するか、を消費者視点で検査する。CI（design-check）の必須ステップに追加（`scripts/design/pack-smoke.ts`）
 - **`prepack` script** — pack / publish の直前に必ず `npm run build` が走る。dist の作り忘れによる空配布を封じる
-- **`exports` フィールド** — `.` / `./lint-core` / `./loader` / `./package.json` の公開 entry を明示。既存の deep import（`melta-ds-mcp/dist/*` / `./design/*` / `./metadata/*`）は pattern で維持し非破壊。解決経路は実際の Node 解決器で検査（`tests/package-exports.spec.ts`）
-- **`--melta-root=<path>` 引数でのアセット root 差し替え** — 優先順位は `--melta-root` > `MELTA_ROOT` > パッケージ相対。MCP の起動コマンドに直接書けるようになった（従来の `MELTA_ROOT` 経路は完全互換で維持）
+- **`exports` フィールド** — `./lint-core` / `./package.json` の公開 entry を明示。既存の deep import（`melta-ds-mcp/dist/*` / `./design/*` / `./metadata/*`）は pattern で維持し非破壊。解決経路は実際の Node 解決器で検査（`tests/package-exports.spec.ts`）。**パッケージ名の bare import（`import "melta-ds-mcp"`）は非サポート** — `dist/index.js` は import しただけで stdio サーバーが起動する CLI entry であり、従来も server 起動の footgun だった。`bin` 起動に `.` エントリは不要なので公開 API にしない。`loader` も公開 entry には昇格させない（engine API の設計は将来フェーズ。`./dist/*` passthrough では従来同様に到達可能）
+- **`--melta-root=<path>` 引数でのアセット root 差し替え** — 優先順位は `--melta-root` > `MELTA_ROOT` > パッケージ相対。MCP の起動コマンドに直接書けるようになった（従来の `MELTA_ROOT` 経路は完全互換で維持）。値なしの `--melta-root` は黙って fallback せず設定エラーで即時終了する
+- **`setMeltaRoot(path)`** — アセット root の明示 API。root 解決は lazy 化し、`process.argv` の解釈は CLI entry（`src/index.ts`）だけの責務にした。loader が argv を無条件走査すると、テストランナーや埋め込み先ホストの同名オプションを誤採用しうるため
 - **`design/schemas` を配布物に追加** — component contract / recipe / rule の 3 スキーマを公開資産化。vendor 先が自前の契約を melta のスキーマで検証できる
-- **`design/contracts/package.json` を配布物に追加** — 同梱 contracts の version を消費者が確認できる（pack smoke の照合対象）
-- MELTA_ROOT / `--melta-root` 経路のテスト補強 — fixture に `design/contracts/tokens.json` を追加し、`get_token` / `search` が root 差し替えで動くことと、引数が env より優先されることを固定（`tests/mcp-server.spec.ts`）
+- **`design/contracts/package.json` を配布物に追加** — 同梱 contracts の version を消費者が確認できる
+- root 差し替え経路のテスト補強 — fixture に `design/contracts/tokens.json` を追加し、`get_token` / `search` が root 差し替えで動くこと、`setMeltaRoot` が env より優先されキャッシュを破棄すること、CLI 起動 `--melta-root=<path>` で MCP サーバーが差し替え先のアセットを配ることを固定（`tests/mcp-server.spec.ts`）
 
 #### Changed
 
@@ -24,7 +25,7 @@ npm 上の 1.4.0 が 7/19 時点の contracts 0.5.0 を同梱したまま stale 
 
 #### Removed
 
-- **`loadScreens` を削除** — `metadata/screens.json` を読む loader だが src / scripts のどこからも呼ばれていないデッドコードだった。`metadata/screens.json` 自体は配布物として残す
+- **`loadScreens` を削除** — `metadata/screens.json` を読む未使用の内部関数。src / scripts / tests のいずれからも呼ばれておらず、`loader` は公開 entry でもないため既知の消費者はゼロ。`metadata/screens.json` 自体は配布物として残す
 
 ## [1.4.0] - 2026-07-19
 
