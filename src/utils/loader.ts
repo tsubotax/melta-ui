@@ -5,7 +5,6 @@ import { isAutoDetectable } from "./matcher.js";
 import type {
   Tokens,
   ComponentsData,
-  ScreensData,
   ProhibitionRule,
   RuleEntry,
   RulesFile,
@@ -14,18 +13,55 @@ import type {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const MELTA_ROOT_FLAG = "--melta-root";
+
 /**
- * アセット root の解決。既定は「dist/src の2階層上」（melta-ui リポ構造）。
- * vendor 先（別リポに engine を組み込む場合）は MELTA_ROOT 環境変数で
+ * アセット root の解決。優先順位は
+ *   1. `--melta-root=<path>`（`--melta-root <path>` も可）— MCP の起動コマンドに直接書ける
+ *   2. `MELTA_ROOT` 環境変数（従来経路。互換維持）
+ *   3. パッケージ相対（dist/src の2階層上 = melta-ui リポ構造）
+ * vendor 先（別リポに engine を組み込む場合）は 1 か 2 で
  * design/contracts・metadata・package.json を持つディレクトリを指定して上書きする。
  */
-const root = process.env.MELTA_ROOT
-  ? resolve(process.env.MELTA_ROOT)
-  : resolve(__dirname, "../..");
+function resolveRoot(): { root: string; via: string } {
+  const argv = process.argv.slice(2);
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg.startsWith(`${MELTA_ROOT_FLAG}=`)) {
+      const value = arg.slice(MELTA_ROOT_FLAG.length + 1);
+      if (value) return { root: resolve(value), via: `${MELTA_ROOT_FLAG}=${value}` };
+    }
+    // スペース区切り形式（`--melta-root /path`）。次要素がフラグなら値なしとみなす
+    if (arg === MELTA_ROOT_FLAG) {
+      const value = argv[i + 1];
+      if (value && !value.startsWith("-")) {
+        return { root: resolve(value), via: `${MELTA_ROOT_FLAG} ${value}` };
+      }
+    }
+  }
+  if (process.env.MELTA_ROOT) {
+    return { root: resolve(process.env.MELTA_ROOT), via: `MELTA_ROOT=${process.env.MELTA_ROOT}` };
+  }
+  return { root: resolve(__dirname, "../.."), via: "パッケージ相対" };
+}
+
+const { root, via: rootVia } = resolveRoot();
+
+/**
+ * アセット読み込み失敗時の診断メッセージ。
+ * 「どのファイルを・どこに期待したか」と「root の差し替え方」を必ず添える。
+ */
+function assetLoadError(relPath: string, absPath: string, e: unknown): Error {
+  return new Error(
+    `[melta-ui] ${relPath} の読み込みに失敗しました (${absPath}): ${(e as Error).message}\n` +
+      `  アセット root = ${root}（解決経路: ${rootVia}）\n` +
+      `  vendor 先では ${MELTA_ROOT_FLAG}=<path> か MELTA_ROOT=<path> で ` +
+      `design/contracts・metadata・package.json を持つディレクトリを指定してください。`
+  );
+}
 
 let tokensCache: Tokens | null = null;
 let componentsCache: ComponentsData | null = null;
-let screensCache: ScreensData | null = null;
 let packageCache: { name: string; version: string } | null = null;
 let designConstitutionCache: string | null = null;
 
@@ -63,29 +99,26 @@ export function loadDesignConstitution(): string {
 
 export function loadTokens(): Tokens {
   if (!tokensCache) {
-    tokensCache = JSON.parse(
-      readFileSync(resolve(root, "design/contracts/tokens.json"), "utf-8")
-    );
+    const tokensPath = resolve(root, "design/contracts/tokens.json");
+    try {
+      tokensCache = JSON.parse(readFileSync(tokensPath, "utf-8")) as Tokens;
+    } catch (e) {
+      throw assetLoadError("design/contracts/tokens.json", tokensPath, e);
+    }
   }
   return tokensCache!;
 }
 
 export function loadComponents(): ComponentsData {
   if (!componentsCache) {
-    componentsCache = JSON.parse(
-      readFileSync(resolve(root, "metadata/components.json"), "utf-8")
-    );
+    const componentsPath = resolve(root, "metadata/components.json");
+    try {
+      componentsCache = JSON.parse(readFileSync(componentsPath, "utf-8")) as ComponentsData;
+    } catch (e) {
+      throw assetLoadError("metadata/components.json", componentsPath, e);
+    }
   }
   return componentsCache!;
-}
-
-export function loadScreens(): ScreensData {
-  if (!screensCache) {
-    screensCache = JSON.parse(
-      readFileSync(resolve(root, "metadata/screens.json"), "utf-8")
-    );
-  }
-  return screensCache!;
 }
 
 let rulesFileCache: RulesFile | null = null;
