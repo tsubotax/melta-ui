@@ -31,9 +31,9 @@ AI にガイドラインを読ませることはできる。守るかどうか�
 
 - **105 禁止ルールのうち 48 / 105 を静的に自動検出**。残りも「なぜ自動検出しないか」を `automationStatus` で分類・可視化する（[rules.json](./design/contracts/rules.json) / 内訳は[制約と正直な範囲](#制約と正直な範囲)）
 - **Playwright + axe-core 248 tests** が CI 必須ゲート（[.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [実行履歴](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml)）
-- **5 種の代表的リセット CSS 環境で VRT 差分 0px**。pixelmatch の literal 比較で機械検証（[tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts)、`npm run test:reset-vrt`）
+- **5 種の代表的リセット CSS 環境で VRT 差分ピクセル 0**。pixelmatch の literal 比較で機械検証（[tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts)、`npm run test:reset-vrt`）
 - **npm 3 パッケージ + MCP Registry で配布**（[melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app)、Registry ID `io.github.tsubotax/melta-ui`）
-- **別リポジトリの React Native 実装が同じ契約を購読**し、web 側が契約を壊すと consumer テストが赤くなる（[melta-app](https://github.com/tsubotax/melta-app) / 互換ゲートは `npm run design:compat`）
+- **別リポジトリの React Native 実装が同じ契約を購読**し、契約の破壊的変更は APP 側が契約バージョンを取り込んだ時点で consumer テストが検出する（[melta-app](https://github.com/tsubotax/melta-app) / npm 公開版との互換は `npm run design:compat` が publish 前に検査）
 - **外部プロジェクトで「AI が違反を書く → 即検出 → 自己修正」ループを実測**（2026-08、非公開 RN アプリへ npm 経由で導入。[melta-app README のステータス節](https://github.com/tsubotax/melta-app/blob/main/README.md#ステータス)）
 - **drift 検査自身に負のテストがある**（わざと壊して発火することを固定：[tests/drift-heal.spec.ts](./tests/drift-heal.spec.ts)）
 
@@ -117,7 +117,8 @@ hook / CI / lint CLI まで含めた強制層が要る場合。`npm install` し
 ```bash
 git clone https://github.com/tsubotax/melta-ui.git
 cd melta-ui && npm install
-npm run design:lint-generated -- <生成したファイル>
+printf '<div class="text-black shadow-2xl">x</div>' > /tmp/melta-bad.html
+npm run design:lint-generated -- /tmp/melta-bad.html
 ```
 
 `npm install` で有効になるもの: `.mcp.json`（Claude Code へ MCP 自動接続）/ `.claude/settings.json` の PostToolUse hook / lint CLI。
@@ -125,8 +126,8 @@ npm run design:lint-generated -- <生成したファイル>
 **成功判定 1** — 違反ファイルに lint CLI をかけると exit 1 で落ちる:
 
 ```text
-  ✗ [error] AI_NO_CARD_COLOR_BAR_TOP: "border-t-4" → border border-slate-200 のみでカードを構成
-  ✗ [error] COLOR_NO_BLUE_BG: "bg-blue-500" → bg-primary-*（primaryで統一する）
+  ✗ [error] COLOR_NO_TEXT_BLACK: "text-black" → text-slate-900（純黒はコントラストが強すぎて長時間の利用で目が疲れる）
+  ✗ [error] SPACE_NO_SHADOW_2XL: "shadow-2xl" → shadow-sm 〜 shadow-md（オーバーレイ: shadow-xl）（影が強すぎてノイズになる）
 
 1 ファイル走査 / error 2 / warn 0
 ❌ FAILED
@@ -227,7 +228,7 @@ MCP サーバーも lint エンジンもローカルプロセスで完結する�
 - **個人メンテナンスの OSS**（tsubotax）。SLA も専任チームもない。実運用の dogfood（web showcase / RN アプリ）で回している
 - **0.x / 1.x の方針**: 契約パッケージ `melta-contracts` は 0.x で、破壊的変更は minor bump で入りうる。ただし破壊的変更の分類は人手ではなく `npm run design:compat` の機械判定で、semver bump を強制する
 - **変更の通知経路は [CHANGELOG.md](./CHANGELOG.md)**。リリースごとに Added / Changed / Removed を残す
-- **バグ・要望は [GitHub Issues](https://github.com/tsubotax/melta-ui)** へ
+- **バグ・要望は [GitHub Issues](https://github.com/tsubotax/melta-ui/issues)** へ
 
 <!-- sec: learn-more -->
 ## もっと知る

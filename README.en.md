@@ -31,9 +31,9 @@ You can make an AI read your guidelines. Whether it *follows* them is up to the 
 
 - **48 of the 105 prohibition rules are statically auto-detected.** The rest are classified and surfaced by `automationStatus` instead of being silently unenforced ([rules.json](./design/contracts/rules.json) / breakdown under [Limits](#limits-and-the-honest-scope))
 - **Playwright + axe-core, 248 tests**, as a required CI gate ([.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [run history](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml))
-- **0px visual difference across five representative reset-CSS environments**, machine-verified with literal pixelmatch comparison ([tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts), `npm run test:reset-vrt`)
+- **0 diff pixels across five representative reset-CSS environments**, machine-verified with literal pixelmatch comparison ([tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts), `npm run test:reset-vrt`)
 - **Distributed as three npm packages plus the MCP Registry** ([melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app), Registry ID `io.github.tsubotax/melta-ui`)
-- **A React Native implementation in a separate repository subscribes to the same contract**, and its consumer tests go red when the web side breaks it ([melta-app](https://github.com/tsubotax/melta-app) / compat gate: `npm run design:compat`)
+- **A React Native implementation in a separate repository subscribes to the same contract**; breaking contract changes are caught by its consumer tests when the APP side picks up the new contract version ([melta-app](https://github.com/tsubotax/melta-app) / `npm run design:compat` checks compatibility against the published npm version before publishing)
 - **The "AI writes a violation → instant detection → self-repair" loop was measured on an outside project** (2026-08, installed via npm into a private RN app — see [the status section of the melta-app README](https://github.com/tsubotax/melta-app/blob/main/README.md#ステータス))
 - **The drift checks have negative tests of their own** — deliberately breaking things is pinned as a firing condition ([tests/drift-heal.spec.ts](./tests/drift-heal.spec.ts))
 
@@ -117,7 +117,8 @@ Use this when you want the enforcing layers — hook, CI and the lint CLI. Those
 ```bash
 git clone https://github.com/tsubotax/melta-ui.git
 cd melta-ui && npm install
-npm run design:lint-generated -- <generated file>
+printf '<div class="text-black shadow-2xl">x</div>' > /tmp/melta-bad.html
+npm run design:lint-generated -- /tmp/melta-bad.html
 ```
 
 `npm install` activates: `.mcp.json` (auto-connects the MCP server in Claude Code), the PostToolUse hook in `.claude/settings.json`, and the lint CLI.
@@ -125,8 +126,8 @@ npm run design:lint-generated -- <generated file>
 **Success check 1** — running the lint CLI on a violating file exits 1:
 
 ```text
-  ✗ [error] AI_NO_CARD_COLOR_BAR_TOP: "border-t-4" → border border-slate-200 のみでカードを構成
-  ✗ [error] COLOR_NO_BLUE_BG: "bg-blue-500" → bg-primary-*（primaryで統一する）
+  ✗ [error] COLOR_NO_TEXT_BLACK: "text-black" → text-slate-900（純黒はコントラストが強すぎて長時間の利用で目が疲れる）
+  ✗ [error] SPACE_NO_SHADOW_2XL: "shadow-2xl" → shadow-sm 〜 shadow-md（オーバーレイ: shadow-xl）（影が強すぎてノイズになる）
 
 1 ファイル走査 / error 2 / warn 0
 ❌ FAILED
@@ -137,6 +138,8 @@ npm run design:lint-generated -- <generated file>
 ```json
 {"decision":"block","reason":"melta UI 禁止パターン検出（error 2 / warn 0）。書き込まれたファイルを修正してください: ..."}
 ```
+
+> Note: tool output (lint messages, hook feedback) is currently Japanese-only.
 
 <!-- sec: how -->
 ## How it works — contract, lookup, verification, monitoring
@@ -189,7 +192,7 @@ Contracts have **two layers: normative and concrete**. The normative core (`comp
 Enforcement runs both ways:
 
 - **Web side → compat gate** (`npm run design:compat`): a golden diff between the published npm version and HEAD. Token removals, variant removals and rule semantics changes are classified as breaking, and a semver bump is machine-enforced
-- **APP side → consumer tests**: melta-app's CI checks contract subset, token existence and contractVersion sync. Break the contract on web and the APP tests go red
+- **APP side → consumer tests**: melta-app's CI checks contract subset, token existence and contractVersion sync. Contract breakage on the web side is caught when the APP updates its contract dependency
 
 melta-app also ships an eslint plugin on npm for consumer projects, so raw literal values are blocked in **the code that uses the library**. The live RN catalog showcase is at https://app.melta.tsubotax.com.
 
@@ -229,7 +232,7 @@ Both the MCP server and the lint engine run entirely as local processes. There i
 - **A personally maintained OSS project** (tsubotax). No SLA, no dedicated team. It is kept honest by dogfooding in production (the web showcase and an RN app)
 - **0.x / 1.x policy**: the contract package `melta-contracts` is still 0.x, so breaking changes can arrive in a minor bump. What is *not* left to judgement is the classification — `npm run design:compat` decides mechanically and forces the semver bump
 - **Changes are announced through [CHANGELOG.md](./CHANGELOG.md)**, with Added / Changed / Removed per release
-- **Bugs and requests go to [GitHub Issues](https://github.com/tsubotax/melta-ui)**
+- **Bugs and requests go to [GitHub Issues](https://github.com/tsubotax/melta-ui/issues)**
 
 <!-- sec: learn-more -->
 ## Learn more
