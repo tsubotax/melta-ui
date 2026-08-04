@@ -1,85 +1,202 @@
+<!-- sec: hero -->
 # melta UI
 
 [![Design System Check](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml/badge.svg?branch=main)](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml)
 
-**A design system readable by humans *and* AI agents.**
-
-> 🤖 **Built for AI coding agents** — Claude Code / Cursor / **Codex** read `DESIGN.md` and the JSON contracts to generate DS-compliant UI, and CI catches violations.
+**Turn AI design guidelines into executable contracts that catch violations.**
 
 > 🇯🇵 日本語版（正本）: [README.md](./README.md) · Site: https://melta.tsubotax.com
 
----
+<!-- sec: lead -->
+You can make an AI read your guidelines. Whether it *follows* them is up to the AI. melta UI replaces that "up to the AI" with machinery. A machine is in the loop at four points: **before** generation (the MCP server hands the agent the contract), **immediately after** (lint and the editor hook push violations back), **before merge** (CI blocks), and **afterwards** (drift checks keep catching docs and implementation rotting apart). Not just readable — enforced.
 
-Design systems used to be for humans only. Read the style guide, infer a component's intent, judge by context — that was the work of designers and engineers.
+**Scope boundary**: melta UI is *not* a ready-made CSS component library. What ships is values (tokens), rules, specs (contracts) and verifiers (lint / MCP) — not a package you `import` and drop in. The web implementation is included as a reference implementation in HTML + Tailwind classes.
 
-But UI is no longer written by humans alone. When an AI generates the code, picks the components, and lays out the page, a design system being **human-readable is no longer enough.**
+<!-- sec: who -->
+## Who it's for
 
-melta UI's thesis: **add machine-readability without sacrificing human-readability.** Both at once.
+**A good fit**
 
----
+- Teams generating and maintaining UI with AI coding agents (Claude Code / Cursor / Codex …)
+- Individuals or small teams who want "we wrote the guideline but nobody follows it" solved structurally
+- Products that want one design contract shared between web and React Native
 
-## Architecture — three layers
+**Not a fit**
+
+- You want a finished web component library to install and use immediately
+- Your styling is not class-based (e.g. CSS-in-JS through props) so style never appears in the markup — static lint has nothing to read
+
+<!-- sec: proof -->
+## Proof — every claim has a verification path
+
+- **48 of the 105 prohibition rules are statically auto-detected.** The rest are classified and surfaced by `automationStatus` instead of being silently unenforced ([rules.json](./design/contracts/rules.json) / breakdown under [Limits](#limits-and-the-honest-scope))
+- **Playwright + axe-core, 248 tests**, as a required CI gate ([.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [run history](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml))
+- **0px visual difference across five representative reset-CSS environments**, machine-verified with literal pixelmatch comparison ([tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts), `npm run test:reset-vrt`)
+- **Distributed as three npm packages plus the MCP Registry** ([melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app), Registry ID `io.github.tsubotax/melta-ui`)
+- **A React Native implementation in a separate repository subscribes to the same contract**, and its consumer tests go red when the web side breaks it ([melta-app](https://github.com/tsubotax/melta-app) / compat gate: `npm run design:compat`)
+- **The "AI writes a violation → instant detection → self-repair" loop was measured on an outside project** (2026-08, installed via npm into a private RN app — see [the status section of the melta-app README](https://github.com/tsubotax/melta-app/blob/main/README.md#ステータス))
+- **The drift checks have negative tests of their own** — deliberately breaking things is pinned as a firing condition ([tests/drift-heal.spec.ts](./tests/drift-heal.spec.ts))
+
+<!-- sec: ships -->
+## What ships — installable today
+
+| Package | Role | Usage |
+|---|---|---|
+| [`melta-contracts`](https://www.npmjs.com/package/melta-contracts) | **Contract data** (tokens / rules / component contracts / recipes, JSON only). No build step, framework-agnostic | `npm install melta-contracts` |
+| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP server + lint engine** (this repository). `check_html` runs the same logic as CI and the hook | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint-core` |
+| [`melta-app`](https://www.npmjs.com/package/melta-app) | **React Native implementation**, shipping an eslint plugin for consumer projects | `npm install melta-app` |
+
+> A bare import of `melta-ds-mcp` (`import "melta-ds-mcp"`) is unsupported: the entry is a CLI that boots a stdio server on import. Use `npx melta-ds-mcp` or the subpaths. Entry contract, deep-import compatibility and the package-split plan live in [docs/distribution.md](./docs/distribution.md).
+
+<!-- sec: requirements -->
+## Requirements and compatibility
+
+| Item | Value |
+|---|---|
+| Node | 22 or later (CI verifies on 22) |
+| MCP client | Anything speaking stdio MCP (verified with Claude Code; Cursor / Codex register the same stdio command) |
+| Styling | **Tailwind, class-based.** Static lint reads class attributes, HTML attributes and DOM structure |
+| Rendering the output | Prototype: Tailwind CDN + the `tailwind.config` in `DESIGN.md`. Production: the v4 `@theme` block in `foundations/theme.md` |
+| JSX / Vue | Class and HTML-attribute lint applies. **Composition lint (nesting, a11y DOM) is HTML-only.** Classes reaching JSX through a variable or spread are not statically traceable |
+| License | MIT |
+
+<!-- sec: quickstart -->
+## Five-minute quick start
+
+### Path A — npm (MCP server, recommended)
+
+Add contract lookup and self-verification to an existing project without cloning anything.
+
+```bash
+claude mcp add melta-ui -- npx -y melta-ds-mcp
+claude mcp list
+```
+
+**Success check** — `claude mcp list` prints this line:
+
+```text
+melta-ui: npx -y melta-ds-mcp - ✔ Connected
+```
+
+On connect the server hands over MCP `instructions`, so you don't have to repeat "melta is not a ready-made CSS library", "read `melta://design-constitution` first" and "run `check_html` before presenting" in every prompt. Then just ask for UI:
+
+> Build me a user list table
+
+**Success check** — the agent runs its generated HTML through `check_html` and gets a response shaped like this (then fixes and re-checks):
+
+```jsonc
+{
+  "passed": false,
+  "errorCount": 2,
+  "warnCount": 0,
+  "violations": [
+    { "ruleId": "AI_NO_CARD_COLOR_BAR_TOP", "severity": "error", "token": "border-t-4",
+      "reason": "AI生成UIの典型パターン。装飾過剰で汎用性が低い",
+      "alternative": "border border-slate-200 のみでカードを構成" },
+    { "ruleId": "COLOR_NO_BLUE_BG", "severity": "error", "token": "bg-blue-500",
+      "reason": "primaryで統一する", "alternative": "bg-primary-*" }
+  ],
+  "coverage": { "automated": "...", "notAutomated": "..." }
+}
+```
+
+To actually **render** the generated HTML you need Tailwind plus melta's token config. For a prototype the CDN is enough:
+
+```html
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Paste the tailwind.config from DESIGN.md ("Quick Reference → HTML template") verbatim.
+  // All eight fontSize steps differ from the Tailwind defaults (18px body / 2.0 line-height is core to melta).
+</script>
+```
+
+### Path B — clone (full harness)
+
+Use this when you want the enforcing layers — hook, CI and the lint CLI. Those three do *not* reach a project that merely ran `npm install` (see [Limits](#limits-and-the-honest-scope)).
+
+```bash
+git clone https://github.com/tsubotax/melta-ui.git
+cd melta-ui && npm install
+npm run design:lint-generated -- <generated file>
+```
+
+`npm install` activates: `.mcp.json` (auto-connects the MCP server in Claude Code), the PostToolUse hook in `.claude/settings.json`, and the lint CLI.
+
+**Success check 1** — running the lint CLI on a violating file exits 1:
+
+```text
+  ✗ [error] AI_NO_CARD_COLOR_BAR_TOP: "border-t-4" → border border-slate-200 のみでカードを構成
+  ✗ [error] COLOR_NO_BLUE_BG: "bg-blue-500" → bg-primary-*（primaryで統一する）
+
+1 ファイル走査 / error 2 / warn 0
+❌ FAILED
+```
+
+**Success check 2** — right after Claude Code writes or edits a `.html` / `.tsx` / `.jsx` / `.vue` file, the hook returns this JSON and drives the fix loop (warn-only findings are injected as `additionalContext` instead):
+
+```json
+{"decision":"block","reason":"melta UI 禁止パターン検出（error 2 / warn 0）。書き込まれたファイルを修正してください: ..."}
+```
+
+<!-- sec: how -->
+## How it works — contract, lookup, verification, monitoring
 
 ```
-Layer 1 — Constitution (what the AI reads first)
-  DESIGN.md          Brand identity + 7 principles + Quick Reference (enough to generate basic UI)
-  CLAUDE.md / AGENTS.md   Working instructions & reading guide (agent-neutral SSOT = AGENTS.md)
+① Contract (SSOT)     design/contracts/
+                        tokens.json      101 design tokens
+                        rules.json       105 prohibition rules (id + severity + detector + alternative)
+                        components/      40 contracts (28 web / 12 app-first)
+                        recipes/         platform concretions (web: generated mirror / app: RN styleRefs)
+                      DESIGN.md / AGENTS.md   the constitution and working guide an agent reads first
 
-Layer 2 — Specification (machine-readable SSOT)
-  design/contracts/
-    ├── tokens.json        101 design tokens (+ tokens.dtcg.json — W3C DTCG 2025.10 export)
-    ├── rules.json         105 prohibition rules (id + severity + detector)
-    └── components/        40 contracts (28 web + 12 React-Native-pending): variants + sizes + a11y + rules
+② Lookup (before generation)
+                      MCP server (melta-ds-mcp)
+                        hands over only the spec, value or rule that is needed, on demand
 
-Layer 3 — Verification (violations don't pass)
-  scripts/design/    validate / drift-check / lint-generated
-  tests/             Playwright + axe-core (248 tests)
-  .github/workflows/ CI runs all of the above on every push/PR
+③ Verification (right after generation → before merge)
+                      PostToolUse hook   lint on Write/Edit; errors block and drive an auto-fix
+                      lint CLI / CI      .github/workflows/design-check.yml
+                      MCP check_html     self-verification with the same logic as CI
+
+④ Monitoring (afterwards)
+                      design:drift       catches docs drifting away from contracts
+                      design:compat      breaking-change × semver gate against the published npm version
+                      design:drift-heal  detects drift and regenerates derived files only (SSOT stays human-gated)
 ```
 
-| Layer | Format | Reader | Role |
-|-------|--------|--------|------|
-| **DESIGN.md** | Markdown | every AI agent | Design constitution + Quick Reference. Enough on its own to generate basic UI |
-| **AGENTS.md / CLAUDE.md** | Markdown | AI (Codex/Cursor/Claude) | Working steps, reading modes, npm scripts |
-| **contracts/** | JSON | AI + harness | Strict spec: 40 contracts (28 web) + 105 rules + 101 tokens |
-| **harness** | TypeScript | CI | Schema validation, drift detection, Playwright + axe |
-| **MCP server** | TypeScript | AI agents | Exposes token lookup / component fetch / rule & HTML checks as tools |
+The MCP server exposes 6 tools:
 
----
+| Tool | What it does | Example input |
+|------|--------------|---------------|
+| `get_token` | Token lookup | `{ "path": "color.primary.600" }` |
+| `get_component` | Component spec (variants / sizes / stateSpecs / anatomy / a11y) | `{ "id": "button" }` |
+| `check_rule` | Prohibition check on a class string (34 patterns auto-detected; context-dependent ones come back flagged `conditional`) | `{ "classes": "text-black shadow-2xl" }` |
+| `check_html` | Lint a whole HTML / JSX source with the same logic as CI and the hook | `{ "source": "<div class=...>" }` |
+| `get_rules` | Read the rule registry (all entries including manual ones, filterable) | `{ "category": "accessibility" }` |
+| `search` | Full-text search (up to 20 results + a truncated flag) | `{ "query": "card" }` |
 
-## Why it's readable for AI
+Resources: `melta://design-constitution` (the full `DESIGN.md`) / `melta://tokens` / `melta://components` / `melta://components/{id}` / `melta://rules` / `melta://rules/auto-detectable`.
 
-1. **Progressive loading** — don't waste context.
+The web surface covers 28 components, 13 foundations and 5 patterns. The design principles are Content First / WCAG 2.1 AA / Semantic Color / 3-Color Rule / 4px Grid / Minimal Elevation / No AI-ish Decoration ([DESIGN.md](./DESIGN.md)).
 
-   | Mode | Files read | Use |
-   |------|------------|-----|
-   | Quick | `DESIGN.md` only | single component |
-   | Standard | + `theme.md` + relevant contracts / component md | a page |
-   | MCP | `get_token` / `get_component` / `check_rule` / `check_html` / `get_rules` / `search` | tool integration |
-   | Full | everything | bootstrapping a new project |
+<!-- sec: platforms -->
+## Web and APP — one contract feeds both
 
-2. **Machine-readable specs — reference, not interpretation.** Every component is a contract (`*.contract.json`) with variants, sizes, a11y, token refs and the exact Tailwind string to copy.
+The same contract package ([`melta-contracts`](https://www.npmjs.com/package/melta-contracts)) is consumed by the web implementation (this repository, HTML + Tailwind) and by the APP implementation ([melta-app](https://github.com/tsubotax/melta-app), React Native). There is no path where a token is copied into an implementation — duplication is physically prevented.
 
-3. **105 prohibition rules** with explicit `detector` + `alternative`. 48 of them are statically auto-detected — by CI, by the MCP `check_rule` tool, and by the Claude Code hook; the rest are classified by verification path (`automationStatus`) instead of being silently unenforced.
+Contracts have **two layers: normative and concrete**. The normative core (`components/*.contract.json`) holds variant vocabulary, states, tokenRefs and a11y, shared across platforms; where divergence is legitimate (hover→pressed, elevation decomposition, 44pt touch targets) `platformSemantics` declares only the semantics. The concrete layer (`recipes/`) is a generated mirror of the contract's Tailwind on web (freshness enforced in CI) and hand-authored RN styleRefs on app (colors are 100% token references).
 
-4. **Self-verification in the loop** — the MCP `check_html` tool runs the *same* lint as CI, so an agent can generate → check → fix without leaving the conversation.
+Enforcement runs both ways:
 
----
+- **Web side → compat gate** (`npm run design:compat`): a golden diff between the published npm version and HEAD. Token removals, variant removals and rule semantics changes are classified as breaking, and a semver bump is machine-enforced
+- **APP side → consumer tests**: melta-app's CI checks contract subset, token existence and contractVersion sync. Break the contract on web and the APP tests go red
 
-## Enforcement — the DS ships its own guards
+melta-app also ships an eslint plugin on npm for consumer projects, so raw literal values are blocked in **the code that uses the library**. The live RN catalog showcase is at https://app.melta.tsubotax.com.
 
-| Layer | For | How |
-|-------|-----|-----|
-| **PostToolUse hook** | Claude Code (cloned repo only) | Shipped in `.claude/settings.json`. On Write/Edit of HTML, lint runs: `error` blocks (the agent auto-fixes), `warn` is injected as advice |
-| **CI** | every agent (cloned repo only) | `.github/workflows/design-check.yml` checks changed files for prohibited patterns on each PR/push |
-| **CLI** | Codex / Cursor / etc. (cloned repo only) | `npm run design:lint-generated -- <file>` — wire into any agent's hook system |
-| **lint-core / MCP `check_html`** | npm consumers | `melta-ds-mcp/lint-core` (a public export entry since 1.5.0) called from your own hook/CI, or the MCP `check_html` tool. Same lint logic as CI |
+<!-- sec: limits -->
+## Limits and the honest scope
 
-> **Clone path and npm path ship different layers.** The hook, CI and CLI rows above assume you cloned this repository; they do *not* reach a project that merely ran `npm install`. What an npm consumer gets is `melta-ds-mcp/lint-core` (plus the `melta-ds-mcp/dist/utils/lint-core.js` deep import kept as a compatibility passthrough) and the MCP `check_html` tool — wire either one into your own hook or CI.
-
-### Verification coverage — a route-based KPI (not a single number)
-
-Auto-generated by `npm run design:coverage` and CI-guarded for freshness, so the numbers move every time the harness improves rather than being a static claim.
+**What 48 / 105 means.** We do not claim to "enforce 105 prohibition rules". 48 are statically auto-detectable; for the rest, the verification path is classified and made visible via `automationStatus` — the point of the inventory is to leave zero rules that are declared but never checked.
 
 <!-- BEGIN:coverage-en (npm run design:coverage で再生成) -->
 | Route | Count | What |
@@ -92,56 +209,45 @@ Auto-generated by `npm run design:coverage` and CI-guarded for freshness, so the
 | Unclassified | 0 (0 error) | Inventory pending (no automationStatus declared) |
 <!-- END:coverage-en -->
 
-The same orphan-0 drift check guarantees every "manual" rule stays reachable from a contract or doc — so no rule silently becomes dead as the registry grows.
+`npm run design:coverage` generates this table from the contracts and `npm run design:drift` guards its freshness, so the numbers move whenever the harness improves. The SSOT for each rule's state is the `automationStatus` field in `rules.json`.
 
-### Reset-swap VRT — 0px difference across five representative reset-CSS environments
+**Other limits**:
 
-Generated UI lands on top of whatever reset CSS the host site uses. melta injects five resets (Normalize / Bootstrap Reboot / Tailwind Preflight / Eric Meyer / kiso.css) ahead of the melta stack and machine-verifies **0px difference** with literal pixelmatch comparison (`npm run test:reset-vrt`). Fixtures are assembled at runtime from contract `htmlSample`s, so there is no copy to drift. The three leak paths this audit uncovered are sealed by the Host-Reset Defense layer in `ds-theme.css`.
+- **The clone path and the npm path ship different layers.** The PostToolUse hook, CI and the lint CLI assume you cloned this repository; they do not reach a project that merely ran `npm install`. What the npm path gives you is `melta-ds-mcp/lint-core` and the MCP `check_html` tool — wire either into your own hook or CI
+- **Styling that isn't class-based cannot be inspected.** If style never lands in the markup (class / attributes), static lint fires on nothing
+- **Composition lint does not cover JSX.** Nesting and a11y-DOM checks are HTML-only; JSX gets class and attribute lint
+- **`check_html.passed` is not sign-off.** It means lint-clean draft, not brand-approved. The final call stays with a human
 
----
+<!-- sec: security -->
+## Security and data boundary
 
-## Distribution
+Both the MCP server and the lint engine run entirely as local processes. There is no path that sends generated code, prompts or check results anywhere, and there is no telemetry. The only network traffic is `npx` fetching the package, plus `npm run design:compat` / `npm run check:pack` querying published versions on the npm registry.
 
-- **npm** — `npx -y melta-ds-mcp` runs the MCP server standalone; `melta-contracts` ships the tokens/rules/contracts JSON (framework-agnostic, consumed by web *and* React Native).
-- **MCP Registry** — `io.github.tsubotax/melta-ui`.
-- **Web** — `DESIGN.md`, `AGENTS.md`, `llms.txt` / `llms-full.txt` served at https://melta.tsubotax.com.
+<!-- sec: maturity -->
+## Maturity and maintenance
 
-### What 1.5.0 changed for consumers
+- **A personally maintained OSS project** (tsubotax). No SLA, no dedicated team. It is kept honest by dogfooding in production (the web showcase and an RN app)
+- **0.x / 1.x policy**: the contract package `melta-contracts` is still 0.x, so breaking changes can arrive in a minor bump. What is *not* left to judgement is the classification — `npm run design:compat` decides mechanically and forces the semver bump
+- **Changes are announced through [CHANGELOG.md](./CHANGELOG.md)**, with Added / Changed / Removed per release
+- **Bugs and requests go to [GitHub Issues](https://github.com/tsubotax/melta-ui)**
 
-- **Public export entry** — `melta-ds-mcp/lint-core` is now a declared entry in `exports`, so consumers can run the same lint as CI from their own hook or pipeline. The previous `melta-ds-mcp/dist/utils/lint-core.js` deep import stays as a compatibility passthrough; `design/*` and `metadata/*` deep imports are likewise not broken without notice.
-- **Bare import is unsupported** — `import "melta-ds-mcp"` is not a supported entry: it is a CLI that boots a stdio server on import. Use `npx melta-ds-mcp` (MCP server) or the subpaths above.
-- **`--melta-root=<path>`** — swap the asset root straight from the MCP launch command (precedence: `--melta-root` > `MELTA_ROOT` > package-relative), so a vendor can serve its own contracts through the same server. A value-less `--melta-root` exits with a config error instead of silently falling back.
-- **Bundled schemas** — the tarball ships `design/schemas/{component-contract,recipe,rule}.schema.json` (plus `design/contracts/package.json`, so consumers can read the bundled contracts version) — a vendor can validate its own contracts against the published schema.
-- **`check:pack`** — a consumer-perspective smoke gate: `npm pack` → extract → check the bundled contracts version against the `melta-contracts` release on the registry → verify the three schemas are present and parse → `npm install` the tarball into a temp consumer and lint through *both* specifiers (public entry and deep import). This is what keeps a `melta-ds-mcp` release from shipping stale contracts.
+<!-- sec: learn-more -->
+## Learn more
 
-### Multi-platform contracts
+| Document | What's in it |
+|---|---|
+| [DESIGN.md](./DESIGN.md) | The design constitution + Quick Reference. Enough on its own to generate basic UI |
+| [AGENTS.md](./AGENTS.md) | Agent-neutral working guide (reading modes, task-based guide, npm scripts) |
+| [design/authority.md](./design/authority.md) | SSOT declaration and precedence when values conflict |
+| [docs/melta-loop-playbook.md](./docs/melta-loop-playbook.md) | Governance for loop / pipeline automation (three automation levels, SSOT write-protect, hard/soft human gates, audit log). W2 drift repair is live today |
+| [docs/benchmarks.md](./docs/benchmarks.md) | The benchmark protocol (five conditions × N trials measuring the lift in DS-compliance score) and its known limits |
+| [docs/distribution.md](./docs/distribution.md) | npm entry contract, deep-import compatibility, vendor path, package-split plan |
+| [docs/ai-ready-ds-maturity-model.md](./docs/ai-ready-ds-maturity-model.md) | An AI-Ready maturity model (Lv0 None → Lv4 Verified) you can run against any project |
+| [design/compat/google-designmd.md](./design/compat/google-designmd.md) | Mapping against the Google Labs [design.md spec](https://github.com/google-labs-code/design.md). melta's `DESIGN.md` carries spec-compatible front matter and passes `npx @google/design.md lint` with errors: 0. The difference in reach: the spec validates the DESIGN.md file itself, melta validates the generated code through CI and hooks |
 
-One contract package feeds two implementations: web (this repo, HTML + Tailwind) and [melta-app](https://github.com/tsubotax/melta-app) (React Native). Contracts are split into a **normative core** (variant vocabulary, states, tokenRefs, a11y — shared across platforms; `platformSemantics` declares where divergence is legitimate, e.g. hover→pressed, elevation decomposition, 44pt touch targets) and **platform recipes** (`recipes/web/` generated from contracts and freshness-checked in CI; `recipes/app/` hand-authored React Native styleRefs, 100% token references). Enforcement runs both ways: `design:compat` diffs the published npm package against HEAD and forces semver bumps on breaking changes, while melta-app's consumer tests go red if web breaks a token, a contract key, or version sync.
+<!-- sec: license -->
+## License
 
----
+MIT License — [LICENSE](./LICENSE). Icon licenses are listed in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
 
-## Quick Start
-
-**Claude Code** — drop the repo in your project root; Claude auto-loads `DESIGN.md` + `CLAUDE.md`. Just describe the UI.
-
-**MCP (any agent)** — add the server:
-```jsonc
-{ "mcpServers": { "melta-ui": { "command": "npx", "args": ["-y", "melta-ds-mcp"] } } }
-```
-
-On connect, MCP `instructions` explain that melta is a contracts/rules/lint-driven
-system rather than a ready-made CSS component library. Agents are directed to read
-`melta://design-constitution`, use the existing lookup tools, and run `check_html`
-before presenting generated HTML/JSX/Vue as a `lint-clean draft / brand-unapproved`.
-
-**Contracts only** — `npm install melta-contracts` and read `tokens.json` / `rules.json` / `components/*.contract.json` directly.
-
----
-
-## How AI-ready is *your* design system?
-
-See [docs/ai-ready-ds-maturity-model.md](./docs/ai-ready-ds-maturity-model.md) — a 5-level maturity model (Lv0 None → Lv4 Verified) you can run against any project with any AI agent, with melta UI as the Lv.4 reference.
-
----
-
-MIT · https://github.com/tsubotax/melta-ui
+Acknowledgments: [Charcoal Icons](https://github.com/pixiv/charcoal) (pixiv Inc., Apache License 2.0) / [Lucide Icons](https://github.com/lucide-icons/lucide) (ISC License) / [Tailwind CSS](https://tailwindcss.com/)

@@ -8,6 +8,7 @@
  *    / showcase の version 表示が ds-version-label で置換対象になっているか
  * 4. 全 contract に対応する components/*.md が存在するか
  * 5. rules.json の全ルール ID が一意（validate.ts と重複するが独立チェック）
+ * 6. README.md ↔ README.en.md の構造 parity（check-readme-parity.ts に委譲）
  */
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -17,6 +18,7 @@ import { getContractStats } from "../../src/utils/contract-stats.js";
 import { isAutoDetectable } from "../../src/utils/matcher.js";
 import { getAllRules } from "../../src/utils/loader.js";
 import { buildFrontMatter } from "./export-designmd.js";
+import { checkReadmeParity } from "./check-readme-parity.js";
 import {
   isDocOnlyGuarded,
   renderCoverageBlock,
@@ -539,6 +541,15 @@ if (!existsSync(loopPlaybookPath)) {
     ok("Loop playbook: 3-Level 分類表現あり");
   }
 }
+
+// --- 11. README 日英 parity ---
+// 手書き 2 枚の入口（README.md / README.en.md）は片方だけ更新されると静かに乖離する。
+// 「同一アウトラインで運用する」は運用ルールであって SSOT ではないので機械照合する。
+section("11. README 日英 parity");
+
+const parity = checkReadmeParity(root);
+for (const o of parity.oks) ok(o);
+for (const d of parity.drifts) drift(d);
 
 // --- Summary ---
 section("Summary");
