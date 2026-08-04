@@ -69,7 +69,7 @@ jobs:
         run: npm run build
 
       - name: Pack Smoke (npm pack → 展開 → 同梱 contracts version + deep import の consumer 検証)
-        run: npm run check:pack
+        run: npm run check:pack -- --require-network
 
   test:
     runs-on: ubuntu-latest

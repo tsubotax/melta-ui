@@ -128,6 +128,11 @@ async function main(): Promise<void> {
     readFileSync(resolve(root, "design/contracts/package.json"), "utf-8")
   ).version as string;
 
+  // CI では registry 到達を必須にする（--require-network / env）。取得失敗を warn で流すと
+  // 「同期検査を実施できないまま緑」になり、stale 再発防止ゲートが実質無効化されるため。
+  const requireNetwork =
+    process.argv.includes("--require-network") ||
+    process.env.MELTA_PACK_SMOKE_REQUIRE_NETWORK === "1";
   let registryVersion: string | null = null;
   try {
     registryVersion = execFileSync("npm", ["view", "melta-contracts", "version"], {
@@ -136,10 +141,14 @@ async function main(): Promise<void> {
       stdio: ["ignore", "pipe", "pipe"],
     }).trim();
   } catch (e) {
-    warn(
-      `registry の melta-contracts version を取得できませんでした（オフライン想定）: ` +
-        `${(e as Error).message.split("\n")[0]}`
-    );
+    const msg =
+      `registry の melta-contracts version を取得できませんでした: ` +
+      `${(e as Error).message.split("\n")[0]}`;
+    if (requireNetwork) {
+      fail(`${msg}（--require-network 指定のため failure。CI はネットワーク必須）`);
+    } else {
+      warn(`${msg}（オフライン想定で継続）`);
+    }
   }
 
   if (registryVersion) {
