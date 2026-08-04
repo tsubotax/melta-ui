@@ -205,6 +205,10 @@ import tokens from "melta-contracts/tokens" with { type: "json" };
 import rules from "melta-contracts/rules" with { type: "json" };
 ```
 
+#### パッケージ構成の今後について
+
+将来、検証エンジン（`melta`）とルールセット（`melta-contracts`）を eslint 型に分離する方向で検討している。`melta-ds-mcp` は互換を維持したまま段階的に移行する予定で、現在の entry（`melta-ds-mcp` / `melta-ds-mcp/lint-core` / `melta-ds-mcp/loader` および `dist/*`・`design/*`・`metadata/*` の deep import）を予告なく壊すことはしない。時期・パッケージ名は未確定。
+
 ### MCP サーバー（このリポジトリを clone した場合）
 
 `.mcp.json` 同梱のため、リポジトリ内では `npm install` だけで Claude Code に自動接続される。手動登録する場合:
@@ -259,6 +263,7 @@ npm run design:check          # Schema + ルール + tokenRef 検証
 npm run design:coverage        # 検証カバレッジ（経路別マトリクス）
 npm run design:drift           # ドキュメント ↔ contracts の drift 検出
 npm run design:compat          # 互換ゲート（npm 公開版 vs HEAD の破壊的変更 × semver 検査）
+npm run check:pack             # 配布物 smoke（npm pack → 展開 → 同梱 contracts version + deep import）
 npm run design:recipes         # 契約 → recipes/web/ の Tailwind レシピ生成
 npm run design:build           # contract → metadata/components.json 生成 + tsc
 npm run design:update-showcase # showcase の数値を contracts から自動更新

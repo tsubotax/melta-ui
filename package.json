@@ -1,6 +1,6 @@
 {
   "name": "melta-ds-mcp",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "melta UI — AI-Ready Design System with MCP server (design tokens, component contracts, prohibition rules, check_html self-verification)",
   "type": "module",
   "mcpName": "io.github.tsubotax/melta-ui",
@@ -24,12 +24,23 @@
   "bin": {
     "melta-ds-mcp": "./dist/index.js"
   },
+  "exports": {
+    ".": "./dist/index.js",
+    "./lint-core": "./dist/utils/lint-core.js",
+    "./loader": "./dist/utils/loader.js",
+    "./package.json": "./package.json",
+    "./dist/*": "./dist/*",
+    "./design/*": "./design/*",
+    "./metadata/*": "./metadata/*"
+  },
   "files": [
     "dist",
     "design/contracts/tokens.json",
     "design/contracts/tokens.dtcg.json",
     "design/contracts/rules.json",
     "design/contracts/components",
+    "design/contracts/package.json",
+    "design/schemas",
     "metadata",
     "DESIGN.md",
     "AGENTS.md",
@@ -37,6 +48,8 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepack": "npm run build",
+    "check:pack": "tsx scripts/design/pack-smoke.ts",
     "generate": "tsx tools/generate-css.ts && tsx tools/generate-tailwind.ts && tsx tools/generate-pen-variables.ts",
     "validate": "tsx tools/validate-tokens.ts",
     "design:check": "tsx scripts/design/validate.ts",

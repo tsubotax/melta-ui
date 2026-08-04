@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-04
+
+### 配布整備 — stale 配布の物理防止 + 公開 entry の明示 + vendor 経路の堅牢化
+
+npm 上の 1.4.0 が 7/19 時点の contracts 0.5.0 を同梱したまま stale 化していた事故を受けた配布まわりの整備。あわせて、将来の engine / ruleset 分離に向けた非破壊の前準備を入れた。
+
+#### Added
+
+- **consumer pack smoke test（`npm run check:pack`）** — `npm pack` した tarball を展開し、① 同梱 `design/contracts/package.json` の version がリポの contracts version と一致するか ② 展開先の `dist/utils/lint-core.js` を deep import して lint が実際に動くか、を消費者視点で検査する。CI（design-check）の必須ステップに追加し、stale 配布を物理的に再発させない（`scripts/design/pack-smoke.ts`）
+- **`prepack` script** — pack / publish の直前に必ず `npm run build` が走る。dist の作り忘れによる空配布を封じる
+- **`exports` フィールド** — `.` / `./lint-core` / `./loader` / `./package.json` の公開 entry を明示。既存の deep import（`melta-ds-mcp/dist/*` / `./design/*` / `./metadata/*`）は pattern で維持し非破壊。解決経路は実際の Node 解決器で検査（`tests/package-exports.spec.ts`）
+- **`--melta-root=<path>` 引数でのアセット root 差し替え** — 優先順位は `--melta-root` > `MELTA_ROOT` > パッケージ相対。MCP の起動コマンドに直接書けるようになった（従来の `MELTA_ROOT` 経路は完全互換で維持）
+- **`design/schemas` を配布物に追加** — component contract / recipe / rule の 3 スキーマを公開資産化。vendor 先が自前の契約を melta のスキーマで検証できる
+- **`design/contracts/package.json` を配布物に追加** — 同梱 contracts の version を消費者が確認できる（pack smoke の照合対象）
+- MELTA_ROOT / `--melta-root` 経路のテスト補強 — fixture に `design/contracts/tokens.json` を追加し、`get_token` / `search` が root 差し替えで動くことと、引数が env より優先されることを固定（`tests/mcp-server.spec.ts`）
+
+#### Changed
+
+- **`loadTokens` / `loadComponents` に診断付き try/catch** — アセット欠落時に生の ENOENT を投げていた経路を、期待パス・解決した root・`--melta-root` / `MELTA_ROOT` の案内を含むメッセージに統一（`loadRules` / `loadDesignConstitution` と同じ流儀）
+
+#### Removed
+
+- **`loadScreens` を削除** — `metadata/screens.json` を読む loader だが src / scripts のどこからも呼ばれていないデッドコードだった。`metadata/screens.json` 自体は配布物として残す
+
 ## [1.4.0] - 2026-07-19
 
 ### DADS 取り込み — Baseline 線引き + disabled 併記 + 44px タップ領域 + リセットCSS VRT

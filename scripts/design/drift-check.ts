@@ -463,6 +463,7 @@ if (!existsSync(loopPlaybookPath)) {
       "npm run design:llms",
       "npm run validate",
       "npm run build",
+      "npm run check:pack",
       "npm test",
     ];
     const missingFromWorkflow = requiredCiCommands.filter((cmd) => !workflow.includes(cmd));
