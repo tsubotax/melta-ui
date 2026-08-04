@@ -124,6 +124,22 @@ async function main(): Promise<void> {
 
   section("2. registry の melta-contracts とリポの同期（stale 配布の検知）");
 
+  // lockfile の root version 不整合は「1.5.0 を publish したのに lock は 1.4.0」という
+  // リリース commit の信頼性問題として実際に2回起きた（melta-app 0.5.3 / melta-ui 1.5.0、
+  // どちらも Codex レビューで発覚）。ここで機械検査して再発を止める。
+  const pkgVersion = JSON.parse(readFileSync(resolve(root, "package.json"), "utf-8"))
+    .version as string;
+  const lock = JSON.parse(readFileSync(resolve(root, "package-lock.json"), "utf-8"));
+  if (lock.version !== pkgVersion || lock.packages?.[""]?.version !== pkgVersion) {
+    fail(
+      `package-lock.json の version が package.json (${pkgVersion}) と不一致です ` +
+        `(root=${lock.version} / packages[""]=${lock.packages?.[""]?.version})。` +
+        `npm install --package-lock-only で同期すること`
+    );
+  } else {
+    ok(`lockfile の version 同期: ${pkgVersion}`);
+  }
+
   const repoContractsVersion = JSON.parse(
     readFileSync(resolve(root, "design/contracts/package.json"), "utf-8")
   ).version as string;

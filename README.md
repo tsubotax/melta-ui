@@ -4,7 +4,7 @@
 
 **人間にも、AIにも、読めるデザインシステム。**
 
-> 🤖 **Built for AI coding agents** — Claude Code / Cursor / **Codex** が `DESIGN.md` と JSON contracts を読んで DS 準拠の UI を生成し、CI で違反を検知する。
+> 🤖 **Built for AI coding agents** — Claude Code / Cursor / **Codex** が `DESIGN.md` と JSON contracts を読んで DS 準拠の UI を生成し、CI で違反を検知する（105 ルール中 48 を静的自動検出。残りも検証経路を分類・可視化 — 詳細は検証カバレッジ表）。
 
 ---
 
@@ -146,7 +146,7 @@ AI (内部):
 
 > 「宣言だけで検知ゼロ」だった a11y ルール 7 件を棚卸しし、3 件を DOM 検証で蘇生（icon-only button / ×ボタン / skeleton の aria）、4 件は静的不能/test 担保として `automationStatus` で明示。各ルールの状態は `rules.json` の `automationStatus` フィールドが SSOT。
 
-#### リセットCSS差し替え VRT — どのサイトに貼っても 1px も変わらない
+#### リセットCSS差し替え VRT — 5 種の代表的リセット CSS 環境で差分 0px
 
 生成 UI はホストサイトのリセットCSS（Normalize / Bootstrap Reboot / Tailwind Preflight / Eric Meyer / kiso.css）の上に置かれる。流派ごとの `border: 0` や body 直指定 font が数 px の崩れを起こすが、人間の目視では検出できない。melta は 5 種のリセットを melta スタックより前に注入し、**pixelmatch の literal 比較（threshold 0）で差分 0px** を機械検証する（`npm run test:reset-vrt`）。fixture は契約 htmlSample から実行時に組み立てるためコピー drift も発生しない。検証で発見した貫通経路 3 系統は `ds-theme.css` の Host-Reset Defense 層が封鎖している。
 
