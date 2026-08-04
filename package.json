@@ -48,6 +48,7 @@
     "build": "tsc",
     "prepack": "npm run build",
     "check:pack": "tsx scripts/design/pack-smoke.ts",
+    "check:readme-parity": "tsx scripts/design/check-readme-parity.ts",
     "generate": "tsx tools/generate-css.ts && tsx tools/generate-tailwind.ts && tsx tools/generate-pen-variables.ts",
     "validate": "tsx tools/validate-tokens.ts",
     "design:check": "tsx scripts/design/validate.ts",
