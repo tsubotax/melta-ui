@@ -2,18 +2,18 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.tsubotax/melta-ui",
   "title": "melta UI",
-  "description": "AI-Ready design system MCP: melta UI tokens, component contracts, 99 rules, check_html self-verify",
+  "description": "AI-Ready design system MCP: melta UI tokens, component contracts, 105 rules, check_html self-verify",
   "repository": {
     "url": "https://github.com/tsubotax/melta-ui",
     "source": "github"
   },
   "websiteUrl": "https://melta.tsubotax.com",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "melta-ds-mcp",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "transport": {
         "type": "stdio"
       }

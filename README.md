@@ -120,11 +120,14 @@ AI (内部):
 
 | 層 | 対象 | 仕組み |
 |---|---|---|
-| **PostToolUse hook** | Claude Code | `.claude/settings.json` に同梱（クローンするだけで有効化候補に）。Write/Edit 直後に lint が走り、error は block フィードバックで Claude が自動修正、warn は additionalContext で助言注入 |
-| **CI** | 全エージェント | `.github/workflows/design-check.yml` が PR / push の変更ファイルを禁止パターン検査 |
-| **CLI** | Codex / Cursor 等 | `npm run design:lint-generated -- <file>` 。各エージェントのフック機構に組み込み可能 |
+| **PostToolUse hook** | Claude Code | このリポジトリを clone した場合のみ。`.claude/settings.json` 同梱で、Write/Edit 直後に lint が走り、error は block フィードバックで Claude が自動修正、warn は additionalContext で助言注入 |
+| **CI** | 全エージェント（clone 時） | `.github/workflows/design-check.yml` が PR / push の変更ファイルを禁止パターン検査 |
+| **CLI** | Codex / Cursor 等（clone 時） | `npm run design:lint-generated -- <file>` 。各エージェントのフック機構に組み込み可能 |
+| **lint-core / MCP `check_html`** | npm 消費者 | 1.5.0 で公開 entry 化した `melta-ds-mcp/lint-core` を自前のフック / CI から呼ぶか、MCP の `check_html` を使う。CI と同一ロジック |
 
-> hook は `npm install` 後に有効（未インストール時はその旨をコンテキストに通知）。Claude Code 以外のエージェントには CI + CLI が代替層。
+> **clone 経路と npm 経路で届く層が違う**。上の hook / CI / CLI は「このリポジトリを clone して使う」前提の層で、`npm install` した消費者には届かない。npm 経路で使える強制層は `melta-ds-mcp/lint-core`（1.5.0 で公開 entry 化。`melta-ds-mcp/dist/utils/lint-core.js` の deep import も互換 passthrough として維持）と MCP の `check_html` の 2 つで、これを各プロジェクトのフック / CI に自前で組み込む。
+>
+> hook は clone 後の `npm install` で有効（未インストール時はその旨をコンテキストに通知）。Claude Code 以外のエージェントには CI + CLI が代替層。
 
 #### 検証カバレッジ（`npm run design:coverage` で再生成）
 
@@ -265,7 +268,7 @@ npm run design:check          # Schema + ルール + tokenRef 検証
 npm run design:coverage        # 検証カバレッジ（経路別マトリクス）
 npm run design:drift           # ドキュメント ↔ contracts の drift 検出
 npm run design:compat          # 互換ゲート（npm 公開版 vs HEAD の破壊的変更 × semver 検査）
-npm run check:pack             # 配布物 smoke（npm pack → 展開 → 同梱 contracts version + deep import）
+npm run check:pack             # 配布物 smoke（npm pack → 展開 → registry の melta-contracts と同期検査 + schemas 3 種の同梱 + 公開 entry / deep import 両 specifier の consumer import）
 npm run design:recipes         # 契約 → recipes/web/ の Tailwind レシピ生成
 npm run design:build           # contract → metadata/components.json 生成 + tsc
 npm run design:update-showcase # showcase の数値を contracts から自動更新

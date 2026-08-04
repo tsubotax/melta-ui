@@ -63,6 +63,7 @@ npm run design:check          # static harness（ルール検証・contract検�
 npm run design:lint-generated # 生成 HTML/TSX の禁止パターン検査（error で exit 1）
 npm run design:drift          # ドキュメント ↔ contracts の drift 検出
 npm run design:compat         # 互換ゲート（npm 公開版 vs HEAD、breaking 分類 + semver 強制）
+npm run check:pack            # 配布物 smoke（npm pack → registry の melta-contracts と同期検査 + schemas 3 種 + 両 specifier の consumer import）
 npm run design:recipes        # 契約 → recipes/web/ 生成（app recipe は手書き）
 npm run design:build          # contract → metadata/components.json + llms.txt 生成
 npm run validate              # tokens.json vs ds-config.js / ds-theme.css の整合性
@@ -105,7 +106,7 @@ npm run build                 # TypeScript → dist/（MCP サーバー）
 
 **Components (28)**: button, card, checkbox, modal, sidebar, textfield, select, dropdown, radio, toggle, toast, list, badge, tag, table, tooltip, tabs, breadcrumb, pagination, avatar, progress, alert, accordion, skeleton, datepicker, divider, stepper, copy-button — 各 `components/{name}.md`
 
-**Contracts**: `design/contracts/components/*.contract.json` — 機械可読仕様（web 28 + app 先行 5）
+**Contracts**: `design/contracts/components/*.contract.json` — 機械可読仕様（web 28 + app 先行 12）
 
 **Patterns (5)**: layout, form, navigation, interaction-states, responsive — 各 `patterns/{name}.md`
 

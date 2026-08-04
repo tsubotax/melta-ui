@@ -4,7 +4,8 @@
  * 検出項目:
  * 1. DESIGN.md のルール件数 vs rules.json の実件数
  * 2. showcase (docs/index.html) のコンポーネント数 vs contracts
- * 3. package.json の version vs showcase の MELTA_VERSION
+ * 3. package.json の version vs showcase の MELTA_VERSION / server.json（version 2 箇所 + ルール件数）
+ *    / showcase の version 表示が ds-version-label で置換対象になっているか
  * 4. 全 contract に対応する components/*.md が存在するか
  * 5. rules.json の全ルール ID が一意（validate.ts と重複するが独立チェック）
  */
@@ -183,6 +184,43 @@ if (existsSync(docsPath)) {
     } else {
       ok(`version 一致: ${pkgVersion}`);
     }
+  }
+}
+
+// server.json（MCP Registry 公開マニフェスト）の version 2 箇所
+// publish 後に bump し忘れると registry に古い版が居座る（1.4.0 stale 事故の再発防止）
+const serverJson = JSON.parse(readFileSync(resolve(root, "server.json"), "utf-8"));
+const serverVersions = [serverJson.version, serverJson.packages?.[0]?.version];
+const serverVersionMismatch = serverVersions.filter((v) => v !== pkgVersion);
+if (serverVersionMismatch.length > 0) {
+  drift(`server.json: version ${serverVersionMismatch.join(",")} vs package.json: ${pkgVersion}`);
+} else {
+  ok(`server.json version 一致: ${pkgVersion}（2 箇所）`);
+}
+
+// server.json description のルール件数
+const serverRuleMatch = String(serverJson.description ?? "").match(/(\d+)\s*rules/);
+if (!serverRuleMatch) {
+  drift("server.json の description にルール件数の記載が見つかりません");
+} else if (parseInt(serverRuleMatch[1]) !== actualRuleCount) {
+  drift(`server.json description: ${serverRuleMatch[1]} rules vs rules.json: ${actualRuleCount} 件`);
+} else {
+  ok(`server.json description のルール件数一致: ${actualRuleCount} 件`);
+}
+
+// showcase の version 表示は ds-showcase.js が .ds-version-label だけを置換する。
+// クラスを付け忘れた "v1.2" 表記は置換対象外＝永久 stale になるので、全 v 表記を検査する。
+if (existsSync(docsPath)) {
+  const docsHtml = readFileSync(docsPath, "utf-8");
+  const unlabeled = [...docsHtml.matchAll(/<(span|p)\b([^>]*)>([^<]*\bv\d+\.\d+[^<]*)<\/\1>/g)]
+    .filter((m) => !m[2].includes("ds-version-label"))
+    .map((m) => m[3].trim());
+  if (unlabeled.length > 0) {
+    drift(
+      `docs/index.html: ds-version-label が付いていない version 表示（置換対象外＝永久 stale）: ${unlabeled.join(" / ")}`
+    );
+  } else {
+    ok("docs/index.html の version 表示はすべて ds-version-label 付き");
   }
 }
 

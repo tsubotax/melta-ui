@@ -33,7 +33,7 @@ Layer 2 — Specification (machine-readable SSOT)
 
 Layer 3 — Verification (violations don't pass)
   scripts/design/    validate / drift-check / lint-generated
-  tests/             Playwright + axe-core (170 tests)
+  tests/             Playwright + axe-core (248 tests)
   .github/workflows/ CI runs all of the above on every push/PR
 ```
 
@@ -70,9 +70,12 @@ Layer 3 — Verification (violations don't pass)
 
 | Layer | For | How |
 |-------|-----|-----|
-| **PostToolUse hook** | Claude Code | Shipped in `.claude/settings.json`. On Write/Edit of HTML, lint runs: `error` blocks (the agent auto-fixes), `warn` is injected as advice |
-| **CI** | every agent | `.github/workflows/design-check.yml` checks changed files for prohibited patterns on each PR/push |
-| **CLI** | Codex / Cursor / etc. | `npm run design:lint-generated -- <file>` — wire into any agent's hook system |
+| **PostToolUse hook** | Claude Code (cloned repo only) | Shipped in `.claude/settings.json`. On Write/Edit of HTML, lint runs: `error` blocks (the agent auto-fixes), `warn` is injected as advice |
+| **CI** | every agent (cloned repo only) | `.github/workflows/design-check.yml` checks changed files for prohibited patterns on each PR/push |
+| **CLI** | Codex / Cursor / etc. (cloned repo only) | `npm run design:lint-generated -- <file>` — wire into any agent's hook system |
+| **lint-core / MCP `check_html`** | npm consumers | `melta-ds-mcp/lint-core` (a public export entry since 1.5.0) called from your own hook/CI, or the MCP `check_html` tool. Same lint logic as CI |
+
+> **Clone path and npm path ship different layers.** The hook, CI and CLI rows above assume you cloned this repository; they do *not* reach a project that merely ran `npm install`. What an npm consumer gets is `melta-ds-mcp/lint-core` (plus the `melta-ds-mcp/dist/utils/lint-core.js` deep import kept as a compatibility passthrough) and the MCP `check_html` tool — wire either one into your own hook or CI.
 
 ### Verification coverage — a route-based KPI (not a single number)
 
@@ -102,6 +105,14 @@ Generated UI lands on top of whatever reset CSS the host site uses. melta inject
 - **npm** — `npx -y melta-ds-mcp` runs the MCP server standalone; `melta-contracts` ships the tokens/rules/contracts JSON (framework-agnostic, consumed by web *and* React Native).
 - **MCP Registry** — `io.github.tsubotax/melta-ui`.
 - **Web** — `DESIGN.md`, `AGENTS.md`, `llms.txt` / `llms-full.txt` served at https://melta.tsubotax.com.
+
+### What 1.5.0 changed for consumers
+
+- **Public export entry** — `melta-ds-mcp/lint-core` is now a declared entry in `exports`, so consumers can run the same lint as CI from their own hook or pipeline. The previous `melta-ds-mcp/dist/utils/lint-core.js` deep import stays as a compatibility passthrough; `design/*` and `metadata/*` deep imports are likewise not broken without notice.
+- **Bare import is unsupported** — `import "melta-ds-mcp"` is not a supported entry: it is a CLI that boots a stdio server on import. Use `npx melta-ds-mcp` (MCP server) or the subpaths above.
+- **`--melta-root=<path>`** — swap the asset root straight from the MCP launch command (precedence: `--melta-root` > `MELTA_ROOT` > package-relative), so a vendor can serve its own contracts through the same server. A value-less `--melta-root` exits with a config error instead of silently falling back.
+- **Bundled schemas** — the tarball ships `design/schemas/{component-contract,recipe,rule}.schema.json` (plus `design/contracts/package.json`, so consumers can read the bundled contracts version) — a vendor can validate its own contracts against the published schema.
+- **`check:pack`** — a consumer-perspective smoke gate: `npm pack` → extract → check the bundled contracts version against the `melta-contracts` release on the registry → verify the three schemas are present and parse → `npm install` the tarball into a temp consumer and lint through *both* specifiers (public entry and deep import). This is what keeps a `melta-ds-mcp` release from shipping stale contracts.
 
 ### Multi-platform contracts
 

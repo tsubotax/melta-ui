@@ -255,7 +255,7 @@ than rewrite policy.
 | Substrate | GitHub Actions plus local release script |
 | Context | `package.json`, `.github/workflows/design-check.yml`, MCP server, docs site, package files |
 | Action | Run existing CI checks, add package and MCP smoke checks, produce readiness report |
-| Verify | `npm run design:check`, `npm run design:lint-generated -- --baseline .design-baseline.json examples/*.html docs/*.html`, `npm run design:drift`, `npm run design:compat`, `npm run design:llms`, `npm run validate`, `npm run build`, `npm test`, `npm run check:pack` (npm pack consumer smoke: bundled contracts version plus deep import), MCP boot smoke |
+| Verify | `npm run design:check`, `npm run design:lint-generated -- --baseline .design-baseline.json examples/*.html docs/*.html`, `npm run design:drift`, `npm run design:compat`, `npm run design:llms`, `npm run validate`, `npm run build`, `npm test`, `npm run check:pack` (npm pack consumer smoke: bundled contracts version synced against the `melta-contracts` release on the registry, the three bundled schemas, and a temp-consumer install that lints through both specifiers — public entry `melta-ds-mcp/lint-core` and the `dist/utils/lint-core.js` deep import), MCP boot smoke |
 | Stop | All checks pass and report says release ready; publish/deploy remains human action |
 | Human Gate | Publish, deploy, version bump, protected branch commit or push |
 | Escalation payload | Failing command, package/MCP smoke evidence, changed paths, release decision question |
