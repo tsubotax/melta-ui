@@ -1,4 +1,5 @@
 import { loadTokens, loadComponents } from "../utils/loader.js";
+import { readClassValue } from "../utils/class-value.js";
 
 interface SearchResult {
   type: "token" | "component";
@@ -42,19 +43,19 @@ export function search(query: string): SearchResponse {
     const anatomyText = Array.isArray(comp.anatomy)
       ? comp.anatomy.join(" ")
       : Object.entries(comp.anatomy ?? {})
-          .map(([part, p]) => `${part} ${p.description ?? ""} ${p.tailwind ?? ""}`)
+          .map(([part, p]) => `${part} ${p.description ?? ""} ${readClassValue(p, part) ?? ""}`)
           .join(" ");
     // variant は `name + tailwind` を索引しているので、stateSpec / anatomy の差分クラスも
     // tailwind まで索引してパリティを取る（"cursor-not-allowed" 等のクラスで該当コンポーネントを引ける）
     const stateSpecText = Object.entries(comp.stateSpecs ?? {})
-      .map(([state, s]) => `${state} ${s.description ?? ""} ${s.tailwind ?? ""}`)
+      .map(([state, s]) => `${state} ${s.description ?? ""} ${readClassValue(s, state) ?? ""}`)
       .join(" ");
     const searchable = [
       comp.id,
       comp.name,
       comp.description,
       comp.category,
-      ...comp.variants.map((v) => `${v.name} ${v.tailwind}`),
+      ...comp.variants.map((v) => `${v.name} ${readClassValue(v, v.name) ?? ""}`),
       ...(comp.states ?? []),
       stateSpecText,
       anatomyText,
@@ -106,7 +107,7 @@ function searchTokenObject(
       const searchable = [
         currentPath,
         String((value as Record<string, unknown>).value ?? ""),
-        String((value as Record<string, unknown>).tailwind ?? ""),
+        String(readClassValue(value, "token") ?? ""),
       ]
         .join(" ")
         .toLowerCase();

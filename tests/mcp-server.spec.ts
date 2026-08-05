@@ -314,6 +314,41 @@ test.describe("アセット root の差し替え（vendor 経路）", () => {
     }
   });
 
+  test("doc を持たない bundle では design-constitution resource を列挙しない（S2 W6）", async () => {
+    // 以前は DESIGN.md の有無に関わらず無条件に列挙していたため、
+    // doc を同梱しない bundle では「list には出るが read すると必ず ENOENT」という
+    // 壊れた resource が残り、クライアントは接続直後に 1 件必ず失敗していた。
+    const fixtureRoot = createMeltaRootFixture(undefined); // DESIGN.md を置かない
+    const client = new Client({ name: "melta-doc-capability", version: "1.0.0" });
+    try {
+      await client.connect(createCliTransport([`--melta-root=${fixtureRoot}`]));
+      const listed = (await client.listResources()) as { resources: Array<{ uri: string }> };
+      const uris = listed.resources.map((r) => r.uri);
+      expect(uris, `design-constitution が列挙されている: ${uris.join(", ")}`).not.toContain(
+        "melta://design-constitution"
+      );
+      // 他の resource は従来どおり出ること（列挙ごと消していないことの確認）
+      expect(uris).toContain("melta://tokens");
+      expect(uris).toContain("melta://rules");
+    } finally {
+      await client.close();
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
+  test("doc を持つ bundle では design-constitution resource が列挙される", async () => {
+    const fixtureRoot = createMeltaRootFixture("# Vendor Design\n");
+    const client = new Client({ name: "melta-doc-capability-on", version: "1.0.0" });
+    try {
+      await client.connect(createCliTransport([`--melta-root=${fixtureRoot}`]));
+      const listed = (await client.listResources()) as { resources: Array<{ uri: string }> };
+      expect(listed.resources.map((r) => r.uri)).toContain("melta://design-constitution");
+    } finally {
+      await client.close();
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
   test("値なしの --melta-root は起動せず設定エラーで落ちる", () => {
     let stderr = "";
     let status: number | null = null;

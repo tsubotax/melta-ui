@@ -17,10 +17,12 @@
       "variants": [
         {
           "name": "single",
+          "class": "border border-slate-200 rounded-lg divide-y divide-slate-200",
           "tailwind": "border border-slate-200 rounded-lg divide-y divide-slate-200"
         },
         {
           "name": "multiple",
+          "class": "border border-slate-200 rounded-lg divide-y divide-slate-200",
           "tailwind": "border border-slate-200 rounded-lg divide-y divide-slate-200"
         }
       ],
@@ -60,6 +62,7 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -192,18 +195,22 @@
       "variants": [
         {
           "name": "info",
+          "class": "bg-primary-50 border border-primary-200 text-primary-800 rounded-lg p-4",
           "tailwind": "bg-primary-50 border border-primary-200 text-primary-800 rounded-lg p-4"
         },
         {
           "name": "success",
+          "class": "bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-4",
           "tailwind": "bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-4"
         },
         {
           "name": "warning",
+          "class": "bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4",
           "tailwind": "bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4"
         },
         {
           "name": "error",
+          "class": "bg-red-50 border border-red-200 text-red-800 rounded-lg p-4",
           "tailwind": "bg-red-50 border border-red-200 text-red-800 rounded-lg p-4"
         }
       ],
@@ -403,30 +410,36 @@
       "variants": [
         {
           "name": "image",
+          "class": "w-10 h-10 rounded-full object-cover",
           "tailwind": "w-10 h-10 rounded-full object-cover"
         },
         {
           "name": "initials",
+          "class": "w-10 h-10 rounded-full bg-primary-50 text-primary-600 font-medium inline-flex items-center justify-center text-sm",
           "tailwind": "w-10 h-10 rounded-full bg-primary-50 text-primary-600 font-medium inline-flex items-center justify-center text-sm"
         },
         {
           "name": "group",
+          "class": "flex -space-x-2",
           "tailwind": "flex -space-x-2"
         }
       ],
       "sizes": [
         {
           "name": "small",
+          "class": "w-8 h-8",
           "tailwind": "w-8 h-8",
           "height": "32px"
         },
         {
           "name": "medium",
+          "class": "w-10 h-10",
           "tailwind": "w-10 h-10",
           "height": "40px"
         },
         {
           "name": "large",
+          "class": "w-12 h-12",
           "tailwind": "w-12 h-12",
           "height": "48px"
         }
@@ -582,22 +595,27 @@
       "variants": [
         {
           "name": "neutral",
+          "class": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700",
           "tailwind": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
         },
         {
           "name": "success",
+          "class": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700",
           "tailwind": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"
         },
         {
           "name": "warning",
+          "class": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700",
           "tailwind": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700"
         },
         {
           "name": "danger",
+          "class": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700",
           "tailwind": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700"
         },
         {
           "name": "accent",
+          "class": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-50 text-primary-700",
           "tailwind": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-50 text-primary-700"
         }
       ],
@@ -633,6 +651,7 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -737,10 +756,12 @@
       "variants": [
         {
           "name": "text-separator",
+          "class": "flex items-center gap-2 text-sm",
           "tailwind": "flex items-center gap-2 text-sm"
         },
         {
           "name": "chevron-separator",
+          "class": "flex items-center gap-2 text-sm",
           "tailwind": "flex items-center gap-2 text-sm"
         }
       ],
@@ -778,46 +799,56 @@
       "variants": [
         {
           "name": "contained",
+          "class": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer",
           "tailwind": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-500 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer"
         },
         {
           "name": "outlined",
+          "class": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer",
           "tailwind": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer"
         },
         {
           "name": "brand-outline",
+          "class": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer",
           "tailwind": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer"
         },
         {
           "name": "neutral",
+          "class": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer",
           "tailwind": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
         },
         {
           "name": "lighted",
+          "class": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors cursor-pointer",
           "tailwind": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors cursor-pointer"
         },
         {
           "name": "danger",
+          "class": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600/50 transition-colors cursor-pointer",
           "tailwind": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600/50 transition-colors cursor-pointer"
         },
         {
           "name": "subtle",
+          "class": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium text-slate-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer",
           "tailwind": "inline-flex items-center justify-center gap-2 h-10 px-4 text-[1rem] font-medium text-slate-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-colors cursor-pointer"
         }
       ],
       "sizes": [
         {
           "name": "small",
+          "class": "h-8 px-3 text-[0.875rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2",
           "tailwind": "h-8 px-3 text-[0.875rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2",
           "height": "32px"
         },
         {
           "name": "medium",
+          "class": "h-10 px-4 text-[1rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2",
           "tailwind": "h-10 px-4 text-[1rem] relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2",
           "height": "40px"
         },
         {
           "name": "large",
+          "class": "h-12 px-6 text-[1rem]",
           "tailwind": "h-12 px-6 text-[1rem]",
           "height": "48px"
         }
@@ -825,16 +856,19 @@
       "iconButton": [
         {
           "name": "small",
+          "class": "w-8 h-8",
           "tailwind": "w-8 h-8",
           "icon": "w-4 h-4"
         },
         {
           "name": "medium",
+          "class": "w-10 h-10",
           "tailwind": "w-10 h-10",
           "icon": "w-5 h-5"
         },
         {
           "name": "large",
+          "class": "w-12 h-12",
           "tailwind": "w-12 h-12",
           "icon": "w-5 h-5"
         }
@@ -842,14 +876,17 @@
       "iconTextPadding": [
         {
           "name": "small",
+          "class": "pl-2.5 pr-3",
           "tailwind": "pl-2.5 pr-3"
         },
         {
           "name": "medium",
+          "class": "pl-3 pr-4",
           "tailwind": "pl-3 pr-4"
         },
         {
           "name": "large",
+          "class": "pl-5 pr-6",
           "tailwind": "pl-5 pr-6"
         }
       ],
@@ -864,13 +901,15 @@
         "disabled": {
           "description": "操作不可。全 variant 共通。",
           "tailwind": "opacity-50 cursor-not-allowed pointer-events-none",
-          "ariaChanges": "disabled 属性 + aria-disabled=\"true\"。hover/focus は効かせない。"
+          "ariaChanges": "disabled 属性 + aria-disabled=\"true\"。hover/focus は効かせない。",
+          "class": "opacity-50 cursor-not-allowed pointer-events-none"
         },
         "loading": {
           "description": "非同期処理中。全 variant 共通。",
           "tailwind": "opacity-70 cursor-wait pointer-events-none",
           "ariaChanges": "aria-busy=\"true\" + disabled。",
-          "htmlNote": "label 前にスピナーを prepend（スピナーのクラスは htmlSample/anatomy 側で表現。htmlNote は prose でリンタ非対象）。"
+          "htmlNote": "label 前にスピナーを prepend（スピナーのクラスは htmlSample/anatomy 側で表現。htmlNote は prose でリンタ非対象）。",
+          "class": "opacity-70 cursor-wait pointer-events-none"
         }
       },
       "platformSemantics": {
@@ -1148,18 +1187,22 @@
       "variants": [
         {
           "name": "basic",
+          "class": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm",
           "tailwind": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm"
         },
         {
           "name": "media",
+          "class": "bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm",
           "tailwind": "bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"
         },
         {
           "name": "action",
+          "class": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow",
           "tailwind": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
         },
         {
           "name": "link",
+          "class": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:border-primary-300 transition-all",
           "tailwind": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:border-primary-300 transition-all"
         }
       ],
@@ -1315,14 +1358,17 @@
       "variants": [
         {
           "name": "default",
+          "class": "w-4 h-4 accent-primary-500 cursor-pointer",
           "tailwind": "w-4 h-4 accent-primary-500 cursor-pointer"
         },
         {
           "name": "disabled",
+          "class": "w-4 h-4 opacity-50 cursor-not-allowed",
           "tailwind": "w-4 h-4 opacity-50 cursor-not-allowed"
         },
         {
           "name": "indeterminate",
+          "class": "w-4 h-4 accent-primary-500 cursor-pointer",
           "tailwind": "w-4 h-4 accent-primary-500 cursor-pointer"
         }
       ],
@@ -1446,26 +1492,31 @@
       "variants": [
         {
           "name": "outlined",
+          "class": "bg-white border border-slate-200 inline-flex items-center justify-center cursor-pointer",
           "tailwind": "bg-white border border-slate-200 inline-flex items-center justify-center cursor-pointer"
         },
         {
           "name": "subtle",
+          "class": "bg-transparent inline-flex items-center justify-center cursor-pointer hover:bg-gray-50",
           "tailwind": "bg-transparent inline-flex items-center justify-center cursor-pointer hover:bg-gray-50"
         }
       ],
       "sizes": [
         {
           "name": "large",
+          "class": "w-12 h-12 p-3 rounded-2xl",
           "tailwind": "w-12 h-12 p-3 rounded-2xl",
           "height": "48px"
         },
         {
           "name": "medium",
+          "class": "w-10 h-10 p-2.5 rounded-xl",
           "tailwind": "w-10 h-10 p-2.5 rounded-xl",
           "height": "40px"
         },
         {
           "name": "small",
+          "class": "w-8 h-8 p-2 rounded-lg",
           "tailwind": "w-8 h-8 p-2 rounded-lg",
           "height": "32px"
         }
@@ -1510,14 +1561,17 @@
       "variants": [
         {
           "name": "trigger",
+          "class": "w-full flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base",
           "tailwind": "w-full flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base"
         },
         {
           "name": "calendar",
+          "class": "absolute mt-1 w-[320px] bg-white rounded-xl border border-slate-200 shadow-md z-20 p-4",
           "tailwind": "absolute mt-1 w-[320px] bg-white rounded-xl border border-slate-200 shadow-md z-20 p-4"
         },
         {
           "name": "day-cell",
+          "class": "w-10 h-10 inline-flex items-center justify-center text-sm rounded-lg",
           "tailwind": "w-10 h-10 inline-flex items-center justify-center text-sm rounded-lg"
         }
       ],
@@ -1537,27 +1591,32 @@
           "description": "カレンダー展開。calendar variant が開いた姿そのもの＝差分なし。",
           "tailwind": "",
           "ariaChanges": "トリガーに aria-expanded=\"true\"。calendarPopup を role=\"dialog\" で表示しフォーカス移動。",
-          "htmlNote": "structural 状態。calendar variant の tailwind（absolute mt-1 ... z-20）が open の表示。default は calendarPopup を hidden で隠す。"
+          "htmlNote": "structural 状態。calendar variant の tailwind（absolute mt-1 ... z-20）が open の表示。default は calendarPopup を hidden で隠す。",
+          "class": ""
         },
         "selected": {
           "description": "選択済み日セル。day-cell 基底への overlay 差分。",
           "tailwind": "bg-primary-500 text-white hover:bg-primary-600",
-          "ariaChanges": "当該 day セルに aria-selected=\"true\"。"
+          "ariaChanges": "当該 day セルに aria-selected=\"true\"。",
+          "class": "bg-primary-500 text-white hover:bg-primary-600"
         },
         "today": {
           "description": "今日のマーカー。day-cell 基底への overlay 差分（選択とは独立）。",
           "tailwind": "font-semibold ring-1 ring-inset ring-primary-300",
-          "htmlNote": "text color は持たず ring + 太字のみ＝selected(bg-primary-500 text-white) と併用しても文字色が衝突しない。未選択時は基底の text 色を継承。"
+          "htmlNote": "text color は持たず ring + 太字のみ＝selected(bg-primary-500 text-white) と併用しても文字色が衝突しない。未選択時は基底の text 色を継承。",
+          "class": "font-semibold ring-1 ring-inset ring-primary-300"
         },
         "error": {
           "description": "不正入力。trigger 基底への overlay 差分。",
           "tailwind": "border-red-600",
-          "ariaChanges": "トリガーに aria-invalid=\"true\" + aria-describedby でエラーメッセージ参照。"
+          "ariaChanges": "トリガーに aria-invalid=\"true\" + aria-describedby でエラーメッセージ参照。",
+          "class": "border-red-600"
         },
         "disabled": {
           "description": "操作不可。全 variant 共通。",
           "tailwind": "opacity-50 cursor-not-allowed pointer-events-none",
-          "ariaChanges": "トリガーに disabled 属性 + aria-disabled=\"true\"。カレンダーを開けない。"
+          "ariaChanges": "トリガーに disabled 属性 + aria-disabled=\"true\"。カレンダーを開けない。",
+          "class": "opacity-50 cursor-not-allowed pointer-events-none"
         }
       },
       "appStatus": "planned",
@@ -1596,14 +1655,17 @@
       "variants": [
         {
           "name": "horizontal",
+          "class": "border-t border-slate-200",
           "tailwind": "border-t border-slate-200"
         },
         {
           "name": "with-text",
+          "class": "flex items-center gap-4",
           "tailwind": "flex items-center gap-4"
         },
         {
           "name": "vertical",
+          "class": "border-l border-slate-200 self-stretch",
           "tailwind": "border-l border-slate-200 self-stretch"
         }
       ],
@@ -1644,14 +1706,17 @@
       "variants": [
         {
           "name": "basic",
+          "class": "absolute top-full mt-1 w-48 bg-white rounded-lg border border-slate-200 shadow-md z-20 py-1",
           "tailwind": "absolute top-full mt-1 w-48 bg-white rounded-lg border border-slate-200 shadow-md z-20 py-1"
         },
         {
           "name": "with-icons",
+          "class": "absolute top-full mt-1 w-48 bg-white rounded-lg border border-slate-200 shadow-md z-20 py-1",
           "tailwind": "absolute top-full mt-1 w-48 bg-white rounded-lg border border-slate-200 shadow-md z-20 py-1"
         },
         {
           "name": "with-separator",
+          "class": "absolute top-full mt-1 w-48 bg-white rounded-lg border border-slate-200 shadow-md z-20 py-1",
           "tailwind": "absolute top-full mt-1 w-48 bg-white rounded-lg border border-slate-200 shadow-md z-20 py-1"
         }
       ],
@@ -1669,17 +1734,20 @@
           "description": "メニュー展開。menuContainer variant が開いた姿そのもの＝差分なし。",
           "tailwind": "",
           "ariaChanges": "triggerButton に aria-expanded=\"true\"。menuContainer を role=\"menu\" で表示。",
-          "htmlNote": "structural 状態。variant の tailwind（absolute top-full ... z-20）が open の表示。default は menuContainer を hidden で隠す。"
+          "htmlNote": "structural 状態。variant の tailwind（absolute top-full ... z-20）が open の表示。default は menuContainer を hidden で隠す。",
+          "class": ""
         },
         "destructive": {
           "description": "破壊的アクションの menuItem。menuItem 基底への overlay 差分。",
           "tailwind": "text-red-700 hover:bg-red-50",
-          "htmlNote": "「削除」等の危険操作項目に適用。アイコンも text-red-600 に揃える。"
+          "htmlNote": "「削除」等の危険操作項目に適用。アイコンも text-red-600 に揃える。",
+          "class": "text-red-700 hover:bg-red-50"
         },
         "disabled": {
           "description": "操作不可。全 variant 共通。",
           "tailwind": "opacity-50 cursor-not-allowed pointer-events-none",
-          "ariaChanges": "トリガーに aria-disabled=\"true\"。開けない（aria-expanded は false のまま）。"
+          "ariaChanges": "トリガーに aria-disabled=\"true\"。開けない（aria-expanded は false のまま）。",
+          "class": "opacity-50 cursor-not-allowed pointer-events-none"
         }
       },
       "appStatus": "planned",
@@ -1711,6 +1779,7 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -1795,6 +1864,7 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -1863,22 +1933,26 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
       "sizes": [
         {
           "name": "sm",
+          "class": "",
           "tailwind": "",
           "height": "16px"
         },
         {
           "name": "md",
+          "class": "",
           "tailwind": "",
           "height": "20px"
         },
         {
           "name": "lg",
+          "class": "",
           "tailwind": "",
           "height": "24px"
         }
@@ -1950,6 +2024,7 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -2010,14 +2085,17 @@
       "variants": [
         {
           "name": "link",
+          "class": "flex items-center gap-3 px-4 py-3 text-body hover:bg-gray-50 border-b border-slate-200 transition-colors",
           "tailwind": "flex items-center gap-3 px-4 py-3 text-body hover:bg-gray-50 border-b border-slate-200 transition-colors"
         },
         {
           "name": "information",
+          "class": "flex items-center gap-3 px-4 py-3 text-body border-b border-slate-200",
           "tailwind": "flex items-center gap-3 px-4 py-3 text-body border-b border-slate-200"
         },
         {
           "name": "action",
+          "class": "flex items-center justify-between px-4 py-3 text-body hover:bg-gray-50 border-b border-slate-200",
           "tailwind": "flex items-center justify-between px-4 py-3 text-body hover:bg-gray-50 border-b border-slate-200"
         }
       ],
@@ -2059,22 +2137,26 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
       "sizes": [
         {
           "name": "sm",
+          "class": "",
           "tailwind": "",
           "height": "26px"
         },
         {
           "name": "md",
+          "class": "",
           "tailwind": "",
           "height": "36px"
         },
         {
           "name": "lg",
+          "class": "",
           "tailwind": "",
           "height": "45px"
         }
@@ -2173,29 +2255,34 @@
         "overlay": {
           "description": "背景バックドロップ。クリックで閉じる。MODAL_OVERLAY_REQUIRED。",
           "element": "div",
-          "tailwind": "bg-black/50 absolute inset-0"
+          "tailwind": "bg-black/50 absolute inset-0",
+          "class": "bg-black/50 absolute inset-0"
         },
         "container": {
           "description": "ダイアログ本体。フォーカストラップ範囲。",
           "element": "div",
           "roles": "role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-title\"",
-          "tailwind": "bg-white rounded-xl p-6 shadow-xl relative z-10"
+          "tailwind": "bg-white rounded-xl p-6 shadow-xl relative z-10",
+          "class": "bg-white rounded-xl p-6 shadow-xl relative z-10"
         },
         "header": {
           "description": "タイトル。aria-labelledby 参照先。",
           "element": "h2",
           "roles": "id=\"modal-title\"",
-          "tailwind": "text-2xl font-bold text-slate-900"
+          "tailwind": "text-2xl font-bold text-slate-900",
+          "class": "text-2xl font-bold text-slate-900"
         },
         "body": {
           "description": "本文。",
           "element": "div",
-          "tailwind": "text-body mt-2"
+          "tailwind": "text-body mt-2",
+          "class": "text-body mt-2"
         },
         "footer": {
           "description": "アクション群(任意)。",
           "element": "div",
-          "tailwind": "flex justify-end gap-3 mt-6"
+          "tailwind": "flex justify-end gap-3 mt-6",
+          "class": "flex justify-end gap-3 mt-6"
         },
         "closeButton": {
           "description": "閉じるボタン。MODAL_CLOSE_REQUIRED。アイコンのみなら aria-label 必須。",
@@ -2206,30 +2293,36 @@
       "variants": [
         {
           "name": "confirmation",
+          "class": "fixed inset-0 flex items-center justify-center z-50",
           "tailwind": "fixed inset-0 flex items-center justify-center z-50"
         },
         {
           "name": "form",
+          "class": "fixed inset-0 flex items-center justify-center z-50",
           "tailwind": "fixed inset-0 flex items-center justify-center z-50"
         },
         {
           "name": "alert",
+          "class": "fixed inset-0 flex items-center justify-center z-50",
           "tailwind": "fixed inset-0 flex items-center justify-center z-50"
         }
       ],
       "sizes": [
         {
           "name": "small",
+          "class": "w-96",
           "tailwind": "w-96",
           "height": "0px"
         },
         {
           "name": "medium",
+          "class": "w-[32rem]",
           "tailwind": "w-[32rem]",
           "height": "0px"
         },
         {
           "name": "large",
+          "class": "w-[48rem]",
           "tailwind": "w-[48rem]",
           "height": "0px"
         }
@@ -2243,18 +2336,21 @@
         "default": {
           "description": "閉。DOM 上 hidden。",
           "tailwind": "hidden",
-          "ariaChanges": "aria-hidden=\"true\"。"
+          "ariaChanges": "aria-hidden=\"true\"。",
+          "class": "hidden"
         },
         "open": {
           "description": "表示。フォーカストラップ作動。",
           "tailwind": "",
           "ariaChanges": "aria-modal=\"true\"。Escape で閉じる(MODAL_ESC_CLOSE_REQUIRED)。",
-          "htmlNote": "variant tailwind（fixed inset-0 flex items-center justify-center z-50）がそのまま open の表示。open は variant 基底＝差分なし。"
+          "htmlNote": "variant tailwind（fixed inset-0 flex items-center justify-center z-50）がそのまま open の表示。open は variant 基底＝差分なし。",
+          "class": ""
         },
         "closing": {
           "description": "閉アニメ中。完了後 hidden に戻し focus 復帰。",
           "tailwind": "opacity-0 transition-opacity duration-150",
-          "htmlNote": "トランジション終了で default(hidden) へ。"
+          "htmlNote": "トランジション終了で default(hidden) へ。",
+          "class": "opacity-0 transition-opacity duration-150"
         }
       },
       "appStatus": "implemented",
@@ -2480,14 +2576,17 @@
       "variants": [
         {
           "name": "active",
+          "class": "w-10 h-10 inline-flex items-center justify-center text-base font-medium text-white bg-primary-500 rounded-lg",
           "tailwind": "w-10 h-10 inline-flex items-center justify-center text-base font-medium text-white bg-primary-500 rounded-lg"
         },
         {
           "name": "inactive",
+          "class": "w-10 h-10 inline-flex items-center justify-center text-base font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-gray-50 transition-colors",
           "tailwind": "w-10 h-10 inline-flex items-center justify-center text-base font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-gray-50 transition-colors"
         },
         {
           "name": "disabled",
+          "class": "w-10 h-10 inline-flex items-center justify-center text-slate-300 cursor-not-allowed",
           "tailwind": "w-10 h-10 inline-flex items-center justify-center text-slate-300 cursor-not-allowed"
         }
       ],
@@ -2530,14 +2629,17 @@
       "variants": [
         {
           "name": "primary",
+          "class": "bg-slate-200 rounded-full h-2",
           "tailwind": "bg-slate-200 rounded-full h-2"
         },
         {
           "name": "success",
+          "class": "bg-slate-200 rounded-full h-2",
           "tailwind": "bg-slate-200 rounded-full h-2"
         },
         {
           "name": "indeterminate",
+          "class": "bg-slate-200 rounded-full h-2 overflow-hidden",
           "tailwind": "bg-slate-200 rounded-full h-2 overflow-hidden"
         }
       ],
@@ -2658,14 +2760,17 @@
       "variants": [
         {
           "name": "vertical",
+          "class": "flex flex-col gap-3",
           "tailwind": "flex flex-col gap-3"
         },
         {
           "name": "horizontal",
+          "class": "flex gap-4",
           "tailwind": "flex gap-4"
         },
         {
           "name": "card-style",
+          "class": "grid grid-cols-2 gap-4",
           "tailwind": "grid grid-cols-2 gap-4"
         }
       ],
@@ -2682,23 +2787,27 @@
         "selected": {
           "description": "選択済み。radioCircle 基底への overlay 差分 + selectedIndicator 表示。",
           "tailwind": "border-primary-500",
-          "ariaChanges": "当該 <input type=\"radio\"> に checked + aria-checked=\"true\"。selectedIndicator（内側ドット bg-primary-500）を表示。"
+          "ariaChanges": "当該 <input type=\"radio\"> に checked + aria-checked=\"true\"。selectedIndicator（内側ドット bg-primary-500）を表示。",
+          "class": "border-primary-500"
         },
         "unselected": {
           "description": "未選択（radioCircle の基底状態）。default の resting と同義＝差分なし。",
           "tailwind": "",
-          "ariaChanges": "aria-checked=\"false\"。selectedIndicator は非表示。"
+          "ariaChanges": "aria-checked=\"false\"。selectedIndicator は非表示。",
+          "class": ""
         },
         "error": {
           "description": "バリデーションエラー。radioCircle 基底への overlay 差分。",
           "tailwind": "border-red-600",
           "ariaChanges": "radiogroup に aria-invalid=\"true\" + aria-describedby で errorText 参照。",
-          "htmlNote": "errorText を text-red-600 で表示。selected と併用時は error の border-red-600 を優先（選択済みでもエラーなら赤枠）。"
+          "htmlNote": "errorText を text-red-600 で表示。selected と併用時は error の border-red-600 を優先（選択済みでもエラーなら赤枠）。",
+          "class": "border-red-600"
         },
         "disabled": {
           "description": "操作不可。全 variant 共通。",
           "tailwind": "opacity-50 cursor-not-allowed pointer-events-none",
-          "ariaChanges": "各 <input type=\"radio\"> に disabled + aria-disabled=\"true\"。"
+          "ariaChanges": "各 <input type=\"radio\"> に disabled + aria-disabled=\"true\"。",
+          "class": "opacity-50 cursor-not-allowed pointer-events-none"
         }
       },
       "appStatus": "implemented",
@@ -2866,6 +2975,7 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -2915,10 +3025,12 @@
       "variants": [
         {
           "name": "fixed",
+          "class": "",
           "tailwind": ""
         },
         {
           "name": "scroll",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -2990,14 +3102,17 @@
       "variants": [
         {
           "name": "default",
+          "class": "appearance-none w-full px-3 py-2 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500/50 pr-10",
           "tailwind": "appearance-none w-full px-3 py-2 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500/50 pr-10"
         },
         {
           "name": "error",
+          "class": "appearance-none w-full px-3 py-2 text-base border border-red-300 rounded-lg focus:ring-2 focus:ring-red-600/50 bg-red-50 pr-10",
           "tailwind": "appearance-none w-full px-3 py-2 text-base border border-red-300 rounded-lg focus:ring-2 focus:ring-red-600/50 bg-red-50 pr-10"
         },
         {
           "name": "disabled",
+          "class": "appearance-none w-full px-3 py-2 text-base border border-slate-200 rounded-lg bg-slate-100 text-slate-400 cursor-not-allowed pr-10",
           "tailwind": "appearance-none w-full px-3 py-2 text-base border border-slate-200 rounded-lg bg-slate-100 text-slate-400 cursor-not-allowed pr-10"
         }
       ],
@@ -3042,25 +3157,30 @@
       "variants": [
         {
           "name": "standard",
+          "class": "w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col h-screen",
           "tailwind": "w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col h-screen"
         },
         {
           "name": "compact",
+          "class": "w-16 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col items-center h-screen",
           "tailwind": "w-16 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col items-center h-screen"
         },
         {
           "name": "drawer",
+          "class": "fixed left-0 top-0 h-screen w-64 bg-white shadow-xl z-50 flex flex-col",
           "tailwind": "fixed left-0 top-0 h-screen w-64 bg-white shadow-xl z-50 flex flex-col"
         }
       ],
       "sizes": [
         {
           "name": "standard",
+          "class": "w-64",
           "tailwind": "w-64",
           "height": "0px"
         },
         {
           "name": "compact",
+          "class": "w-16",
           "tailwind": "w-16",
           "height": "0px"
         }
@@ -3107,14 +3227,17 @@
       "variants": [
         {
           "name": "text",
+          "class": "bg-slate-200 rounded-md h-4 w-full skeleton-pulse",
           "tailwind": "bg-slate-200 rounded-md h-4 w-full skeleton-pulse"
         },
         {
           "name": "card",
+          "class": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm",
           "tailwind": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm"
         },
         {
           "name": "circle",
+          "class": "bg-slate-200 rounded-full w-10 h-10 skeleton-pulse",
           "tailwind": "bg-slate-200 rounded-full w-10 h-10 skeleton-pulse"
         }
       ],
@@ -3238,6 +3361,7 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -3289,21 +3413,25 @@
       "variants": [
         {
           "name": "horizontal",
+          "class": "flex items-center",
           "tailwind": "flex items-center"
         },
         {
           "name": "vertical",
+          "class": "space-y-0",
           "tailwind": "space-y-0"
         }
       ],
       "sizes": [
         {
           "name": "standard",
+          "class": "w-8 h-8 text-sm",
           "tailwind": "w-8 h-8 text-sm",
           "height": "32px"
         },
         {
           "name": "compact",
+          "class": "w-6 h-6 text-xs",
           "tailwind": "w-6 h-6 text-xs",
           "height": "24px"
         }
@@ -3342,6 +3470,7 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -3394,7 +3523,8 @@
         "wrapper": {
           "description": "角丸ボーダーのコンテナ。",
           "element": "div",
-          "tailwind": "bg-white rounded-xl border border-slate-200 overflow-hidden"
+          "tailwind": "bg-white rounded-xl border border-slate-200 overflow-hidden",
+          "class": "bg-white rounded-xl border border-slate-200 overflow-hidden"
         },
         "caption": {
           "description": "テーブル説明(推奨)。SR 向け。",
@@ -3404,26 +3534,31 @@
           "description": "列見出し。scope=\"col\" 必須(TABLE_TH_SCOPE_REQUIRED)。sortable variant では aria-sort=\"none|ascending|descending\" を付与しクリック/Enter でトグル、ラベル+方向アイコンを inline-flex。",
           "element": "th",
           "roles": "scope=\"col\"",
-          "tailwind": "text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wider"
+          "tailwind": "text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wider",
+          "class": "text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wider"
         },
         "row": {
           "description": "tbody 行。hover ハイライト。",
           "element": "tr",
-          "tailwind": "hover:bg-gray-50 transition-colors"
+          "tailwind": "hover:bg-gray-50 transition-colors",
+          "class": "hover:bg-gray-50 transition-colors"
         },
         "td": {
           "description": "データセル。",
           "element": "td",
-          "tailwind": "py-3 px-4 text-sm text-slate-900"
+          "tailwind": "py-3 px-4 text-sm text-slate-900",
+          "class": "py-3 px-4 text-sm text-slate-900"
         }
       },
       "variants": [
         {
           "name": "basic",
+          "class": "w-full",
           "tailwind": "w-full"
         },
         {
           "name": "sortable",
+          "class": "w-full",
           "tailwind": "w-full"
         }
       ],
@@ -3437,7 +3572,8 @@
         "empty": {
           "description": "0件。空状態行を表示。全 variant 共通。",
           "tailwind": "",
-          "htmlNote": "<tbody> 内に colspan 全列結合の1行で中央寄せ「データがありません」。"
+          "htmlNote": "<tbody> 内に colspan 全列結合の1行で中央寄せ「データがありません」。",
+          "class": ""
         }
       },
       "appStatus": "not-planned",
@@ -3473,18 +3609,22 @@
       "variants": [
         {
           "name": "underline-active",
+          "class": "px-4 py-2.5 text-sm font-semibold text-primary-500 border-b-2 border-primary-500 cursor-default",
           "tailwind": "px-4 py-2.5 text-sm font-semibold text-primary-500 border-b-2 border-primary-500 cursor-default"
         },
         {
           "name": "underline-inactive",
+          "class": "px-4 py-2.5 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700 cursor-pointer",
           "tailwind": "px-4 py-2.5 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700 cursor-pointer"
         },
         {
           "name": "bar-active",
+          "class": "flex-1 relative flex items-center justify-center py-4 text-sm font-semibold text-slate-900 hover:bg-slate-100 cursor-pointer",
           "tailwind": "flex-1 relative flex items-center justify-center py-4 text-sm font-semibold text-slate-900 hover:bg-slate-100 cursor-pointer"
         },
         {
           "name": "bar-inactive",
+          "class": "flex-1 relative flex items-center justify-center py-4 text-sm font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer",
           "tailwind": "flex-1 relative flex items-center justify-center py-4 text-sm font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
         }
       ],
@@ -3501,7 +3641,8 @@
         "disabled": {
           "description": "操作不可。全 variant 共通。",
           "tailwind": "opacity-50 cursor-not-allowed pointer-events-none",
-          "ariaChanges": "tab に aria-disabled=\"true\" + tabindex=\"-1\"（フォーカス・選択不可）。"
+          "ariaChanges": "tab に aria-disabled=\"true\" + tabindex=\"-1\"（フォーカス・選択不可）。",
+          "class": "opacity-50 cursor-not-allowed pointer-events-none"
         }
       },
       "appStatus": "planned",
@@ -3537,14 +3678,17 @@
       "variants": [
         {
           "name": "basic",
+          "class": "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700",
           "tailwind": "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
         },
         {
           "name": "removable",
+          "class": "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700",
           "tailwind": "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
         },
         {
           "name": "filter-chip",
+          "class": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm border border-slate-200 cursor-pointer bg-white text-slate-700",
           "tailwind": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm border border-slate-200 cursor-pointer bg-white text-slate-700"
         }
       ],
@@ -3711,34 +3855,42 @@
       "variants": [
         {
           "name": "xxs",
+          "class": "",
           "tailwind": ""
         },
         {
           "name": "xs",
+          "class": "",
           "tailwind": ""
         },
         {
           "name": "sm",
+          "class": "",
           "tailwind": ""
         },
         {
           "name": "base",
+          "class": "",
           "tailwind": ""
         },
         {
           "name": "lg",
+          "class": "",
           "tailwind": ""
         },
         {
           "name": "xl",
+          "class": "",
           "tailwind": ""
         },
         {
           "name": "2xl",
+          "class": "",
           "tailwind": ""
         },
         {
           "name": "3xl",
+          "class": "",
           "tailwind": ""
         }
       ],
@@ -3865,34 +4017,41 @@
       "variants": [
         {
           "name": "default",
+          "class": "w-full px-3 py-2 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500/50 caret-primary-500",
           "tailwind": "w-full px-3 py-2 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500/50 caret-primary-500"
         },
         {
           "name": "error",
+          "class": "w-full px-3 py-2 text-base border border-red-300 rounded-lg focus:ring-2 focus:ring-red-600/50 bg-red-50",
           "tailwind": "w-full px-3 py-2 text-base border border-red-300 rounded-lg focus:ring-2 focus:ring-red-600/50 bg-red-50"
         },
         {
           "name": "disabled",
+          "class": "w-full px-3 py-2 text-base border border-slate-200 rounded-lg bg-slate-100 text-slate-400 cursor-not-allowed",
           "tailwind": "w-full px-3 py-2 text-base border border-slate-200 rounded-lg bg-slate-100 text-slate-400 cursor-not-allowed"
         },
         {
           "name": "success",
+          "class": "w-full px-3 py-2 text-base border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500/50",
           "tailwind": "w-full px-3 py-2 text-base border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500/50"
         }
       ],
       "sizes": [
         {
           "name": "small",
+          "class": "px-3 py-1.5 text-sm",
           "tailwind": "px-3 py-1.5 text-sm",
           "height": "36px"
         },
         {
           "name": "medium",
+          "class": "px-3 py-2 text-base",
           "tailwind": "px-3 py-2 text-base",
           "height": "42px"
         },
         {
           "name": "large",
+          "class": "px-3 py-2.5 text-lg",
           "tailwind": "px-3 py-2.5 text-lg",
           "height": "48px"
         }
@@ -4091,18 +4250,22 @@
       "variants": [
         {
           "name": "success",
+          "class": "flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-4",
           "tailwind": "flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-4"
         },
         {
           "name": "error",
+          "class": "flex items-center gap-3 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4",
           "tailwind": "flex items-center gap-3 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4"
         },
         {
           "name": "warning",
+          "class": "flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4",
           "tailwind": "flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4"
         },
         {
           "name": "info",
+          "class": "flex items-center gap-3 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg p-4",
           "tailwind": "flex items-center gap-3 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg p-4"
         }
       ],
@@ -4283,21 +4446,25 @@
       "variants": [
         {
           "name": "off",
+          "class": "relative inline-flex h-6 w-11 items-center rounded-full bg-slate-300",
           "tailwind": "relative inline-flex h-6 w-11 items-center rounded-full bg-slate-300"
         },
         {
           "name": "on",
+          "class": "relative inline-flex h-6 w-11 items-center rounded-full bg-primary-500",
           "tailwind": "relative inline-flex h-6 w-11 items-center rounded-full bg-primary-500"
         }
       ],
       "sizes": [
         {
           "name": "medium",
+          "class": "h-6 w-11",
           "tailwind": "h-6 w-11",
           "height": "24px"
         },
         {
           "name": "large",
+          "class": "h-7 w-14",
           "tailwind": "h-7 w-14",
           "height": "28px"
         }
@@ -4313,7 +4480,8 @@
         "disabled": {
           "description": "操作不可。off/on 共通。",
           "tailwind": "opacity-50 cursor-not-allowed pointer-events-none",
-          "ariaChanges": "disabled 属性 + aria-disabled=\"true\"。aria-checked は現状態を保持。"
+          "ariaChanges": "disabled 属性 + aria-disabled=\"true\"。aria-checked は現状態を保持。",
+          "class": "opacity-50 cursor-not-allowed pointer-events-none"
         }
       },
       "appStatus": "implemented",
@@ -4419,18 +4587,22 @@
       "variants": [
         {
           "name": "top",
+          "class": "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-600 text-white text-sm rounded-lg shadow-sm px-3 py-2 max-w-xs",
           "tailwind": "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-600 text-white text-sm rounded-lg shadow-sm px-3 py-2 max-w-xs"
         },
         {
           "name": "bottom",
+          "class": "absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-slate-600 text-white text-sm rounded-lg shadow-sm px-3 py-2 max-w-xs",
           "tailwind": "absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-slate-600 text-white text-sm rounded-lg shadow-sm px-3 py-2 max-w-xs"
         },
         {
           "name": "left",
+          "class": "absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-slate-600 text-white text-sm rounded-lg shadow-sm px-3 py-2 max-w-xs",
           "tailwind": "absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-slate-600 text-white text-sm rounded-lg shadow-sm px-3 py-2 max-w-xs"
         },
         {
           "name": "right",
+          "class": "absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-slate-600 text-white text-sm rounded-lg shadow-sm px-3 py-2 max-w-xs",
           "tailwind": "absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-slate-600 text-white text-sm rounded-lg shadow-sm px-3 py-2 max-w-xs"
         }
       ],

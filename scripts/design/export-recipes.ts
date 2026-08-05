@@ -13,6 +13,7 @@
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readClassValue } from "../../src/utils/class-value.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // アセット root。vendor 先では MELTA_ROOT で上書き（src/utils/loader.ts と同じ規約）
@@ -40,7 +41,11 @@ export function buildWebRecipe(contract: ContractLike): Record<string, unknown> 
     if (!group) return undefined;
     const out: Record<string, { tailwind: string }> = {};
     for (const [key, value] of Object.entries(group)) {
-      if (typeof value?.tailwind === "string") out[key] = { tailwind: value.tailwind };
+      // 読みは共通 reader（class 正 / tailwind alias）。
+      // 出力キーは tailwind のまま — recipes/web は「web = Tailwind」を意図した
+      // platform 具象レイヤーで、recipe schema 自身がそう定義している
+      const cls = readClassValue(value, `${key}`);
+      if (typeof cls === "string") out[key] = { tailwind: cls };
     }
     return Object.keys(out).length > 0 ? out : undefined;
   };

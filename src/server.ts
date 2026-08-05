@@ -12,6 +12,7 @@ import {
   loadRules,
   loadPackage,
   loadDesignConstitution,
+  hasDesignConstitution,
   getProhibitionRules,
   getAllRules,
 } from "./utils/loader.js";
@@ -36,12 +37,33 @@ const URI_SCHEME = process.env.MELTA_URI_SCHEME ?? "melta";
  * MCP tool 定義。detector / severity の enum は capability 表からの導出であることを
  * テストで機械照合するため、ハンドラ内に埋めずに export する。
  */
+
+/**
+ * component が見つからないときの診断。
+ *
+ * MCP は contract（design/contracts/components/*.contract.json）ではなく
+ * **metadata/components.json という導出物**を読む。bundle に contract があっても
+ * ビルドを回していなければ component 系の 3 経路（tool / search / resource）が
+ * まるごと空になるが、従来は "Component not found" としか出ず原因に辿り着けなかった。
+ */
+function componentNotFoundMessage(id: string, total: number): string {
+  if (total === 0) {
+    return (
+      `Component not found: ${id}\n` +
+      "metadata/components.json に component が 1 件もありません。\n" +
+      "MCP が読むのは contract ではなくこの導出物です。contract から生成する場合は " +
+      "ビルド（melta では npm run design:build）を先に実行してください。"
+    );
+  }
+  return `Component not found: ${id}（この bundle の component は ${total} 件）`;
+}
+
 export function toolDefinitions(ruleCount: number) {
   return [
       {
         name: "get_token",
         description:
-          "Get a design token by dot-path. Returns the token object with value and tailwind class.",
+          "Get a design token by dot-path. Returns the token object with its value and class mapping.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -57,7 +79,7 @@ export function toolDefinitions(ruleCount: number) {
       {
         name: "get_component",
         description:
-          "Get component metadata including variants, sizes, accessibility requirements, HTML sample, per-state specs (stateSpecs: disabled/loading/open/empty etc. — each with delta Tailwind classes + aria changes), and anatomy parts (overlay/container/th etc. with element/roles/tailwind). Prefer these structured fields over inferring states from the HTML sample.",
+          "Get component metadata including variants, sizes, accessibility requirements, HTML sample, per-state specs (stateSpecs: disabled/loading/open/empty etc. — each with delta class strings + aria changes), and anatomy parts (overlay/container/th etc. with element/roles/class). Prefer these structured fields over inferring states from the HTML sample.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -73,14 +95,14 @@ export function toolDefinitions(ruleCount: number) {
       {
         name: "check_rule",
         description:
-          "Check Tailwind classes against melta UI prohibition rules. Returns violations with reasons and alternatives.",
+          "Check class strings against this design system's prohibition rules. Returns violations with reasons and alternatives.",
         inputSchema: {
           type: "object" as const,
           properties: {
             classes: {
               type: "string",
               description:
-                'Space-separated Tailwind classes to check (e.g. "text-black shadow-2xl bg-green-500")',
+                'Space-separated class string to check (e.g. "text-black shadow-2xl bg-green-500")',
             },
           },
           required: ["classes"],
@@ -110,7 +132,7 @@ export function toolDefinitions(ruleCount: number) {
       {
         name: "search",
         description:
-          "Search across tokens and components by keyword. Matches against names, values, tailwind classes, and descriptions. Returns up to 20 results (truncated flag when more matched).",
+          "Search across tokens and components by keyword. Matches against names, values, class strings, and descriptions. Returns up to 20 results (truncated flag when more matched).",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -170,13 +192,19 @@ export function createServer(): Server {
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: [
-      {
-        uri: uriOf("design-constitution"),
-        name: "Design Constitution (DESIGN.md)",
-        description:
-          "Start here before UI work: brand identity, non-negotiable principles, Quick Reference, prohibited Top 10, and source-of-truth order",
-        mimeType: "text/markdown",
-      },
+      // doc は capability。同梱していない bundle では列挙しない
+      // （列挙したまま read で ENOENT にすると、クライアントは接続直後に必ず 1 件失敗する）
+      ...(hasDesignConstitution()
+        ? [
+            {
+              uri: uriOf("design-constitution"),
+              name: "Design Constitution (DESIGN.md)",
+              description:
+                "Start here before UI work: brand identity, non-negotiable principles, Quick Reference, prohibited Top 10, and source-of-truth order",
+              mimeType: "text/markdown",
+            },
+          ]
+        : []),
       {
         uri: uriOf("tokens"),
         name: "Design Tokens",
@@ -186,7 +214,7 @@ export function createServer(): Server {
       {
         uri: uriOf("components"),
         name: "Components",
-        description: `All ${components.components.length} component metadata with Tailwind classes`,
+        description: `All ${components.components.length} component metadata (variants / sizes / a11y / class strings)`,
         mimeType: "application/json",
       },
       {
@@ -216,7 +244,7 @@ export function createServer(): Server {
       const id = componentMatch[1];
       const comp = getComponent(id);
       if (!comp) {
-        throw new Error(`Component not found: ${id}`);
+        throw new Error(componentNotFoundMessage(id, components.components.length));
       }
       return {
         contents: [
@@ -327,7 +355,7 @@ export function createServer(): Server {
         if (!comp) {
           return {
             content: [
-              { type: "text", text: `Component not found: ${id}` },
+              { type: "text", text: componentNotFoundMessage(id, loadComponents().components.length) },
             ],
             isError: true,
           };

@@ -23,6 +23,23 @@ import {
 import { tokenize, matches, isAutoDetectable, expandRulePatterns } from "../../src/utils/matcher.js";
 import { isStaticallyDetectable, isUnclassified, isUnguardedError } from "./coverage-stats.js";
 import { assertBundleCompat } from "../../src/utils/rule-diagnostics.js";
+import { ClassValueConflictError, readClassValue } from "../../src/utils/class-value.js";
+
+/**
+ * validate 内の読み取り用。衝突はセクション 3 で既に error として収集しているので、
+ * ここで再度 throw して残りの検査を止めない（生成側 build-legacy / export-recipes は
+ * fail-fast のままにする — 壊れた値で生成物を作らせないため）。
+ */
+function readClassValueLenient(node: unknown, path: string): string | undefined {
+  try {
+    return readClassValue(node, path);
+  } catch (e) {
+    // 握り潰すのは「既に報告済みの衝突」だけ。将来 reader が別の診断を投げたとき
+    // 無音化しないよう、それ以外は再 throw する
+    if (e instanceof ClassValueConflictError) return undefined;
+    throw e;
+  }
+}
 import type { RuleEntry, RulesFile } from "../../src/utils/types.js";
 import { serializeDtcg, DTCG_PATH } from "./export-dtcg.js";
 import { serializeWebRecipe, WEB_RECIPES_DIR } from "./export-recipes.js";
@@ -91,6 +108,12 @@ for (const cap of skipCapabilities) {
 interface SimpleSchema {
   type?: string;
   required?: string[];
+  /**
+   * いずれか 1 つ以上の branch を満たせば OK（W3 の「class か tailwind のどちらか必須」用）。
+   * oneOf ではなく anyOf。移行期は両方を持つ contract が正当なので、
+   * oneOf だと両 branch に一致して失敗してしまう。
+   */
+  anyOf?: SimpleSchema[];
   properties?: Record<string, { type?: string | string[]; enum?: string[]; pattern?: string; minLength?: number; items?: SimpleSchema }>;
   items?: SimpleSchema;
   additionalProperties?: SimpleSchema | boolean;
@@ -103,6 +126,21 @@ function validateAgainstSchema(
   label: string
 ): string[] {
   const issues: string[] = [];
+
+  if (schema.anyOf && schema.anyOf.length > 0) {
+    const branchIssues = schema.anyOf.map((branch) =>
+      validateAgainstSchema(data, branch, path, label)
+    );
+    if (!branchIssues.some((b) => b.length === 0)) {
+      // どの branch も満たさない場合だけ報告する（どれを期待していたかを出す）
+      issues.push(
+        `${label}: "${path}" は次のいずれかを満たす必要があります — ` +
+          schema.anyOf
+            .map((b) => (b.required ? `[${b.required.join(", ")}]` : "(条件)"))
+            .join(" / ")
+      );
+    }
+  }
 
   if (schema.type === "object" && typeof data === "object" && data !== null && !Array.isArray(data)) {
     const obj = data as Record<string, unknown>;
@@ -490,6 +528,29 @@ if (existsSync(contractDir)) {
     if (!contract) continue;
     contractFiles.push(file);
 
+    // クラス文字列の衝突（class と tailwind が別の値）を先に全部集めて error 化する。
+    // reader は path 付きで throw するが、投げっぱなしだとプロセスごと落ちて
+    // 残りの検査が走らない。ここで収集して「1 回の design:check で全部見える」形にする。
+    {
+      const walk = (node: unknown, path: string): void => {
+        if (node == null || typeof node !== "object") return;
+        if (Array.isArray(node)) {
+          node.forEach((v, i) => walk(v, `${path}[${i}]`));
+          return;
+        }
+        const rec = node as Record<string, unknown>;
+        if ("class" in rec || "tailwind" in rec) {
+          try {
+            readClassValue(rec, path);
+          } catch (e) {
+            error((e as Error).message.split("\n")[0].replace(/^\[melta-ui\] /, `${file}: `));
+          }
+        }
+        for (const [k, v] of Object.entries(rec)) walk(v, `${path}.${k}`);
+      };
+      walk(contract, file.replace(/\.contract\.json$/, ""));
+    }
+
     // bundle が宣言した語彙にない category は typo とみなす
     // （schema の enum を外した = 第三者 DS が独自語彙を持てる、の代償を宣言で埋める）
     const contractCategory = (contract as unknown as { category?: string }).category;
@@ -682,7 +743,8 @@ if (rulesData && existsSync(contractDir)) {
   /**
    * contract から Tailwind class 文字列を抽出する。
    * 対象キー:
-   * - "tailwind"（variants/sizes/iconButton/iconTextPadding 等）
+   * - "class"（正のキー）/ "tailwind"（deprecated alias。W3）
+   *   — variants/sizes/stateSpecs/anatomy/iconButton/iconTextPadding 等
    * - "focusRing"（a11y）
    * - "htmlSample" 配下の任意の string（object でも全 string が HTML として扱われる）
    *
@@ -697,7 +759,7 @@ if (rulesData && existsSync(contractDir)) {
     insideHtmlSample: boolean
   ): void {
     if (typeof node === "string") {
-      if (parentKey === "tailwind" || parentKey === "focusRing") {
+      if (parentKey === "class" || parentKey === "tailwind" || parentKey === "focusRing") {
         out.push({ classes: node, path });
       } else if (insideHtmlSample) {
         // HTML から class="..." を抽出
@@ -786,7 +848,8 @@ if (existsSync(contractDir)) {
 
     for (const [vkey, variant] of Object.entries(contract.variants || {})) {
       const sample = samples[vkey];
-      if (typeof sample !== "string" || typeof variant.tailwind !== "string") continue;
+      const variantClass = readClassValueLenient(variant, `${file}.variants`);
+      if (typeof sample !== "string" || typeof variantClass !== "string") continue;
       pairsChecked++;
 
       // htmlSample 内の全 class="..." トークンを集める
@@ -794,7 +857,7 @@ if (existsSync(contractDir)) {
       for (const m of sample.matchAll(/class=["']([^"']+)["']/g)) {
         for (const c of m[1].split(/\s+/)) if (c) sampleClasses.add(c);
       }
-      const missing = variant.tailwind
+      const missing = variantClass
         .split(/\s+/)
         .filter((c) => c && !sampleClasses.has(c));
       if (missing.length > 0) {
@@ -914,10 +977,13 @@ if (existsSync(contractDir)) {
 
     // (d) 差分規約: stateSpec.tailwind が variant tailwind を verbatim 再掲したら warn
     const variantTw = new Set(
-      Object.values(contract.variants ?? {}).map((v) => v.tailwind).filter(Boolean)
+      Object.values(contract.variants ?? {})
+        .map((v) => readClassValueLenient(v, `${file}.variants`))
+        .filter(Boolean)
     );
     for (const [stateName, spec] of Object.entries(contract.stateSpecs ?? {})) {
-      if (spec.tailwind && variantTw.has(spec.tailwind)) {
+      const specClass = readClassValueLenient(spec, `${file}.stateSpecs.${stateName}`);
+      if (specClass && variantTw.has(specClass)) {
         warn(
           `${file}: stateSpecs."${stateName}".tailwind が variant tailwind と完全一致（差分のみの規約に反する。variant が基底状態なら tailwind は "" にする）`
         );
@@ -926,7 +992,10 @@ if (existsSync(contractDir)) {
 
     // (e) disabled レシピ sanity
     const disabled = contract.stateSpecs?.disabled;
-    if (disabled && !disabled.tailwind.includes("cursor-not-allowed")) {
+    const disabledClass = disabled
+      ? readClassValueLenient(disabled, `${file}.stateSpecs.disabled`) ?? ""
+      : "";
+    if (disabled && !disabledClass.includes("cursor-not-allowed")) {
       warn(
         `${file}: stateSpecs.disabled.tailwind に cursor-not-allowed が無い（disabled の標準レシピを確認）`
       );
@@ -983,8 +1052,16 @@ section("9. recipes（web 鮮度 + app styleRefs 検証）");
       webIssues++;
       continue;
     }
-    if (readFileSync(recipePath, "utf-8") !== serializeWebRecipe(contract)) {
-      error(`recipes/web/${contract.id}.recipe.json が契約と不一致（npm run design:recipes で再生成）`);
+    // 生成器（export-recipes）はクラス値の衝突で fail-fast する設計。
+    // ここは検査側なので、落とさず error として収集して残りの検査を続ける
+    // （衝突自体はセクション 3 で既に報告済み）
+    try {
+      if (readFileSync(recipePath, "utf-8") !== serializeWebRecipe(contract)) {
+        error(`recipes/web/${contract.id}.recipe.json が契約と不一致（npm run design:recipes で再生成）`);
+        webIssues++;
+      }
+    } catch (e) {
+      error(`recipes/web/${contract.id}.recipe.json の照合に失敗: ${(e as Error).message.split("\n")[0]}`);
       webIssues++;
     }
   }

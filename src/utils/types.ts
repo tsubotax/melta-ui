@@ -42,15 +42,21 @@ export interface Tokens {
   wireframe?: Record<string, TokenValue>;
 }
 
-/** Component variant */
+/** Component variant（生成 metadata の形。class が正、tailwind は deprecated alias で同値） */
 export interface ComponentVariant {
   name: string;
+  /** 正のキー。生成 metadata では tailwind と必ず同値で併記される */
+  class: string;
+  /** @deprecated class を使うこと。削除は次の major（それまでは必ず同値で出力される） */
   tailwind: string;
 }
 
-/** Component size */
+/** Component size（class が正、tailwind は deprecated alias で同値） */
 export interface ComponentSize {
   name: string;
+  /** 正のキー。生成 metadata では tailwind と必ず同値で併記される */
+  class: string;
+  /** @deprecated class を使うこと。削除は次の major（それまでは必ず同値で出力される） */
   tailwind: string;
 }
 
@@ -65,6 +71,9 @@ export interface ComponentAccessibility {
 /** state ごとの生成仕様（P2-1）。tailwind は base/variant からの差分クラスのみ */
 export interface StateSpec {
   description: string;
+  /** 正のキー。生成 metadata では tailwind と必ず同値で併記される */
+  class: string;
+  /** @deprecated class を使うこと。削除は次の major（それまでは必ず同値で出力される） */
   tailwind: string;
   ariaChanges?: string;
   htmlNote?: string;
@@ -75,6 +84,8 @@ export interface AnatomyPart {
   description: string;
   element?: string;
   roles?: string;
+  class?: string;
+  /** @deprecated class を使うこと。削除は次の major */
   tailwind?: string;
 }
 

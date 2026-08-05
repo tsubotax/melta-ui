@@ -2,41 +2,72 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "melta UI Component Contract",
   "type": "object",
-  "required": ["id", "version", "name", "category", "intent", "variants", "sizes", "states", "a11y", "rules"],
+  "required": [
+    "id",
+    "version",
+    "name",
+    "category",
+    "intent",
+    "variants",
+    "sizes",
+    "states",
+    "a11y",
+    "rules"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
+    "$schema": {
+      "type": "string"
+    },
     "id": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*$",
       "description": "コンポーネント ID（kebab-case）"
     },
-    "version": { "type": "string" },
-    "name": { "type": "string" },
+    "version": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
     "category": {
       "type": "string",
       "minLength": 1,
       "description": "コンポーネントの分類。DS ごとの語彙なので engine は値を制約しない（melta の語彙は form-input / data-display / feedback / layout / navigation）"
     },
-    "intent": { "type": "string" },
-    "docPath": { "type": "string" },
+    "intent": {
+      "type": "string"
+    },
+    "docPath": {
+      "type": "string"
+    },
     "appFirst": {
       "type": "boolean",
       "description": "app(RN)先行定義の contract。web(melta-ui)実装より先に app で定義したもの。"
     },
     "webStatus": {
       "type": "string",
-      "enum": ["pending", "implemented"],
+      "enum": [
+        "pending",
+        "implemented"
+      ],
       "description": "web 実装の状態。pending = app 先行で web 未実装（drift-check が docPath / showcase 突合を skip）。"
     },
     "appStatus": {
       "comment": "APP(RN)実装の状態宣言（webStatus の対称、melta-app 公開 P0。Codex レビューで appMapping と直交分離）。implemented=RN 実装済み / planned=実装する意図 / not-planned=実装しない宣言（appNote 推奨: 理由）。差分表（compatibility matrix）はこのフィールドから生成する＝手書き禁止。melta-app の consumer テストが implemented 集合 == 実装 allowlist を照合。互換ゲートは implemented→非 implemented の後退を breaking 扱い。v0 スコープ等の時期はここに焼かない（スコープは可変、契約は安定）",
       "type": "string",
-      "enum": ["implemented", "planned", "not-planned"]
+      "enum": [
+        "implemented",
+        "planned",
+        "not-planned"
+      ]
     },
     "appMapping": {
       "comment": "web からの写像形態（appStatus=実装有無とは直交軸）。省略時 native。adapted=モバイルの形に変えて実装する/した（appNote 必須: 何に変わるか。例: select → ActionSheet/Picker）。adapted のまま implemented になれる（分離の目的）",
       "type": "string",
-      "enum": ["native", "adapted"]
+      "enum": [
+        "native",
+        "adapted"
+      ]
     },
     "appNote": {
       "type": "string",
@@ -44,33 +75,92 @@
     },
     "anatomy": {
       "comment": "Phase1 移行形: 簡易コンポーネントは string[]、複合（modal/table 等）は {part:{description,element?,roles?,tailwind?}} の object。手書き validate.ts は oneOf 非対応のため type-array で表現する。inner part の deep-validate は Phase2 の ajv 導入時。",
-      "type": ["array", "object"]
+      "type": [
+        "array",
+        "object"
+      ]
     },
     "variants": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["description", "tailwind"],
+        "required": [
+          "description"
+        ],
         "properties": {
-          "description": { "type": "string" },
+          "description": {
+            "type": "string"
+          },
           "tokenRefs": {
             "type": "object",
-            "additionalProperties": { "type": "string" }
+            "additionalProperties": {
+              "type": "string"
+            }
           },
-          "tailwind": { "type": "string" }
-        }
+          "tailwind": {
+            "type": "string",
+            "deprecated": true,
+            "description": "deprecated alias（class を使うこと）。削除は次の major"
+          },
+          "class": {
+            "type": "string",
+            "description": "クラス文字列（正のキー）"
+          }
+        },
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "class"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "tailwind"
+            ]
+          }
+        ]
       }
     },
     "sizes": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["height", "tailwind"],
+        "required": [
+          "height"
+        ],
         "properties": {
-          "height": { "type": "number" },
-          "tailwind": { "type": "string" },
-          "icon": { "type": "number" }
-        }
+          "height": {
+            "type": "number"
+          },
+          "tailwind": {
+            "type": "string",
+            "deprecated": true,
+            "description": "deprecated alias（class を使うこと）。削除は次の major"
+          },
+          "icon": {
+            "type": "number"
+          },
+          "class": {
+            "type": "string",
+            "description": "クラス文字列（正のキー）"
+          }
+        },
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "class"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "tailwind"
+            ]
+          }
+        ]
       }
     },
     "iconButton": {
@@ -78,9 +168,34 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "tailwind": { "type": "string" },
-          "icon": { "type": "string" }
-        }
+          "tailwind": {
+            "type": "string",
+            "deprecated": true,
+            "description": "deprecated alias（class を使うこと）。削除は次の major"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "class": {
+            "type": "string",
+            "description": "クラス文字列（正のキー）"
+          }
+        },
+        "required": [],
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "class"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "tailwind"
+            ]
+          }
+        ]
       }
     },
     "iconTextPadding": {
@@ -88,64 +203,153 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "tailwind": { "type": "string" }
-        }
+          "tailwind": {
+            "type": "string",
+            "deprecated": true,
+            "description": "deprecated alias（class を使うこと）。削除は次の major"
+          },
+          "class": {
+            "type": "string",
+            "description": "クラス文字列（正のキー）"
+          }
+        },
+        "required": [],
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "class"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "tailwind"
+            ]
+          }
+        ]
       }
     },
     "states": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
     "platformSemantics": {
       "comment": "プラットフォーム分岐が正当な箇所の意味論宣言（規範部、P3 recipes 分離）。『なぜ / どう分岐するか』の宣言だけを書き、分岐の具象値は recipes/<platform>/ 側に置く。anatomy / variants 語彙のプラットフォーム分岐は契約違反（語彙は全プラットフォーム共通）。キーは分岐する概念名（hover / elevation / touchTarget 等）、値は分岐の意味論の説明文",
       "type": "object",
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "variantModeledStates": {
       "comment": "variants[] 軸で列挙される state（例: toggle の off/on、tabs の active/inactive）。これらは variant の組合せで姿が決まるため stateSpecs の overlay/structural 差分では表現しない（dual modeling 容認。disabled を variant で持つ系と同型。統一は P3）。validate.ts section 8 は (1) ⊆ states[] を error で担保、(2) coverage backlog (c) から除外、(3) stateSpecs と二重宣言なら warn。disabled を variant key で持つ系（textfield/select 等）は variants に literal key があるので本フィールド不要（(a) の `req in variants` で拾う）。",
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
     "stateSpecs": {
       "comment": "state ごとの生成仕様（opt-in / additive）。keys(stateSpecs) ⊆ states[] が validate.ts の同期チェックで担保される（subset=error / states に spec 無し=warn）。tailwind は **variant 基底からの差分のみ**（state が variant tailwind をそのまま再掲したら validate が warn=差分は空文字にする）。state は2種: (1) overlay 状態（disabled/loading/hover/focus 等）= variant の上に重ねる加算差分。(2) structural 状態（open/closing/empty/expanded 等）= 表示モードを切替。variant が基底状態を表すなら open 等の差分は空文字でよい（例: modal は variant=開いた姿なので open.tailwind=\"\"、default=\"hidden\" の上書き、closing=フェード差分）。variant 依存の hover/focus は variants[].tailwind が正本なので stateSpecs に入れない（disabled が overlay 状態の floor）。",
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["description", "tailwind"],
+        "required": [
+          "description"
+        ],
         "properties": {
-          "description": { "type": "string" },
-          "tailwind": { "type": "string" },
-          "ariaChanges": { "type": "string" },
-          "htmlNote": { "type": "string" }
-        }
+          "description": {
+            "type": "string"
+          },
+          "tailwind": {
+            "type": "string",
+            "deprecated": true,
+            "description": "deprecated alias（class を使うこと）。削除は次の major"
+          },
+          "ariaChanges": {
+            "type": "string"
+          },
+          "htmlNote": {
+            "type": "string"
+          },
+          "class": {
+            "type": "string",
+            "description": "クラス文字列（正のキー）"
+          }
+        },
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "class"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "tailwind"
+            ]
+          }
+        ]
       }
     },
     "a11y": {
       "type": "object",
-      "required": ["role", "required", "keyboard"],
+      "required": [
+        "role",
+        "required",
+        "keyboard"
+      ],
       "properties": {
         "role": {
           "type": "string",
           "description": "canonical は web/ARIA の role 名（img / banner / dialog / switch 等）で書く。RN など platform 固有の accessibilityRole への写像は required の文で記す（例: text 契約の heading）。appFirst 契約でも ARIA 名を正とする — web 逆輸入時に role 変換が曖昧になるのを防ぐ（2026-07-02 Codex レビュー反映）"
         },
-        "required": { "type": "array", "items": { "type": "string" } },
-        "keyboard": { "type": "array", "items": { "type": "string" } },
-        "focusRing": { "type": "string" }
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "keyboard": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "focusRing": {
+          "type": "string"
+        }
       }
     },
     "rules": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "severity"],
+        "required": [
+          "id",
+          "severity"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "severity": { "type": "string", "enum": ["error", "warn"] }
+          "id": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warn"
+            ]
+          }
         }
       }
     },
     "htmlSample": {
-      "type": ["string", "object"]
+      "type": [
+        "string",
+        "object"
+      ]
     }
   }
 }

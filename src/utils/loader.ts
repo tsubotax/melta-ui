@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isAutoDetectable } from "./matcher.js";
@@ -122,6 +122,16 @@ export function loadPackage(): { name: string; version: string } {
  * AI 向け入口である DESIGN.md をそのまま返す。
  * package.json の files に DESIGN.md が含まれるため、repo / npm の両経路で同じ内容を読む。
  */
+/**
+ * doc（DESIGN.md）を bundle が同梱しているか。
+ * MCP は resource を無条件に列挙していたため、doc を持たない bundle では
+ * 「list には出るが read すると必ず ENOENT」という壊れた resource が残っていた。
+ * 列挙の可否をここで判定できるようにする（存在検査なので throw しない）。
+ */
+export function hasDesignConstitution(): boolean {
+  return existsSync(resolve(meltaRoot(), "DESIGN.md"));
+}
+
 export function loadDesignConstitution(): string {
   if (designConstitutionCache === null) {
     const designPath = resolve(meltaRoot(), "DESIGN.md");

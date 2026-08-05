@@ -17,6 +17,7 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
+  hasDesignConstitution,
   loadDesignConstitution,
   loadPackage,
   resetMeltaRoot,
@@ -733,6 +734,18 @@ test.describe("bundle の互換性宣言（schemaVersion / engineCompat）", () 
   test("engineCompat の範囲指定は S2 時点では形だけ見る", () => {
     useBundleMeta({ engineCompat: ">=1 <2" });
     expect(() => checkHtml("<div>x</div>", "html")).not.toThrow();
+  });
+});
+
+test.describe("doc は capability（同梱していない bundle では resource を出さない）", () => {
+  test("DESIGN.md が無い root では hasDesignConstitution が false", () => {
+    useRuleset([validRule()]); // rules.json だけの最小 bundle
+    expect(hasDesignConstitution()).toBe(false);
+  });
+
+  test("melta 自身は doc を同梱している", () => {
+    resetMeltaRoot();
+    expect(hasDesignConstitution()).toBe(true);
   });
 });
 

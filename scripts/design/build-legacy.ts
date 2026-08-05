@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isAutoDetectable } from "../../src/utils/matcher.js";
+import { emitClassValue, readClassValue, requireClassValue } from "../../src/utils/class-value.js";
 import type { RuleEntry } from "../../src/utils/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -26,11 +27,14 @@ const root = process.env.MELTA_ROOT
 
 interface LegacyVariant {
   name: string;
+  /** 正のキー（W3）。tailwind は deprecated alias として同値で併記する */
+  class: string;
   tailwind: string;
 }
 
 interface LegacySize {
   name: string;
+  class: string;
   tailwind: string;
   height?: string;
 }
@@ -69,8 +73,8 @@ interface LegacyComponent {
   anatomy?: Anatomy;
   variants: LegacyVariant[];
   sizes: LegacySize[];
-  iconButton?: Array<{ name: string; tailwind: string; icon: string }>;
-  iconTextPadding?: Array<{ name: string; tailwind: string }>;
+  iconButton?: Array<{ name: string; class: string; tailwind: string; icon: string }>;
+  iconTextPadding?: Array<{ name: string; class: string; tailwind: string }>;
   states?: string[];
   stateSpecs?: Record<string, StateSpec>;
   platformSemantics?: Record<string, string>;
@@ -171,15 +175,18 @@ function loadAppRecipe(id: string): Record<string, unknown> | null {
 
 function contractToLegacy(contract: ComponentContract, rulesData: RulesData): LegacyComponent {
   // variants 変換（object → array）
+  // クラス文字列は class 正 / tailwind alias の共通 reader で読む（W3）。
+  // 生成物には両キーを同値で併記する（metadata は MCP の配布面。片方だけにすると
+  // 既存消費者を壊すか、公開面に技術強制が残るかのどちらかになる）
   const variants: LegacyVariant[] = Object.entries(contract.variants).map(([name, v]) => ({
     name,
-    tailwind: v.tailwind,
+    ...emitClassValue(requireClassValue(v, `${contract.id}.variants.${name}`)),
   }));
 
   // sizes 変換（object → array）
   const sizes: LegacySize[] = Object.entries(contract.sizes).map(([name, s]) => ({
     name,
-    tailwind: s.tailwind,
+    ...emitClassValue(requireClassValue(s, `${contract.id}.sizes.${name}`)),
     height: `${s.height}px`,
   }));
 
@@ -188,7 +195,7 @@ function contractToLegacy(contract: ComponentContract, rulesData: RulesData): Le
   if (contract.iconButton) {
     iconButton = Object.entries(contract.iconButton).map(([name, ib]) => ({
       name,
-      tailwind: ib.tailwind,
+      ...emitClassValue(requireClassValue(ib, `${contract.id}.iconButton.${name}`)),
       icon: ib.icon,
     }));
   }
@@ -198,7 +205,7 @@ function contractToLegacy(contract: ComponentContract, rulesData: RulesData): Le
   if (contract.iconTextPadding) {
     iconTextPadding = Object.entries(contract.iconTextPadding).map(([name, itp]) => ({
       name,
-      tailwind: itp.tailwind,
+      ...emitClassValue(requireClassValue(itp, `${contract.id}.iconTextPadding.${name}`)),
     }));
   }
 
@@ -221,6 +228,31 @@ function contractToLegacy(contract: ComponentContract, rulesData: RulesData): Le
     ...(contract.a11y.focusRing ? { focusRing: contract.a11y.focusRing } : {}),
   };
 
+  // stateSpecs / anatomy(object 形式) も class carrier。pass-through だと
+  // class-only contract で alias が生成されず「metadata は両キー同値」が崩れる
+  const normalizeCarrier = <T extends Record<string, unknown>>(
+    entries: Record<string, T> | undefined,
+    kind: string
+  ): Record<string, T> | undefined => {
+    if (!entries) return undefined;
+    return Object.fromEntries(
+      Object.entries(entries).map(([key, value]) => {
+        const cls = readClassValue(value, `${contract.id}.${kind}.${key}`);
+        return [key, (cls != null ? { ...value, ...emitClassValue(cls) } : value) as T];
+      })
+    );
+  };
+  const normalizedStateSpecs = normalizeCarrier(
+    contract.stateSpecs as Record<string, Record<string, unknown>> | undefined,
+    "stateSpecs"
+  );
+  const normalizedAnatomy = Array.isArray(contract.anatomy)
+    ? contract.anatomy
+    : normalizeCarrier(
+        contract.anatomy as Record<string, Record<string, unknown>> | undefined,
+        "anatomy"
+      );
+
   // htmlSample: contract の値をそのまま渡す（string でも object でも LegacyComponent 型は両方受け入れる）
   const htmlSample: string | Record<string, string> = contract.htmlSample ?? "";
   const appRecipe = loadAppRecipe(contract.id);
@@ -232,13 +264,13 @@ function contractToLegacy(contract: ComponentContract, rulesData: RulesData): Le
     description: contract.intent,
     docPath: contract.docPath || `components/${contract.id}.md`,
     // P2-1: anatomy / states / stateSpecs を additive で運ぶ（条件スプレッドで未定義時は出さない）
-    ...(contract.anatomy ? { anatomy: contract.anatomy } : {}),
+    ...(normalizedAnatomy ? { anatomy: normalizedAnatomy as Anatomy } : {}),
     variants,
     sizes,
     ...(iconButton ? { iconButton } : {}),
     ...(iconTextPadding ? { iconTextPadding } : {}),
     ...(contract.states ? { states: contract.states } : {}),
-    ...(contract.stateSpecs ? { stateSpecs: contract.stateSpecs } : {}),
+    ...(normalizedStateSpecs ? { stateSpecs: normalizedStateSpecs as Record<string, StateSpec> } : {}),
     // P3: 規範（platformSemantics）と app 具象レシピ（recipes/app/、手書き authoring source）を
     // additive で運ぶ。web 具象は variants[].tailwind に既存なので recipes.web は載せない
     ...(contract.platformSemantics ? { platformSemantics: contract.platformSemantics } : {}),
