@@ -1,7 +1,8 @@
 /**
  * Tailwind-aware rule matcher（P1a）
  *
- * rules.json の自動検出ルール（tailwind-class / tailwind-class-prefix）を
+ * rules.json の自動検出ルール（detectors.ts の capability 表で
+ * autoDetectable=true と宣言された detector）を
  * Tailwind class string に対して適用するための共通 utility。
  * check_rule と P1b の contract lint の双方が使う。
  *
@@ -16,6 +17,8 @@
  *   - tailwind-class-prefix: base の prefix 一致
  */
 
+import { DETECTOR_CAPABILITIES, isKnownDetector } from "./detectors.js";
+import type { MatchSource } from "./detectors.js";
 import type { MatchContext, RuleEntry } from "./types.js";
 
 /**
@@ -112,25 +115,44 @@ function findVariantColon(s: string): number {
  * rule が matches() で自動検出可能か（= class 文字列マッチで判定できるか）の単一述語。
  *
  * lint-core / check_rule(MCP) / getProhibitionRules / contract lint が
- * 各自で `["tailwind-class","tailwind-class-prefix"] && pattern` を散在的に
- * 判定していたのを一本化する。detector を増やしたとき consumer 全体が
- * 追従するよう、判定はここ1箇所に集約する。
+ * 各自で detector 名と pattern の有無を散在的に判定していたのを一本化する。
+ * detector を増やしたとき consumer 全体が追従するよう、判定はここ1箇所に集約する。
  */
-const AUTO_DETECTABLE_DETECTORS = [
-  "tailwind-class",
-  "tailwind-class-prefix",
-  "tailwind-class-segment",
-];
-
 export function isAutoDetectable(rule: RuleEntry): boolean {
-  if (!AUTO_DETECTABLE_DETECTORS.includes(rule.detector)) return false;
-  return (
-    rule.pattern != null ||
-    (rule.matchPatterns?.length ?? 0) > 0 ||
-    (rule.prefixPatterns?.length ?? 0) > 0
-  );
+  if (!isKnownDetector(rule.detector)) return false;
+  const capability = DETECTOR_CAPABILITIES[rule.detector];
+  if (!capability.autoDetectable) return false;
+  // 「pattern 系を何か持っている」ではなく「この detector の matches() が
+  // 実際に参照するフィールドを持っている」で判定する。
+  // 例: tailwind-class-segment は matchPatterns しか読まないので、
+  // pattern だけのルールを automated と数えると永久に未検出のまま合格扱いになる。
+  return capability.matchSources.some((f) => hasMatchSource(rule, f));
 }
 
+/**
+ * rule が指定の pattern 系フィールドを実質的に持っているか。
+ *
+ * 空文字は「持っていない」とみなす。matches() 側は `if (rule.pattern)` の
+ * truthy 判定なので、pattern:"" を「有り」と数えると
+ * 自動検査済みなのに永久に未検出（= passed:true）になる。
+ * 空文字宣言そのものは assertValidRules が不正として弾く。
+ */
+export function hasMatchSource(rule: RuleEntry, field: MatchSource): boolean {
+  if (field === "pattern") return typeof rule.pattern === "string" && rule.pattern.length > 0;
+  const list = rule[field];
+  return Array.isArray(list) && list.some((p) => typeof p === "string" && p.length > 0);
+}
+
+/**
+ * **フィールド併記時の実挙動（仕様として固定。tests/rule-diagnostics.spec.ts が回帰を守る）**:
+ * - `prefixPatterns` は **ヒットしたときだけ** 判定を返す（外れたら次のフィールドへ進む = fallthrough）
+ * - `matchPatterns` は **存在した時点で終端**（外れても false を返し、pattern は読まれない = short-circuit）
+ * - `pattern` は matchPatterns が無いときにだけ読まれる
+ *
+ * この非対称は capability 表の matchSources の並び順だけでは表現できない。
+ * 「どのフィールドが必須か」ごと再定義するのは S1+S2
+ * （internal/phase2-plan.md の §S1+S2 に記録した三重不整合を参照）。
+ */
 export function matches(rule: RuleEntry, ctx: MatchContext): boolean {
   if (rule.detector === "tailwind-class") {
     if (rule.matchPatterns && rule.matchPatterns.length > 0) {

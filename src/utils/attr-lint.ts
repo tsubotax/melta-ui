@@ -15,6 +15,12 @@
  */
 
 import { getAllRules } from "./loader.js";
+import { HTML_ATTR_CHECK_KINDS } from "./detectors.js";
+import {
+  assertViolationSeverity,
+  compileRuleRegExp,
+  unsupportedCheckKind,
+} from "./rule-diagnostics.js";
 import type { HtmlAttrCheck, LintViolation, RuleEntry } from "./types.js";
 
 /** 属性名の直前が単語構成文字 / `-` なら別属性（data-scope 等）→ 除外する境界 */
@@ -27,6 +33,7 @@ function snippet(s: string): string {
 }
 
 function toViolation(rule: RuleEntry, token: string): LintViolation {
+  assertViolationSeverity(rule.severity, rule.id);
   return {
     ruleId: rule.id,
     severity: rule.severity,
@@ -37,17 +44,31 @@ function toViolation(rule: RuleEntry, token: string): LintViolation {
   };
 }
 
+/**
+ * engine v1 が実装している html-attr 検査の kind。
+ * capability 表（detectors.ts）から導出する — ここで別定義を持たない。
+ * rule.schema.json の htmlAttrCheck.kind enum との一致は
+ * tests/rule-diagnostics.spec.ts が機械照合する。
+ */
+export const SUPPORTED_ATTR_KINDS = Object.keys(HTML_ATTR_CHECK_KINDS);
+
 /** 1 ルール分の html-attr 検査を実行し、違反トークン列を返す */
-function runCheck(check: HtmlAttrCheck, source: string): string[] {
+function runCheck(check: HtmlAttrCheck, source: string, ruleId: string): string[] {
   const hits: string[] = [];
 
   if (check.kind === "attr-value-forbidden") {
     // 例: tabindex="3" / tabIndex={3}。値が valueRegex にマッチしたら違反。
-    const re = new RegExp(
-      `${ATTR_BOUNDARY}${check.attr}\\s*=\\s*[{"'\\\`]?\\s*([^"'\\\`}\\s>]+)`,
-      "gi"
-    );
-    const valRe = new RegExp(check.valueRegex);
+    const re = compileRuleRegExp({
+      pattern: `${ATTR_BOUNDARY}${check.attr}\\s*=\\s*[{"'\\\`]?\\s*([^"'\\\`}\\s>]+)`,
+      flags: "gi",
+      ruleId,
+      field: "htmlAttrCheck.attr",
+    });
+    const valRe = compileRuleRegExp({
+      pattern: check.valueRegex,
+      ruleId,
+      field: "htmlAttrCheck.valueRegex",
+    });
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {
       if (valRe.test(m[1])) hits.push(`${check.attr}="${m[1]}"`);
@@ -58,8 +79,18 @@ function runCheck(check: HtmlAttrCheck, source: string): string[] {
   if (check.kind === "attr-value-contains") {
     // 例: style="background:#2250df"。クォート内の値全体を取り、valueRegex を含めば違反。
     // attr-value-forbidden と違い、空白を含む多語の値（inline style 宣言列）を対象にする。
-    const re = new RegExp(`${ATTR_BOUNDARY}${check.attr}\\s*=\\s*"([^"]*)"|${ATTR_BOUNDARY}${check.attr}\\s*=\\s*'([^']*)'`, "gi");
-    const valRe = new RegExp(check.valueRegex, "i");
+    const re = compileRuleRegExp({
+      pattern: `${ATTR_BOUNDARY}${check.attr}\\s*=\\s*"([^"]*)"|${ATTR_BOUNDARY}${check.attr}\\s*=\\s*'([^']*)'`,
+      flags: "gi",
+      ruleId,
+      field: "htmlAttrCheck.attr",
+    });
+    const valRe = compileRuleRegExp({
+      pattern: check.valueRegex,
+      flags: "i",
+      ruleId,
+      field: "htmlAttrCheck.valueRegex",
+    });
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {
       const value = m[1] ?? m[2] ?? "";
@@ -74,8 +105,18 @@ function runCheck(check: HtmlAttrCheck, source: string): string[] {
     // 開始タグを抽出したうえで引用符内の値を潰してから属性名を照合する。
     // attr は正規表現の選択肢（(?:commandfor|command)）を許す。長い方を先に書く前提。
     const tagName = check.tag ?? "[a-zA-Z][\\w-]*";
-    const tagRe = new RegExp(`<(?:${tagName})\\b([^>]*)>`, "g");
-    const attrRe = new RegExp(`${ATTR_BOUNDARY}(?:${check.attr})(?![\\w-])`, "i");
+    const tagRe = compileRuleRegExp({
+      pattern: `<(?:${tagName})\\b([^>]*)>`,
+      flags: "g",
+      ruleId,
+      field: "htmlAttrCheck.tag",
+    });
+    const attrRe = compileRuleRegExp({
+      pattern: `${ATTR_BOUNDARY}(?:${check.attr})(?![\\w-])`,
+      flags: "i",
+      ruleId,
+      field: "htmlAttrCheck.attr",
+    });
     let m: RegExpExecArray | null;
     while ((m = tagRe.exec(source)) !== null) {
       const attrsOnly = m[1].replace(/"[^"]*"|'[^']*'/g, '""');
@@ -86,7 +127,12 @@ function runCheck(check: HtmlAttrCheck, source: string): string[] {
 
   if (check.kind === "tag-present") {
     // 例: <style> ブロックの存在。1 ファイルに複数あっても token を畳んで1件にする。
-    const re = new RegExp(`<${check.tag}\\b`, "i");
+    const re = compileRuleRegExp({
+      pattern: `<${check.tag}\\b`,
+      flags: "i",
+      ruleId,
+      field: "htmlAttrCheck.tag",
+    });
     if (re.test(source)) hits.push(`<${check.tag}>`);
     return hits;
   }
@@ -97,8 +143,18 @@ function runCheck(check: HtmlAttrCheck, source: string): string[] {
     // 既知の制約(Codex review): 属性値内に生の `>` を含む(<th title="a>b">)と
     // [^>]* が最初の `>` で切れて誤判定しうる。実 UI では稀(本来 &gt;)で、
     // 完全対応は cheerio 化(S2)で自然に解消する想定。
-    const tagRe = new RegExp(`<${check.tag}\\b([^>]*)>`, "gi");
-    const attrRe = new RegExp(`${ATTR_BOUNDARY}${check.requiredAttr}\\s*=`, "i");
+    const tagRe = compileRuleRegExp({
+      pattern: `<${check.tag}\\b([^>]*)>`,
+      flags: "gi",
+      ruleId,
+      field: "htmlAttrCheck.tag",
+    });
+    const attrRe = compileRuleRegExp({
+      pattern: `${ATTR_BOUNDARY}${check.requiredAttr}\\s*=`,
+      flags: "i",
+      ruleId,
+      field: "htmlAttrCheck.requiredAttr",
+    });
     let m: RegExpExecArray | null;
     while ((m = tagRe.exec(source)) !== null) {
       if (!attrRe.test(m[1])) hits.push(snippet(m[0]));
@@ -106,16 +162,29 @@ function runCheck(check: HtmlAttrCheck, source: string): string[] {
     return hits;
   }
 
-  // element-present: 例 <input type="date">
-  const re = new RegExp(
-    `<${check.tag}\\b[^>]*${ATTR_BOUNDARY}${check.attr}\\s*=\\s*[{"'\\\`]?\\s*${check.attrValue}\\b`,
-    "gi"
-  );
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(source)) !== null) {
-    hits.push(snippet(m[0]));
+  if (check.kind === "element-present") {
+    // 例: <input type="date">
+    const re = compileRuleRegExp({
+      pattern: `<${check.tag}\\b[^>]*${ATTR_BOUNDARY}${check.attr}\\s*=\\s*[{"'\\\`]?\\s*${check.attrValue}\\b`,
+      flags: "gi",
+      ruleId,
+      field: "htmlAttrCheck.tag / attr / attrValue",
+    });
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(source)) !== null) {
+      hits.push(snippet(m[0]));
+    }
+    return hits;
   }
-  return hits;
+
+  // 未知の kind が element-present 分岐へフォールスルーすると、undefined を
+  // 埋め込んだ正規表現で「誤った検査を無言で実行」してしまう。診断付きで落とす。
+  throw unsupportedCheckKind({
+    ruleId,
+    specName: "htmlAttrCheck",
+    kind: (check as { kind?: unknown }).kind,
+    supported: SUPPORTED_ATTR_KINDS,
+  });
 }
 
 /**
@@ -133,7 +202,7 @@ export function lintHtmlAttrs(source: string): LintViolation[] {
   const violations: LintViolation[] = [];
   const seen = new Set<string>(); // ruleId+token の重複排除
   for (const rule of rules) {
-    for (const token of runCheck(rule.htmlAttrCheck!, cleaned)) {
+    for (const token of runCheck(rule.htmlAttrCheck!, cleaned, rule.id)) {
       const key = `${rule.id}::${token}`;
       if (seen.has(key)) continue;
       seen.add(key);

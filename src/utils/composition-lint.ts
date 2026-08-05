@@ -18,9 +18,12 @@
 import { parse } from "node-html-parser";
 import type { HTMLElement } from "node-html-parser";
 import { getAllRules } from "./loader.js";
+import { COMPOSITION_CHECK_KINDS, COMPOSITION_PREDICATES } from "./detectors.js";
+import { assertViolationSeverity, unsupportedCheckKind } from "./rule-diagnostics.js";
 import type { CompositionCheck, LintViolation, RuleEntry } from "./types.js";
 
 function toViolation(rule: RuleEntry, token: string): LintViolation {
+  assertViolationSeverity(rule.severity, rule.id);
   return {
     ruleId: rule.id,
     severity: rule.severity,
@@ -82,11 +85,25 @@ function qualifies(el: HTMLElement, when: string | undefined, glyphs: string[]):
     if (text.length === 0) return false;
     return [...text].every((c) => glyphs.includes(c));
   }
-  return true;
+  // 未知の述語で true を返すと、excludeWhen 経由では全候補が除外されて
+  // 「検査したつもりで 0 件」になる。ruleset は load 時に enum 検証済みなので
+  // ここに来るのは engine 側の不整合（到達不能防御）。
+  throw new Error(
+    `[melta-ui] internal error: 未知の合成述語 ${JSON.stringify(when)} が qualifies に渡りました。\n` +
+      `  実装済み: ${COMPOSITION_PREDICATES.join(" / ")}`
+  );
 }
 
+/**
+ * engine v1 が実装している合成検査の kind。
+ * capability 表（detectors.ts）から導出する — ここで別定義を持たない。
+ * rule.schema.json の compositionCheck.kind enum との一致は
+ * tests/rule-diagnostics.spec.ts が機械照合する。
+ */
+export const SUPPORTED_COMPOSITION_KINDS = Object.keys(COMPOSITION_CHECK_KINDS);
+
 /** 1 ルール分の合成検査を実行し、違反トークン列を返す */
-function runCheck(check: CompositionCheck, root: HTMLElement): string[] {
+function runCheck(check: CompositionCheck, root: HTMLElement, ruleId: string): string[] {
   if (check.kind === "nested-selector") {
     // selector マッチ要素のうち、同 selector の祖先を持つもの（= ネスト）を違反にする。
     // 兄弟として複数あるだけ（正規のショーケース）は祖先を持たないので拾わない。
@@ -124,7 +141,14 @@ function runCheck(check: CompositionCheck, root: HTMLElement): string[] {
     }
     return hits;
   }
-  return [];
+
+  // 未知の kind を静かに 0 件で返すと「検査した」と誤認される。診断付きで落とす。
+  throw unsupportedCheckKind({
+    ruleId,
+    specName: "compositionCheck",
+    kind: (check as { kind?: unknown }).kind,
+    supported: SUPPORTED_COMPOSITION_KINDS,
+  });
 }
 
 /**
@@ -141,7 +165,7 @@ export function lintComposition(html: string): LintViolation[] {
 
   const violations: LintViolation[] = [];
   for (const rule of rules) {
-    for (const token of runCheck(rule.compositionCheck!, root)) {
+    for (const token of runCheck(rule.compositionCheck!, root, rule.id)) {
       violations.push(toViolation(rule, token));
     }
   }

@@ -16,6 +16,7 @@
 import { tokenize, matches, isAutoDetectable } from "./matcher.js";
 import { getAllRules } from "./loader.js";
 import { lintHtmlAttrs } from "./attr-lint.js";
+import { assertViolationSeverity } from "./rule-diagnostics.js";
 import type { RuleEntry, LintViolation } from "./types.js";
 
 // LintViolation は types.ts に移動（attr-lint と共有するため）。
@@ -89,6 +90,7 @@ export function lintSource(source: string): LintViolation[] {
 }
 
 function toViolation(rule: RuleEntry, token: string): LintViolation {
+  assertViolationSeverity(rule.severity, rule.id);
   return {
     ruleId: rule.id,
     severity: rule.severity,

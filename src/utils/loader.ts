@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isAutoDetectable } from "./matcher.js";
+import { assertValidRules } from "./rule-diagnostics.js";
 import type {
   Tokens,
   ComponentsData,
@@ -54,6 +55,25 @@ export function setMeltaRoot(path: string, via = "setMeltaRoot()"): void {
 }
 
 /**
+ * 現在の root と、その解決経路を返す。
+ * 診断メッセージのほか、4 層が同じ root を解決していることを外から確認する用途
+ * （`--print-config` 相当）を想定している。
+ */
+export function getMeltaRootInfo(): { root: string; via: string } {
+  return { ...getRootInfo() };
+}
+
+/**
+ * 明示指定を解除し、既定の解決（MELTA_ROOT → パッケージ相対）に戻す。
+ * setMeltaRoot は env より優先されるため、テストで差し替えたあと
+ * process.cwd() で「戻したつもり」になると env 指定の worker を汚染する。
+ */
+export function resetMeltaRoot(): void {
+  rootInfo = null;
+  resetAssetCaches();
+}
+
+/**
  * アセット読み込み失敗時の診断メッセージ。
  * 「どのファイルを・どこに期待したか」と「root の差し替え方」を必ず添える。
  */
@@ -88,9 +108,12 @@ function resetAssetCaches(): void {
  */
 export function loadPackage(): { name: string; version: string } {
   if (!packageCache) {
-    packageCache = JSON.parse(
-      readFileSync(resolve(meltaRoot(), "package.json"), "utf-8")
-    );
+    const packagePath = resolve(meltaRoot(), "package.json");
+    try {
+      packageCache = JSON.parse(readFileSync(packagePath, "utf-8"));
+    } catch (e) {
+      throw assetLoadError("package.json", packagePath, e);
+    }
   }
   return packageCache!;
 }
@@ -105,9 +128,7 @@ export function loadDesignConstitution(): string {
     try {
       designConstitutionCache = readFileSync(designPath, "utf-8");
     } catch (e) {
-      throw new Error(
-        `[melta-ui] DESIGN.md の読み込みに失敗しました (${designPath}): ${(e as Error).message}`
-      );
+      throw assetLoadError("DESIGN.md", designPath, e);
     }
   }
   return designConstitutionCache;
@@ -147,19 +168,23 @@ let rulesCache: ProhibitionRule[] | null = null;
 export function loadRules(): RulesFile {
   if (!rulesFileCache) {
     const rulesPath = resolve(meltaRoot(), "design/contracts/rules.json");
+    let parsed: RulesFile;
     try {
-      rulesFileCache = JSON.parse(readFileSync(rulesPath, "utf-8")) as RulesFile;
+      parsed = JSON.parse(readFileSync(rulesPath, "utf-8")) as RulesFile;
     } catch (e) {
-      throw new Error(
-        `[melta-ui] design/contracts/rules.json の読み込みに失敗しました: ${(e as Error).message}`
-      );
+      throw assetLoadError("design/contracts/rules.json", rulesPath, e);
     }
+    // 構造が壊れた ruleset を「読めたこと」にしない。不正 severity は
+    // error 件数 0 に丸められて passed: true を返すため、ここで落とす。
+    // ※ S3 で resolver の合成後に ajv の全 schema 検証へ差し替える前哨。
+    assertValidRules(parsed?.rules, rulesPath);
+    rulesFileCache = parsed;
   }
   return rulesFileCache!;
 }
 
 /**
- * 全ルール（manual含む89件）を返す。filter で絞り込み可能。
+ * 全ルール（manual 含む全件）を返す。filter で絞り込み可能。
  * MCP `get_rules` tool / `melta://rules` resource の実体。
  */
 export function getAllRules(filter?: RuleFilter): RuleEntry[] {
@@ -172,7 +197,7 @@ export function getAllRules(filter?: RuleFilter): RuleEntry[] {
 
 /**
  * Prohibition rules loaded from design/contracts/rules.json (SSOT).
- * 自動検出可能なルール（tailwind-class / tailwind-class-prefix）のみ返す。
+ * 自動検出可能なルール（判定は matcher.isAutoDetectable が単一の真理）のみ返す。
  * matchPatterns がある場合は展開する。
  */
 export function getProhibitionRules(): ProhibitionRule[] {
