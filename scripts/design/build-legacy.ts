@@ -350,33 +350,9 @@ console.log(`\n  ✅ metadata/components.json を更新: ${mergedComponents.leng
 const legacyRules = rulesToLegacyProhibitions(rulesData);
 console.log(`\n  rules.json → ProhibitionRule[] 互換: ${legacyRules.length} パターン`);
 
-// loader.ts のハードコードとの差分表示（loader.ts はエンジン自身の資産なので engine root から）
-const loaderPath = resolve(engineRoot, "src/utils/loader.ts");
-if (existsSync(loaderPath)) {
-  const loaderContent = readFileSync(loaderPath, "utf-8");
-  const patternMatches = loaderContent.match(/pattern:\s*"([^"]+)"/g);
-  const hardcodedPatterns = patternMatches
-    ? patternMatches.map((m) => m.replace(/pattern:\s*"/, "").replace(/"$/, ""))
-    : [];
-
-  const legacyPatterns = new Set(legacyRules.map((r) => r.pattern));
-  const missing = legacyRules.filter((r) => !hardcodedPatterns.some((h) => r.pattern.includes(h) || h.includes(r.pattern)));
-  const extra = hardcodedPatterns.filter((h) => !legacyRules.some((r) => r.pattern.includes(h) || h.includes(r.pattern)));
-
-  if (missing.length > 0) {
-    console.log(`\n  ⚠️  rules.json にあって loader.ts にないパターン (${missing.length} 件):`);
-    for (const m of missing.slice(0, 10)) {
-      console.log(`      + ${m.pattern}`);
-    }
-    if (missing.length > 10) console.log(`      ... 他 ${missing.length - 10} 件`);
-  }
-
-  if (extra.length > 0) {
-    console.log(`\n  ℹ️  loader.ts にあって rules.json にないパターン (${extra.length} 件):`);
-    for (const e of extra) {
-      console.log(`      - ${e}`);
-    }
-  }
-}
+// 旧 loader.ts はパターンをハードコードしていたため、ここで文字列リテラルを
+// 拾って差分を出していた。現在の loader.ts は rules.json を読む動的実装で
+// リテラルを持たないため、この比較は全パターンを「loader.ts にない」と誤報するだけだった。
+// 実装同士の一致は tests/ と design:check が担保しているので、件数の報告に留める。
 
 console.log("\n=== build-legacy 完了 ===\n");

@@ -130,6 +130,24 @@ export function isAutoDetectable(rule: RuleEntry): boolean {
 }
 
 /**
+ * ルールを「実際に照合されるパターン文字列」の列へ展開する。
+ *
+ * 展開規則は loader.getProhibitionRules の実装が正で、
+ * カバレッジ報告・legacy 互換レポートもここから数える
+ * （かつて report 側が prefixPatterns を数えず、実数 65 に対し 44 と報告していた）。
+ */
+export function expandRulePatterns(rule: RuleEntry): string[] {
+  const out: string[] = [];
+  if (rule.matchPatterns && rule.matchPatterns.length > 0) {
+    out.push(...rule.matchPatterns);
+  } else if (rule.pattern != null) {
+    out.push(rule.pattern);
+  }
+  out.push(...(rule.prefixPatterns ?? []));
+  return out;
+}
+
+/**
  * rule が指定の pattern 系フィールドを実質的に持っているか。
  *
  * 空文字は「持っていない」とみなす。matches() 側は `if (rule.pattern)` の

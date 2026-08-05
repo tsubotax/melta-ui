@@ -20,9 +20,7 @@ import {
   isKnownDetector,
   isKnownSeverity,
 } from "../../src/utils/detectors.js";
-import { isStaticallyDetectable } from "./coverage-stats.js";
-import type { RuleEntry } from "../../src/utils/types.js";
-import { tokenize, matches, isAutoDetectable } from "../../src/utils/matcher.js";
+import { tokenize, matches, isAutoDetectable, expandRulePatterns } from "../../src/utils/matcher.js";
 import { isStaticallyDetectable, isUnclassified, isUnguardedError } from "./coverage-stats.js";
 import type { RuleEntry, RulesFile } from "../../src/utils/types.js";
 import { serializeDtcg, DTCG_PATH } from "./export-dtcg.js";
@@ -289,20 +287,6 @@ if (rulesData) {
       // 旧実装は tailwind-class / tailwind-class-prefix に pattern を必須としていたが、
       // matcher は matchPatterns があれば pattern を読まない（= 必須にする根拠が無い）。
       // capability 表の matchSources から導出することでこの不整合を解消する。
-      // automationStatus はカバレッジ集計の partition を作る。静的に検出できるルールに
-      // "covered-by-test" 等を付けると staticAuto と両方に計上され、合計が総数を超える。
-      // 「静的検出できる ⇒ automationStatus は auto か未指定」を担保する。
-      if (
-        rule.automationStatus != null &&
-        rule.automationStatus !== "auto" &&
-        isStaticallyDetectable(rule as unknown as RuleEntry)
-      ) {
-        error(
-          `ルール ${rule.id}: 静的検出できるのに automationStatus="${rule.automationStatus}"` +
-            `（カバレッジ集計で二重計上される。auto か未指定にすること）`
-        );
-      }
-
       if (isKnownDetector(rule.detector)) {
         const capability = DETECTOR_CAPABILITIES[rule.detector];
         if (capability.autoDetectable) {
@@ -357,9 +341,15 @@ if (rulesData) {
     let statusConflicts = 0;
     for (const rule of rulesData.rules) {
       const detectable = isStaticallyDetectable(rule);
-      const declaresNoAutomation = ["impossible-static", "llm-judge-candidate", "human-only"].includes(
-        rule.automationStatus ?? ""
-      );
+      // automationStatus はカバレッジ集計の排他的な partition を作る。
+      // covered-by-test も「静的検出はしない」側の宣言なので、静的検出機構を持つルールに
+      // 付くと staticAuto と両方に計上され、合計が総数を超える。
+      const declaresNoAutomation = [
+        "impossible-static",
+        "llm-judge-candidate",
+        "human-only",
+        "covered-by-test",
+      ].includes(rule.automationStatus ?? "");
       if (detectable && declaresNoAutomation) {
         error(
           `ルール ${rule.id}: 静的検出機構を持つのに automationStatus "${rule.automationStatus}" を宣言（矛盾。検出可能性は detector/spec から導出する）`
@@ -545,10 +535,12 @@ if (rulesData) {
 
     // rules.json の自動検出可能ルール数
     const autoDetectable = rulesData.rules.filter(isAutoDetectable);
-    let expandedCount = 0;
-    for (const rule of autoDetectable) {
-      expandedCount += rule.matchPatterns ? rule.matchPatterns.length : 1;
-    }
+    // 展開規則は matcher.expandRulePatterns が単一の真理
+    // （旧実装は prefixPatterns を数えず、実数 65 に対し 44 と報告していた）
+    const expandedCount = autoDetectable.reduce(
+      (n, rule) => n + expandRulePatterns(rule as unknown as RuleEntry).length,
+      0
+    );
     ok(`MCP check_rule 自動検出パターン: ${expandedCount} 件（${autoDetectable.length} ルールから展開）`);
   } else {
     warn("src/utils/loader.ts が見つかりません");
