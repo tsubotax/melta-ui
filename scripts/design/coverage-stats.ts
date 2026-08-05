@@ -11,14 +11,16 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getAllRules } from "../../src/utils/loader.js";
 import { isAutoDetectable } from "../../src/utils/matcher.js";
+import { hasRunnableSpec, specFieldFor } from "../../src/utils/detectors.js";
 import type { RuleEntry } from "../../src/utils/types.js";
 
-/** 静的検出機構（class/attr/composition のいずれか）を持つルールの判定述語 */
+/**
+ * 静的検出機構（class/attr/composition のいずれか）を持つルールの判定述語。
+ * detector と spec の対応は capability 表（src/utils/detectors.ts）から導出する
+ * — ここで detector 名を直書きしない。
+ */
 export function isStaticallyDetectable(r: RuleEntry): boolean {
-  if (isAutoDetectable(r)) return true;
-  if (r.detector === "html-attr" && r.htmlAttrCheck != null) return true;
-  if (r.detector === "composition" && r.compositionCheck != null) return true;
-  return false;
+  return isAutoDetectable(r) || hasRunnableSpec(r);
 }
 
 /**
@@ -74,10 +76,15 @@ export interface Coverage {
 export function computeCoverage(): Coverage {
   const rules = getAllRules();
   const classAuto = rules.filter(isAutoDetectable).length;
-  const htmlAttr = rules.filter((r) => r.detector === "html-attr" && r.htmlAttrCheck != null).length;
-  const composition = rules.filter(
-    (r) => r.detector === "composition" && r.compositionCheck != null
+  // spec 駆動の内訳も capability 表から導出する（detector 名を直書きしない）
+  const htmlAttr = rules.filter(
+    (r) => specFieldFor(r.detector) === "htmlAttrCheck" && hasRunnableSpec(r)
   ).length;
+  const composition = rules.filter(
+    (r) => specFieldFor(r.detector) === "compositionCheck" && hasRunnableSpec(r)
+  ).length;
+  // detector と spec の対応は ruleset 検証で保証済み（食い違いは load 時に落ちる）ため
+  // この 3 集合は互いに素。単純和で二重計上は起きない
   const staticAuto = classAuto + htmlAttr + composition;
   const coveredByTest = rules.filter((r) => r.automationStatus === "covered-by-test").length;
   const impossibleStatic = rules.filter((r) => r.automationStatus === "impossible-static").length;

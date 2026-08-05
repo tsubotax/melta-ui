@@ -35,6 +35,7 @@ import {
   unsupportedCheckKind,
 } from "../src/utils/rule-diagnostics.js";
 import { KNOWN_DETECTORS } from "../src/utils/detectors.js";
+import { toolDefinitions } from "../src/server.js";
 import { matches } from "../src/utils/matcher.js";
 import { SUPPORTED_ATTR_KINDS } from "../src/utils/attr-lint.js";
 import { SUPPORTED_COMPOSITION_KINDS } from "../src/utils/composition-lint.js";
@@ -806,6 +807,14 @@ test.describe("ランタイムの実装一覧と schema の一致（多重定義
     const schemaKinds: string[] =
       schema.properties.rules.items.properties.compositionCheck.properties.kind.enum;
     expect([...SUPPORTED_COMPOSITION_KINDS].sort()).toEqual([...schemaKinds].sort());
+  });
+
+  test("MCP get_rules の enum が capability 表と一致する（再ハードコードの検出）", () => {
+    const getRules = toolDefinitions(105).find((t) => t.name === "get_rules");
+    expect(getRules, "get_rules tool が見つからない").toBeTruthy();
+    const props = getRules!.inputSchema.properties as Record<string, { enum?: readonly string[] }>;
+    expect([...(props.detector.enum ?? [])].sort()).toEqual([...KNOWN_DETECTORS].sort());
+    expect([...(props.severity.enum ?? [])].sort()).toEqual([...KNOWN_SEVERITIES].sort());
   });
 
   test("severity の全集合が schema と一致する", () => {

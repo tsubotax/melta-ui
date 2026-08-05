@@ -13,6 +13,15 @@
 import { readFileSync, readdirSync, existsSync, lstatSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  DETECTOR_CAPABILITIES,
+  KNOWN_DETECTORS,
+  KNOWN_SEVERITIES,
+  isKnownDetector,
+  isKnownSeverity,
+} from "../../src/utils/detectors.js";
+import { isStaticallyDetectable } from "./coverage-stats.js";
+import type { RuleEntry } from "../../src/utils/types.js";
 import { tokenize, matches, isAutoDetectable } from "../../src/utils/matcher.js";
 import { isStaticallyDetectable, isUnclassified, isUnguardedError } from "./coverage-stats.js";
 import type { RuleEntry, RulesFile } from "../../src/utils/types.js";
@@ -261,25 +270,54 @@ if (rulesData) {
         }
       }
 
-      // severity の値チェック
-      if (rule.severity && !["error", "warn"].includes(rule.severity)) {
-        error(`ルール ${rule.id}: severity "${rule.severity}" は "error" または "warn" のみ`);
+      // severity / detector の妥当性は capability 表（src/utils/detectors.ts）が正。
+      // ここで値を直書きしない（かつて schema / validate / matcher の 3 箇所で条件が食い違っていた）
+      if (rule.severity && !isKnownSeverity(rule.severity)) {
+        error(
+          `ルール ${rule.id}: severity "${rule.severity}" は ${KNOWN_SEVERITIES.join(" / ")} のみ`
+        );
       }
 
-      // detector の値チェック
-      const validDetectors = ["tailwind-class", "tailwind-class-prefix", "tailwind-class-segment", "html-attr", "composition", "manual"];
-      if (rule.detector && !validDetectors.includes(rule.detector)) {
-        error(`ルール ${rule.id}: detector "${rule.detector}" は不正`);
+      if (rule.detector && !isKnownDetector(rule.detector)) {
+        error(
+          `ルール ${rule.id}: detector "${rule.detector}" は engine 未実装（${KNOWN_DETECTORS.join(" / ")}）`
+        );
       }
 
-      // tailwind-class / tailwind-class-prefix は pattern 必須
-      if (["tailwind-class", "tailwind-class-prefix"].includes(rule.detector) && !rule.pattern) {
-        error(`ルール ${rule.id}: detector "${rule.detector}" には pattern が必須`);
+      // class 検査を持つ detector は「その detector が実際に読むフィールド」を
+      // 少なくとも 1 つ持つこと。
+      // 旧実装は tailwind-class / tailwind-class-prefix に pattern を必須としていたが、
+      // matcher は matchPatterns があれば pattern を読まない（= 必須にする根拠が無い）。
+      // capability 表の matchSources から導出することでこの不整合を解消する。
+      // automationStatus はカバレッジ集計の partition を作る。静的に検出できるルールに
+      // "covered-by-test" 等を付けると staticAuto と両方に計上され、合計が総数を超える。
+      // 「静的検出できる ⇒ automationStatus は auto か未指定」を担保する。
+      if (
+        rule.automationStatus != null &&
+        rule.automationStatus !== "auto" &&
+        isStaticallyDetectable(rule as unknown as RuleEntry)
+      ) {
+        error(
+          `ルール ${rule.id}: 静的検出できるのに automationStatus="${rule.automationStatus}"` +
+            `（カバレッジ集計で二重計上される。auto か未指定にすること）`
+        );
       }
 
-      // tailwind-class-segment は matchPatterns 必須
-      if (rule.detector === "tailwind-class-segment" && (!rule.matchPatterns || rule.matchPatterns.length === 0)) {
-        error(`ルール ${rule.id}: detector "tailwind-class-segment" には matchPatterns が必須`);
+      if (isKnownDetector(rule.detector)) {
+        const capability = DETECTOR_CAPABILITIES[rule.detector];
+        if (capability.autoDetectable) {
+          const present = capability.matchSources.filter((f) =>
+            f === "pattern"
+              ? typeof rule.pattern === "string" && rule.pattern.length > 0
+              : Array.isArray(rule[f]) && rule[f].length > 0
+          );
+          if (present.length === 0 && (rule.automationStatus ?? "auto") === "auto") {
+            error(
+              `ルール ${rule.id}: detector "${rule.detector}" は ` +
+                `${capability.matchSources.join(" / ")} のいずれかが必要（1 件も検査されない）`
+            );
+          }
+        }
       }
     }
 

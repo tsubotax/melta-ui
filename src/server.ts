@@ -15,6 +15,7 @@ import {
   getProhibitionRules,
   getAllRules,
 } from "./utils/loader.js";
+import { KNOWN_DETECTORS, KNOWN_SEVERITIES } from "./utils/detectors.js";
 import { getToken } from "./tools/get-token.js";
 import { getComponent } from "./tools/get-component.js";
 import { checkRule } from "./tools/check-rule.js";
@@ -30,6 +31,125 @@ import { buildMcpInstructions } from "./guidance.js";
  */
 const SERVER_NAME = process.env.MELTA_SERVER_NAME ?? "melta-ui";
 const URI_SCHEME = process.env.MELTA_URI_SCHEME ?? "melta";
+
+/**
+ * MCP tool 定義。detector / severity の enum は capability 表からの導出であることを
+ * テストで機械照合するため、ハンドラ内に埋めずに export する。
+ */
+export function toolDefinitions(ruleCount: number) {
+  return [
+      {
+        name: "get_token",
+        description:
+          "Get a design token by dot-path. Returns the token object with value and tailwind class.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            path: {
+              type: "string",
+              description:
+                'Dot-separated path to the token (e.g. "color.primary.600", "spacing.4", "radius.lg", "typography.fontSize.base")',
+            },
+          },
+          required: ["path"],
+        },
+      },
+      {
+        name: "get_component",
+        description:
+          "Get component metadata including variants, sizes, accessibility requirements, HTML sample, per-state specs (stateSpecs: disabled/loading/open/empty etc. — each with delta Tailwind classes + aria changes), and anatomy parts (overlay/container/th etc. with element/roles/tailwind). Prefer these structured fields over inferring states from the HTML sample.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            id: {
+              type: "string",
+              description:
+                'Component ID (e.g. "button", "card", "table", "sidebar")',
+            },
+          },
+          required: ["id"],
+        },
+      },
+      {
+        name: "check_rule",
+        description:
+          "Check Tailwind classes against melta UI prohibition rules. Returns violations with reasons and alternatives.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            classes: {
+              type: "string",
+              description:
+                'Space-separated Tailwind classes to check (e.g. "text-black shadow-2xl bg-green-500")',
+            },
+          },
+          required: ["classes"],
+        },
+      },
+      {
+        name: "check_html",
+        description:
+          "Lint a full HTML/JSX source against melta UI rules — the same checks as CI and the PostToolUse hook (class rules + html-attr rules + composition rules for HTML). Use this AFTER generating UI code to self-verify before presenting it. Response always includes coverage info (manual rules cannot be auto-checked).",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            source: {
+              type: "string",
+              description: "Full source code to lint (HTML / JSX / Vue template)",
+            },
+            sourceType: {
+              type: "string",
+              enum: ["html", "jsx"],
+              description:
+                'Source type. "html" (default) also runs composition lint (nested modal etc.); "jsx" runs class + attr lint only',
+            },
+          },
+          required: ["source"],
+        },
+      },
+      {
+        name: "search",
+        description:
+          "Search across tokens and components by keyword. Matches against names, values, tailwind classes, and descriptions. Returns up to 20 results (truncated flag when more matched).",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            query: {
+              type: "string",
+              description: 'Search keyword (e.g. "card", "primary", "shadow")',
+            },
+          },
+          required: ["query"],
+        },
+      },
+      {
+        name: "get_rules",
+        description:
+          `Get melta UI prohibition rules from rules.json (${ruleCount} total). Use this to retrieve manual/contextual rules that check_rule cannot auto-detect. Supports filtering by category, severity, or detector.`,
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            category: {
+              type: "string",
+              description:
+                'Filter by category (e.g. "color", "spacing", "accessibility", "button", "modal")',
+            },
+            severity: {
+              type: "string",
+              // capability 表（detectors.ts）から導出する。ここで別定義を持たない
+              enum: [...KNOWN_SEVERITIES],
+              description: "Filter by severity",
+            },
+            detector: {
+              type: "string",
+              enum: [...KNOWN_DETECTORS],
+              description: "Filter by detector type",
+            },
+          },
+        },
+      },
+  ] as const;
+}
 
 export function createServer(): Server {
   const pkg = loadPackage();
@@ -173,117 +293,7 @@ export function createServer(): Server {
   // --- Tools ---
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [
-      {
-        name: "get_token",
-        description:
-          "Get a design token by dot-path. Returns the token object with value and tailwind class.",
-        inputSchema: {
-          type: "object" as const,
-          properties: {
-            path: {
-              type: "string",
-              description:
-                'Dot-separated path to the token (e.g. "color.primary.600", "spacing.4", "radius.lg", "typography.fontSize.base")',
-            },
-          },
-          required: ["path"],
-        },
-      },
-      {
-        name: "get_component",
-        description:
-          "Get component metadata including variants, sizes, accessibility requirements, HTML sample, per-state specs (stateSpecs: disabled/loading/open/empty etc. — each with delta Tailwind classes + aria changes), and anatomy parts (overlay/container/th etc. with element/roles/tailwind). Prefer these structured fields over inferring states from the HTML sample.",
-        inputSchema: {
-          type: "object" as const,
-          properties: {
-            id: {
-              type: "string",
-              description:
-                'Component ID (e.g. "button", "card", "table", "sidebar")',
-            },
-          },
-          required: ["id"],
-        },
-      },
-      {
-        name: "check_rule",
-        description:
-          "Check Tailwind classes against melta UI prohibition rules. Returns violations with reasons and alternatives.",
-        inputSchema: {
-          type: "object" as const,
-          properties: {
-            classes: {
-              type: "string",
-              description:
-                'Space-separated Tailwind classes to check (e.g. "text-black shadow-2xl bg-green-500")',
-            },
-          },
-          required: ["classes"],
-        },
-      },
-      {
-        name: "check_html",
-        description:
-          "Lint a full HTML/JSX source against melta UI rules — the same checks as CI and the PostToolUse hook (class rules + html-attr rules + composition rules for HTML). Use this AFTER generating UI code to self-verify before presenting it. Response always includes coverage info (manual rules cannot be auto-checked).",
-        inputSchema: {
-          type: "object" as const,
-          properties: {
-            source: {
-              type: "string",
-              description: "Full source code to lint (HTML / JSX / Vue template)",
-            },
-            sourceType: {
-              type: "string",
-              enum: ["html", "jsx"],
-              description:
-                'Source type. "html" (default) also runs composition lint (nested modal etc.); "jsx" runs class + attr lint only',
-            },
-          },
-          required: ["source"],
-        },
-      },
-      {
-        name: "search",
-        description:
-          "Search across tokens and components by keyword. Matches against names, values, tailwind classes, and descriptions. Returns up to 20 results (truncated flag when more matched).",
-        inputSchema: {
-          type: "object" as const,
-          properties: {
-            query: {
-              type: "string",
-              description: 'Search keyword (e.g. "card", "primary", "shadow")',
-            },
-          },
-          required: ["query"],
-        },
-      },
-      {
-        name: "get_rules",
-        description:
-          `Get melta UI prohibition rules from rules.json (${rules.rules.length} total). Use this to retrieve manual/contextual rules that check_rule cannot auto-detect. Supports filtering by category, severity, or detector.`,
-        inputSchema: {
-          type: "object" as const,
-          properties: {
-            category: {
-              type: "string",
-              description:
-                'Filter by category (e.g. "color", "spacing", "accessibility", "button", "modal")',
-            },
-            severity: {
-              type: "string",
-              enum: ["error", "warn"],
-              description: "Filter by severity",
-            },
-            detector: {
-              type: "string",
-              enum: ["tailwind-class", "tailwind-class-prefix", "tailwind-class-segment", "html-attr", "composition", "manual"],
-              description: "Filter by detector type",
-            },
-          },
-        },
-      },
-    ],
+    tools: toolDefinitions(rules.rules.length).map((t) => ({ ...t })),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {

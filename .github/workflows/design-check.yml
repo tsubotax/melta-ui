@@ -62,6 +62,14 @@ jobs:
           npm run design:llms
           git diff --exit-code llms.txt llms-full.txt
 
+      # contract を更新したのに design:build を回し忘れると、MCP が配る
+      # metadata/components.json だけ古い契約を返し続ける（実際に card 2.1.0 の
+      # a11y 追加が 1 コミット分 stale なまま出荷されていた）
+      - name: components.json Freshness (contract → metadata の生成物が最新か)
+        run: |
+          npm run design:build
+          git diff --exit-code metadata/components.json
+
       - name: Token Validation (tokens.json ↔ ds-config.js / ds-theme.css)
         run: npm run validate
 

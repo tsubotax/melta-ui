@@ -1175,7 +1175,7 @@
           "$schema": "../../../schemas/recipe.schema.json",
           "id": "card",
           "platform": "app",
-          "contractVersion": "2.0.0",
+          "contractVersion": "2.1.0",
           "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus 時は FocusRing overlay（borderWidth 2 / color.primary.500 / inset -3 / borderRadius = radius.lg + 3）。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。",
           "variants": {
             "basic": {
@@ -1277,7 +1277,11 @@
       },
       "accessibility": {
         "role": "article",
-        "required": [],
+        "required": [
+          "action / link は主アクションの操作要素（button / a）を内包する。カード面自体を操作要素にしない（RN: 面に accessibilityRole=\"button\" を付けない）",
+          "面のクリック・タップはポインタ向けの近道。キーボード / スクリーンリーダーからの到達は内包した操作要素が担う",
+          "内包する操作要素が2つ以上ある場合、面のクリックはそのうち1つ（主アクション）と同じ遷移先にする"
+        ],
         "focusRing": "focus-within:ring-2 focus-within:ring-primary-500/50"
       },
       "prohibited": [

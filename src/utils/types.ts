@@ -1,3 +1,5 @@
+import type { KnownDetector, KnownSeverity } from "./detectors.js";
+
 /** Token value with Tailwind class mapping */
 export interface TokenValue {
   value: string | number | string[];
@@ -173,9 +175,9 @@ export type CompositionCheck =
 export interface RuleEntry {
   id: string;
   category: string;
-  severity: "error" | "warn";
+  severity: KnownSeverity;
   description: string;
-  detector: "tailwind-class" | "tailwind-class-prefix" | "tailwind-class-segment" | "html-attr" | "composition" | "manual";
+  detector: KnownDetector;
   pattern: string | null;
   matchPatterns?: string[];
   /** tailwind-class-prefix 専用の純粋な前方一致パターン（任意値回避経路の検知用）。matchPatterns（完全一致 + /modifier）とは意味論が異なる */
@@ -205,7 +207,7 @@ export interface RuleEntry {
 /** lint-core / attr-lint が返す 1 件の違反 */
 export interface LintViolation {
   ruleId: string;
-  severity: "error" | "warn";
+  severity: KnownSeverity;
   /** 違反した実際の class token / 属性スニペット（raw） */
   token: string;
   category: string;
@@ -222,8 +224,8 @@ export interface RulesFile {
 /** get_rules / getAllRules で使う絞り込み条件 */
 export interface RuleFilter {
   category?: string;
-  severity?: "error" | "warn";
-  detector?: "tailwind-class" | "tailwind-class-prefix" | "tailwind-class-segment" | "html-attr" | "composition" | "manual";
+  severity?: KnownSeverity;
+  detector?: KnownDetector;
 }
 
 /**
@@ -243,7 +245,7 @@ export interface MatchContext {
 /** check_rule が使う展開済みルール型（matchPatterns 展開後） */
 export interface ProhibitionRule {
   ruleId: string;
-  severity: "error" | "warn";
+  severity: KnownSeverity;
   pattern: string;
   reason: string;
   alternative: string;
@@ -252,7 +254,7 @@ export interface ProhibitionRule {
 /** check_rule の violation 出力 */
 export interface Violation {
   ruleId: string;
-  severity: "error" | "warn";
+  severity: KnownSeverity;
   class: string;
   reason: string;
   alternative: string;

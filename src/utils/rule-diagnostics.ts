@@ -20,8 +20,10 @@ import {
   CHECK_KIND_SHAPES,
   DETECTOR_CAPABILITIES,
   KNOWN_DETECTORS,
+  KNOWN_SEVERITIES,
   SPEC_OWNER,
   isKnownDetector,
+  isKnownSeverity,
 } from "./detectors.js";
 import type {
   CheckKindShape,
@@ -32,10 +34,10 @@ import type {
 import { hasMatchSource } from "./matcher.js";
 import type { RuleEntry } from "./types.js";
 
-/** engine が解釈できる severity。ruleset 側がこれ以外を書いたら評価不能 */
-export const KNOWN_SEVERITIES = ["error", "warn"] as const;
-
-export type KnownSeverity = (typeof KNOWN_SEVERITIES)[number];
+// severity の全集合は capability 表（detectors.ts）が正。
+// 既存 import を壊さないようここから re-export する。
+export { KNOWN_SEVERITIES, isKnownSeverity } from "./detectors.js";
+export type { KnownSeverity } from "./detectors.js";
 
 /**
  * ruleset 不正の共通エラー。
@@ -63,10 +65,6 @@ export function rulesetError(params: {
   return new Error(lines.join("\n"));
 }
 
-/** severity が engine の解釈可能な値か */
-export function isKnownSeverity(value: unknown): value is KnownSeverity {
-  return typeof value === "string" && (KNOWN_SEVERITIES as readonly string[]).includes(value);
-}
 
 /**
  * rules 配列の最小構造検査。

@@ -11,6 +11,8 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isAutoDetectable } from "../../src/utils/matcher.js";
+import type { RuleEntry } from "../../src/utils/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // engine root — loader.ts 等、エンジン自身の資産。vendor 先でもスクリプト位置から解決する
@@ -142,6 +144,7 @@ interface Rule {
   detector: string;
   pattern: string | null;
   matchPatterns?: string[];
+  prefixPatterns?: string[];
   alternative: string;
 }
 
@@ -249,11 +252,15 @@ function rulesToLegacyProhibitions(rulesData: RulesData): LegacyProhibitionRule[
   const result: LegacyProhibitionRule[] = [];
 
   for (const rule of rulesData.rules) {
-    // 自動検出可能なルールのみ変換
-    if (rule.detector === "manual" || !rule.pattern) continue;
+    // 自動検出可能なルールのみ変換。判定は matcher.isAutoDetectable が単一の真理。
+    // 旧実装は `!rule.pattern` で弾いていたため、matchPatterns だけを持つ
+    // tailwind-class-segment（AI_NO_DECORATIVE_PURPLE）が legacy 出力から
+    // 黙って脱落していた。detector ごとに読むフィールドが違う以上、
+    // pattern の有無で判定してはいけない。
+    if (!isAutoDetectable(rule as unknown as RuleEntry)) continue;
 
+    // 展開順は loader.getProhibitionRules と同じ（matchPatterns → pattern、加えて prefixPatterns）
     if (rule.matchPatterns && rule.matchPatterns.length > 0) {
-      // 展開
       for (const mp of rule.matchPatterns) {
         result.push({
           pattern: mp,
@@ -261,9 +268,16 @@ function rulesToLegacyProhibitions(rulesData: RulesData): LegacyProhibitionRule[
           alternative: rule.alternative,
         });
       }
-    } else {
+    } else if (rule.pattern) {
       result.push({
         pattern: rule.pattern,
+        reason: rule.description,
+        alternative: rule.alternative,
+      });
+    }
+    for (const pp of rule.prefixPatterns ?? []) {
+      result.push({
+        pattern: pp,
         reason: rule.description,
         alternative: rule.alternative,
       });

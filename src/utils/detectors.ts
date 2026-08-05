@@ -19,6 +19,18 @@
 /** matcher.matches() が参照しうる pattern 系フィールド */
 export type MatchSource = "pattern" | "matchPatterns" | "prefixPatterns";
 
+/**
+ * engine が解釈できる severity。ruleset 側がこれ以外を書いたら評価不能。
+ * 型・MCP の enum・validate・ランタイム検証はすべてここから導出する。
+ */
+export const KNOWN_SEVERITIES = ["error", "warn"] as const;
+
+export type KnownSeverity = (typeof KNOWN_SEVERITIES)[number];
+
+export function isKnownSeverity(value: unknown): value is KnownSeverity {
+  return typeof value === "string" && (KNOWN_SEVERITIES as readonly string[]).includes(value);
+}
+
 export interface DetectorCapability {
   /** class 文字列マッチ（matcher.matches）で判定できるか */
   autoDetectable: boolean;
@@ -202,4 +214,19 @@ export const SPEC_OWNER: Record<string, KnownDetector> = Object.fromEntries(
  */
 export function isKnownDetector(value: unknown): value is KnownDetector {
   return typeof value === "string" && Object.hasOwn(DETECTOR_CAPABILITIES, value);
+}
+
+/** その detector の検査を駆動する spec フィールド名（無ければ null） */
+export function specFieldFor(detector: unknown): "htmlAttrCheck" | "compositionCheck" | null {
+  return isKnownDetector(detector) ? DETECTOR_CAPABILITIES[detector].specField : null;
+}
+
+/**
+ * spec 駆動の detector が、実際に走る spec を持っているか。
+ * 「宣言はあるが評価されない」（spec 無しの html-attr 等）を false 側に落とす。
+ * types.ts に依存しないよう構造的な型で受ける（types.ts → detectors.ts の一方向を保つため）。
+ */
+export function hasRunnableSpec(rule: { detector?: unknown } & Record<string, unknown>): boolean {
+  const field = specFieldFor(rule.detector);
+  return field != null && rule[field] != null;
 }
