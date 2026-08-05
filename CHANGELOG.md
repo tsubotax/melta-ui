@@ -29,15 +29,15 @@ npm 上の 1.4.0 が 7/19 時点の contracts 0.5.0 を同梱したまま stale 
 
 ## [1.4.0] - 2026-07-19
 
-### DADS 取り込み — Baseline 線引き + disabled 併記 + 44px タップ領域 + リセットCSS VRT
+### 生成 UI の耐久性強化 — Baseline 線引き + disabled 併記 + 44px タップ領域 + リセットCSS VRT
 
-デジタル庁デザインシステム（DADS）4 リポの深掘り調査から採用を決めた 4 項目を導入（設計と Codex レビュー反映は `docs/dads-adoption-plan.md`）。ルールは 99 → **105 件**、contracts は **0.5.0**（npm publish 済）。
+公共系日本語 UI の実装水準を棚卸しして、melta が機械強制すべきと判断した 4 項目を導入。ルールは 99 → **105 件**、contracts は **0.5.0**（npm publish 済）。
 
 #### Added
 
 - **BASELINE_* ルール 5 件（warn）** — CSS/HTML 機能を Baseline **Widely available** に限定する原則を DESIGN.md 原則 8 に明文化し、AI が出しがちな未普及機能（Anchor Positioning / Invoker Commands / popover / View Transitions / text-box-trim）を denylist 検知。attr-lint に新 kind `attr-present`（開始タグ抽出 + 引用符内除去で属性値内の同名語を誤検知しない）
 - **A11Y_DISABLED_REQUIRES_ARIA（warn）** — 契約既存の規範（button stateSpecs.disabled = `disabled` + `aria-disabled` 併用）を composition lint で HTML に機械強制。タブ順維持が要る文脈の `aria-disabled` 単独 + JS ガードパターンは DESIGN.md に注記
-- **リセットCSS差し替え VRT**（`npm run test:reset-vrt`）— Normalize / Bootstrap Reboot / Tailwind Preflight / Eric Meyer / kiso.css の 5 種を melta スタックより前に注入し、pixelmatch threshold 0 + includeAA の literal 比較で **diff 0px** を検証。fixture は契約 htmlSample から実行時組み立て（コピー drift なし）、スナップショット無しの同一セッション内比較 + A/A 決定性テスト（DADS 方式）。CI には non-blocking で組み込み（安定確認後に required 昇格）
+- **リセットCSS差し替え VRT**（`npm run test:reset-vrt`）— Normalize / Bootstrap Reboot / Tailwind Preflight / Eric Meyer / kiso.css の 5 種を melta スタックより前に注入し、pixelmatch threshold 0 + includeAA の literal 比較で **diff 0px** を検証。fixture は契約 htmlSample から実行時組み立て（コピー drift なし）、スナップショット無しの同一セッション内比較 + A/A 決定性テスト。CI には non-blocking で組み込み（安定確認後に required 昇格）
 - **Host-Reset Defense 層（ds-theme.css）** — 監査で発見した 3 系統の漏れを封鎖: ① Reboot 系の body 直指定 font/color が Preflight の html レベル指定を貫通 ② Meyer 系の要素セレクタ `border: 0` が Preflight の `*`（specificity 0）に常勝して枠線消失 ③ kiso.css の日本語タイポプロパティ（text-autospace 等）継承でテキスト幅シフト
 - **タップ領域拡張の受け入れテスト**（`tests/tap-target.spec.ts`）— ジオメトリ不変 / elementFromPoint 拡張帯ヒット / overflow クリップ制約 / disabled 無効化を実ブラウザで固定
 

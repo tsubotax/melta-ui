@@ -1161,7 +1161,7 @@
       "prohibited": [
         "タップターゲットが小さすぎる",
         "操作内容がスクリーンリーダーに伝わらない",
-        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（DADS 取り込み B3、2026-07-19 昇格）",
+        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（2026-07-19 に manual から composition 自動検出へ昇格）",
         "重要度の区別がつかない（Neutralのみ例外）",
         "トグル状態の対比がないと意味不明"
       ],
@@ -2610,7 +2610,7 @@
         "focusRing": "focus:ring-2 focus:ring-primary-500/50"
       },
       "prohibited": [
-        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（DADS 取り込み B3、2026-07-19 昇格）"
+        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（2026-07-19 に manual から composition 自動検出へ昇格）"
       ],
       "htmlSample": "<nav aria-label=\"ページネーション\"><ul class=\"flex items-center gap-1\"><li><button class=\"w-10 h-10 inline-flex items-center justify-center text-base font-medium text-white bg-primary-500 rounded-lg\" aria-current=\"page\" aria-label=\"ページ 1\">1</button></li></ul></nav>"
     },

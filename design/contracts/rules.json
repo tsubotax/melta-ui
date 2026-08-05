@@ -586,7 +586,7 @@
       "id": "BTN_MIN_TAP_TARGET",
       "category": "button",
       "severity": "error",
-      "description": "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（DADS 取り込み B3、2026-07-19 昇格）",
+      "description": "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 / 44px 基準、インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（2026-07-19 に manual から composition 自動検出へ昇格）",
       "detector": "composition",
       "pattern": null,
       "alternative": "relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 を付与（button recipe 準拠なら自動で付く）",
