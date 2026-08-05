@@ -10,7 +10,7 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.4; letter-spacing: 0.01em; }
 /* --- Host-Reset Defense (reset-swap VRT で機械検証) --------------------------
    ホストサイトのリセットCSS（Reboot / Meyer / kiso.css 等）が melta より先に
    読まれても見た目が変わらないよう、ブラウザ既定に依存している値を明示宣言する。
-   検証: npm run test:reset-vrt（漏れの根本原因分析は docs/dads-adoption-plan.md V1）
+   検証: npm run test:reset-vrt
 
    1. Reboot 系は body 直指定の font/color で Preflight の html レベル指定を貫通する
       → body で明示宣言して塞ぐ */

@@ -31,7 +31,7 @@ npm 上の 1.4.0 が 7/19 時点の contracts 0.5.0 を同梱したまま stale 
 
 ### 生成 UI の耐久性強化 — Baseline 線引き + disabled 併記 + 44px タップ領域 + リセットCSS VRT
 
-公共系日本語 UI の実装水準を棚卸しして、melta が機械強制すべきと判断した 4 項目を導入。ルールは 99 → **105 件**、contracts は **0.5.0**（npm publish 済）。
+外部の公開デザインシステムと実装例を調査し、melta が機械強制すべきと判断した 4 項目を導入。ルールは 99 → **105 件**、contracts は **0.5.0**（npm publish 済）。
 
 #### Added
 
@@ -43,7 +43,7 @@ npm 上の 1.4.0 が 7/19 時点の contracts 0.5.0 を同梱したまま stale 
 
 #### Changed（contracts 0.5.0 / button 2.1.0）
 
-- **BTN_MIN_TAP_TARGET を manual → composition 自動検出に昇格**（新 kind `dom-class-required` + `excludeWhen: icon-only`。無防備 error 43 → 42）。button 契約 sizes.small/medium に `after:` 擬似要素のタップ領域拡張を追加（見た目不変・実効 44px、WCAG 2.2 基準）。touchTarget prose の「web は h-8 まで許容」との矛盾を解消。icon-only の幅拡張は第二弾
+- **BTN_MIN_TAP_TARGET を manual → composition 自動検出に昇格**（新 kind `dom-class-required` + `excludeWhen: icon-only`。無防備 error 43 → 42）。button 契約 sizes.small/medium に `after:` 擬似要素のタップ領域拡張を追加（見た目不変・実効 44px、WCAG 2.2 SC 2.5.5 Target Size (Enhanced) = AAA 水準）。touchTarget prose の「web は h-8 まで許容」との矛盾を解消。icon-only の幅拡張は第二弾
 - 社内コーパス migration: aria-disabled 併記 10 箇所 + タップ領域拡張 167 箇所 + 契約 htmlSample 5 箇所（examples / docs/index.html / verification）
 - 新規則で既存合法 HTML の判定が変わる変更を行動互換性破壊とみなし contracts を 0.5.0 に（プロジェクト判断。compat 機械分類は additive でも minor bump）
 
