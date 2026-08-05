@@ -6,7 +6,7 @@
  * の**パターン意味論**を実ブラウザで検証する。Tailwind CDN に依存しない同義の
  * 素 CSS で fixture を組む（CI の外部依存を避ける。クラス→CSS の対応は契約が SSOT）。
  *
- * 検証項目（docs/dads-adoption-plan.md B3 の受け入れ条件）:
+ * 検証項目（docs/lint-and-reset-vrt-adoption-plan.md B3 の受け入れ条件）:
  * 1. 見た目のジオメトリ不変（getBoundingClientRect は h-8 = 32px のまま）
  * 2. 拡張領域（ボタン上下の張り出し帯）のクリックがボタンに落ちる（elementFromPoint + click）
  * 3. overflow:hidden 祖先では拡張領域が切れる（既知の制約の実挙動を固定）

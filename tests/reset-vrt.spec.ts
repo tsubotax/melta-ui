@@ -11,7 +11,7 @@
  * - fixture は契約 htmlSample から実行時に組み立てる（コピー drift を作らない）。
  *   CSS 環境は showcase と同一（Tailwind CDN + ds-config.js + ds-theme.css）
  * - pixelmatch threshold 0 + includeAA で literal 比較。フレークしたら
- *   閾値を緩めて保証文言を「有意差 0px」に変える（docs/dads-adoption-plan.md V1）
+ *   閾値を緩めて保証文言を「有意差 0px」に変える（docs/lint-and-reset-vrt-adoption-plan.md V1）
  *
  * 実行: npm run test:reset-vrt（通常の npm test からは除外されている）
  */

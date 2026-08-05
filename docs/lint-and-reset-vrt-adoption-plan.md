@@ -1,4 +1,4 @@
-# DADS 取り込み導入設計 — lint ルール群 + リセットCSS差し替えVRT
+# 導入設計 — lint ルール群 + リセットCSS差し替えVRT
 
 > 2026-07-19 起草 → **同日 v2: Codex レビュー（blocker 5 / should-fix 9）を実ファイル検算のうえ全面反映**。
 > 調査経緯とスコープ判断（forced-colors 見送り等）はメモリ `dads-research-2026-07` 参照。

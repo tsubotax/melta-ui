@@ -123,7 +123,7 @@ jobs:
   reset-vrt:
     # リセットCSS差し替え VRT（DADS 取り込み V1）。
     # CI Linux での決定性（A/A テスト）の安定を確認するまで non-blocking。
-    # 安定したら continue-on-error を外して required に昇格する（docs/dads-adoption-plan.md V1）
+    # 安定したら continue-on-error を外して required に昇格する（docs/lint-and-reset-vrt-adoption-plan.md V1）
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
