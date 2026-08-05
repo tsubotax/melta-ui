@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schemas/recipe.schema.json",
+  "id": "panel",
+  "platform": "web",
+  "contractVersion": "1.0.0",
+  "generatedFrom": "components/panel.contract.json",
+  "variants": {
+    "flat": {
+      "tailwind": "bg-sand border border-ink/10"
+    },
+    "inset": {
+      "tailwind": "bg-sand/60 border border-ink/10"
+    }
+  },
+  "sizes": {
+    "md": {
+      "tailwind": "p-4 gap-tight"
+    },
+    "lg": {
+      "tailwind": "p-6 gap-loose"
+    }
+  }
+}

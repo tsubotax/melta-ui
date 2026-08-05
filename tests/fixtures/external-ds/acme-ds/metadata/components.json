@@ -1,0 +1,89 @@
+{
+  "version": "1.0.0",
+  "components": [
+    {
+      "id": "data-grid",
+      "name": "DataGrid",
+      "category": "data-table",
+      "description": "表形式データを acme のリズムで並べる",
+      "docPath": "components/data-grid.md",
+      "variants": [
+        {
+          "name": "default",
+          "class": "acme-grid w-full text-ink",
+          "tailwind": "acme-grid w-full text-ink"
+        }
+      ],
+      "sizes": [
+        {
+          "name": "md",
+          "class": "gap-tight",
+          "tailwind": "gap-tight",
+          "height": "44px"
+        }
+      ],
+      "states": [
+        "default",
+        "empty"
+      ],
+      "accessibility": {
+        "role": "table",
+        "required": [
+          "th には scope を付ける"
+        ]
+      },
+      "prohibited": [
+        "th には scope が要る（列見出しか行見出しかを支援技術に伝える）",
+        "表は acme-grid クラスを付けて data-grid 契約の適用対象であることを示す"
+      ],
+      "htmlSample": "<table class=\"acme-grid w-full text-ink\"><thead><tr><th scope=\"col\">名前</th></tr></thead><tbody><tr><td>acme</td></tr></tbody></table>"
+    },
+    {
+      "id": "panel",
+      "name": "Panel",
+      "category": "surface",
+      "description": "情報のまとまりを平面的に区切る acme の基本面",
+      "docPath": "components/panel.md",
+      "variants": [
+        {
+          "name": "flat",
+          "class": "bg-sand border border-ink/10",
+          "tailwind": "bg-sand border border-ink/10"
+        },
+        {
+          "name": "inset",
+          "class": "bg-sand/60 border border-ink/10",
+          "tailwind": "bg-sand/60 border border-ink/10"
+        }
+      ],
+      "sizes": [
+        {
+          "name": "md",
+          "class": "p-4 gap-tight",
+          "tailwind": "p-4 gap-tight",
+          "height": "44px"
+        },
+        {
+          "name": "lg",
+          "class": "p-6 gap-loose",
+          "tailwind": "p-6 gap-loose",
+          "height": "56px"
+        }
+      ],
+      "states": [
+        "default"
+      ],
+      "accessibility": {
+        "role": "group",
+        "required": []
+      },
+      "prohibited": [
+        "強い影は acme の平面志向に反する"
+      ],
+      "htmlSample": {
+        "flat": "<div class=\"bg-sand border border-ink/10 p-4 gap-tight\" role=\"group\">panel</div>",
+        "inset": "<div class=\"bg-sand/60 border border-ink/10 p-4 gap-tight\" role=\"group\">panel</div>"
+      }
+    }
+  ]
+}

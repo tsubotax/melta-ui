@@ -15,19 +15,27 @@ INPUT=$(cat)
 # file_path を抽出
 FILE_PATH=$(echo "$INPUT" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*:[[:space:]]*"\([^"]*\)"/\1/')
 
-# 対象拡張子でなければスキップ
-case "$FILE_PATH" in
-  *.html|*.tsx|*.jsx|*.vue) ;;
-  *) exit 0 ;;
-esac
+# file_path を取り出せなかった = hook の配線ミス。ここで exit 0 すると
+# 「検査が走らなかった」ことが誰にも伝わらないので TS 側に委ねて通知させる
+if [ -n "$FILE_PATH" ]; then
+  # 対象拡張子でなければスキップ。
+  # ここで弾くのは **毎回 tsx を起動しないための足切り**であって判定ではない
+  # （拡張子の正は lint-generated.ts の TARGET_EXT。変更時は両方を合わせること）
+  case "$FILE_PATH" in
+    *.html|*.tsx|*.jsx|*.vue) ;;
+    *) exit 0 ;;
+  esac
 
-# テスト / ベンチマーク / デモ用ファイルは除外
-case "$FILE_PATH" in
-  */tests/*|*/test/*|*/benchmarks/results/*|*/verification/*) exit 0 ;;
-esac
+  # テスト / ベンチマーク / デモ用ファイルは意図的に対象外
+  case "$FILE_PATH" in
+    */tests/*|*/test/*|*/benchmarks/results/*|*/verification/*) exit 0 ;;
+  esac
+fi
 
-# ファイルが存在しなければスキップ
-[ -f "$FILE_PATH" ] || exit 0
+# ⚠️ 「不在ならスキップ」を wrapper で判定しない。
+# 対象拡張子なのに実物が無い / ディレクトリだった、は **検査が走らなかった**ケースで、
+# TS 側（hookMain）が未検査通知を出す。ここで exit 0 すると
+# その通知に永久に到達しない（= fail-open が wrapper 層に残る）
 
 # プロジェクトルートを特定
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

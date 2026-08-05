@@ -58,7 +58,13 @@ function componentNotFoundMessage(id: string, total: number): string {
   return `Component not found: ${id}（この bundle の component は ${total} 件）`;
 }
 
-export function toolDefinitions(ruleCount: number) {
+/**
+ * @param ruleCount この bundle のルール件数
+ * @param serverName 説明文に埋める DS 名。既定は起動時の SERVER_NAME。
+ *   ハードコードすると第三者 bundle の tool 説明にまで melta の名前が残り、
+ *   「データは差し替わったが公開面は melta のまま」になる
+ */
+export function toolDefinitions(ruleCount: number, serverName: string = SERVER_NAME) {
   return [
       {
         name: "get_token",
@@ -111,7 +117,7 @@ export function toolDefinitions(ruleCount: number) {
       {
         name: "check_html",
         description:
-          "Lint a full HTML/JSX source against melta UI rules — the same checks as CI and the PostToolUse hook (class rules + html-attr rules + composition rules for HTML). Use this AFTER generating UI code to self-verify before presenting it. Response always includes coverage info (manual rules cannot be auto-checked).",
+          `Lint a full HTML/JSX source against ${serverName} rules — the same checks as CI and the PostToolUse hook (class rules + html-attr rules + composition rules for HTML). Use this AFTER generating UI code to self-verify before presenting it. Response always includes coverage info (manual rules cannot be auto-checked).`,
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -147,7 +153,7 @@ export function toolDefinitions(ruleCount: number) {
       {
         name: "get_rules",
         description:
-          `Get melta UI prohibition rules from rules.json (${ruleCount} total). Use this to retrieve manual/contextual rules that check_rule cannot auto-detect. Supports filtering by category, severity, or detector.`,
+          `Get ${serverName} prohibition rules from rules.json (${ruleCount} total). Use this to retrieve manual/contextual rules that check_rule cannot auto-detect. Supports filtering by category, severity, or detector.`,
         inputSchema: {
           type: "object" as const,
           properties: {

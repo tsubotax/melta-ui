@@ -35,11 +35,34 @@ jobs:
           if ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
             BASE=$(git rev-parse HEAD~1 2>/dev/null || git hash-object -t tree /dev/null)
           fi
-          # NUL 区切りで空白入りパスにも安全に対応
-          if git diff -z --name-only --diff-filter=d "$BASE" HEAD \
-               | grep -zE '\.(html|tsx|jsx|vue)$' \
-               | xargs -0 -r npm run design:lint-generated --; then
-            echo "✅ 生成物 lint PASSED（対象なしを含む）"
+          # NUL 区切りで空白入りパスにも安全に対応。
+          # tests/fixtures/external-ds/*/samples/ は **別の DS の検体**（melta のルールで
+          # 検査すると、意図的に仕込んだ違反が melta の違反として報告される）。その bundle
+          # 自身のルールでの検査は tests/external-ds.spec.ts が担当するので除外する。
+          # 除外は samples/ だけに絞る（fixture 配下を丸ごと外すと、将来置いた実ファイルが
+          # 黙って無検査になる）。
+          #
+          # grep は 0 件で exit 1 を返す。パイプの途中に置いたまま終了コードを見ると
+          # pipefail 下で「対象なし = CI 失敗」に化けるため、
+          # 一度ファイルに落として件数で明示的に分岐する（GHA 既定の bash -e では
+          # 現状発火しないが、shell: bash を足した瞬間に壊れる潜伏罠）。
+          #
+          # ただし `|| true` で握り潰すと **git diff の失敗まで「対象なし」= 成功**に
+          # なるため、no-match の exit 1 だけを許容する（grep は 2 以上が本物のエラー）。
+          # 一時ファイルは mktemp で実行ごとに一意化する（固定パスは残骸の再利用と競合を招く）。
+          WORKDIR=$(mktemp -d)
+          trap 'rm -rf "$WORKDIR"' EXIT
+          CHANGED="$WORKDIR/changed.z"
+          FILTERED="$WORKDIR/filtered.z"
+          TARGETS="$WORKDIR/targets.z"
+          # git diff の失敗は set -e でそのまま step を落とす
+          git diff -z --name-only --diff-filter=d "$BASE" HEAD > "$CHANGED"
+          grep -zE '\.(html|tsx|jsx|vue)$' "$CHANGED" > "$FILTERED" || [ $? -eq 1 ]
+          grep -zv '^tests/fixtures/external-ds/[^/]*/samples/' "$FILTERED" > "$TARGETS" || [ $? -eq 1 ]
+          if [ ! -s "$TARGETS" ]; then
+            echo "✅ 生成物 lint PASSED（対象なし）"
+          elif xargs -0 -r npm run design:lint-generated -- < "$TARGETS"; then
+            echo "✅ 生成物 lint PASSED"
           else
             echo "❌ 生成物 lint FAILED"
             exit 1

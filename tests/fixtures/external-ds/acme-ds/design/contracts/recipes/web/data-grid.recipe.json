@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/recipe.schema.json",
+  "id": "data-grid",
+  "platform": "web",
+  "contractVersion": "1.0.0",
+  "generatedFrom": "components/data-grid.contract.json",
+  "variants": {
+    "default": {
+      "tailwind": "acme-grid w-full text-ink"
+    }
+  },
+  "sizes": {
+    "md": {
+      "tailwind": "gap-tight"
+    }
+  }
+}

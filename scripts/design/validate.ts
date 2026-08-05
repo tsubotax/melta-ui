@@ -410,10 +410,16 @@ if (rulesData) {
       ok(`  ${cat}: ${count} 件`);
     }
 
-    // 自動検出可能 vs manual の集計
+    // 検出手段の集計。
+    // 「class マッチでないもの = manual」と 2 分するのは誤り: html-attr / composition は
+    // spec を持てば機械検査される。第三者 bundle でこの 2 分法を出すと、実際には
+    // 検査されているルールを「人間頼み」と報告してカバレッジを過小に見せる。
     const autoDetectable = rulesData.rules.filter(isAutoDetectable);
-    const manualOnly = rulesData.rules.filter((r) => !isAutoDetectable(r));
-    ok(`自動検出可能: ${autoDetectable.length} 件 / manual: ${manualOnly.length} 件`);
+    const specDriven = rulesData.rules.filter((r) => !isAutoDetectable(r) && isStaticallyDetectable(r));
+    const notStatic = rulesData.rules.filter((r) => !isStaticallyDetectable(r));
+    ok(
+      `class 自動検出: ${autoDetectable.length} 件 / spec 駆動検査: ${specDriven.length} 件 / 静的検査対象外: ${notStatic.length} 件`
+    );
 
     // --- automationStatus 整合（2026-07 棚卸し）---
     // 「宣言と検出機構の矛盾」を機械で塞ぐ。severity 問わず全ルール対象（warn ルールの誤分類も許さない）。
@@ -827,15 +833,27 @@ if (rulesData && existsSync(contractDir)) {
   );
 }
 
-// --- 7. htmlSample 自己整合（variant.tailwind ⊆ htmlSample のクラス） ---
-// htmlSample は MCP get_component で AI に直接配信される「コピペ元」。variant.tailwind が
+// --- 7. htmlSample 自己整合（variant のクラス ⊆ htmlSample のクラス） ---
+// htmlSample は MCP get_component で AI に直接配信される「コピペ元」。variant が
 // 宣言する focus/hover 等のクラスが htmlSample から欠けていると、AI はそれを欠いた UI を
 // 生成する（focus ring 欠落 = a11y 後退）。値レベルの drift をここで検出する。
+//
+// ⚠️ この検査が成立するのは htmlSample が **variant キーごとの object** のときだけ。
+// schema は単一文字列も許すが、その形では「どの variant の見本か」が決まらないため対応が取れない。
+// 従来は object 以外を黙って continue して「OK（N ペア）」とだけ出していたので、
+// 単一文字列で書いた契約は 1 つも検査されていないのに合格に見えていた（melta 自身にも該当あり）。
+// 検査できなかった集合を数えて報告する（G-C: 黙って素通りさせない）。
 section("7. htmlSample 自己整合（variant ↔ htmlSample）");
 
 if (existsSync(contractDir)) {
   let pairsChecked = 0;
   let driftPairs = 0;
+  /** htmlSample が単一文字列のため variant 対応が取れなかった契約 */
+  const unpairableContracts: string[] = [];
+  /** object 形式だが対応する見本が無い / 文字列でない variant（`file#vkey`） */
+  const unpairedVariantKeys: string[] = [];
+  /** 上記いずれかで検査されなかった variant の総数 */
+  let unpairedVariants = 0;
 
   for (const file of contractFiles) {
     const contract = loadJSON(`design/contracts/components/${file}`) as
@@ -843,13 +861,30 @@ if (existsSync(contractDir)) {
       | null;
     if (!contract) continue;
     const htmlSample = contract.htmlSample;
-    if (!htmlSample || typeof htmlSample !== "object" || Array.isArray(htmlSample)) continue;
+    const variantCount = Object.keys(contract.variants ?? {}).length;
+    if (!htmlSample || typeof htmlSample !== "object" || Array.isArray(htmlSample)) {
+      // htmlSample を持つのに variant 対応が取れない形（= 単一文字列）だけを未検査として数える。
+      // htmlSample 自体が無い契約は「見本を配っていない」ので drift の余地がない。
+      if (htmlSample != null && variantCount > 0) {
+        unpairableContracts.push(file);
+        unpairedVariants += variantCount;
+      }
+      continue;
+    }
     const samples = htmlSample as Record<string, unknown>;
 
     for (const [vkey, variant] of Object.entries(contract.variants || {})) {
       const sample = samples[vkey];
       const variantClass = readClassValueLenient(variant, `${file}.variants`);
-      if (typeof sample !== "string" || typeof variantClass !== "string") continue;
+      if (typeof sample !== "string" || typeof variantClass !== "string") {
+        // object 形式でも、variant に対応する見本が欠けている / 文字列でない場合は
+        // 検査できない。ここを黙って continue すると
+        // 「variants=flat,inset に htmlSample=flat だけ」の契約で inset が未検査のまま
+        // 「自己整合 OK」が出る（object にしさえすれば安心、という誤解を生む）
+        unpairedVariantKeys.push(`${file}#${vkey}`);
+        unpairedVariants++;
+        continue;
+      }
       pairsChecked++;
 
       // htmlSample 内の全 class="..." トークンを集める
@@ -862,15 +897,36 @@ if (existsSync(contractDir)) {
         .filter((c) => c && !sampleClasses.has(c));
       if (missing.length > 0) {
         driftPairs++;
-        warn(
-          `${file}: variant "${vkey}" の tailwind クラスが htmlSample.${vkey} に欠落: ${missing.join(" ")}（AI はこの例をコピーするため focus/hover 欠落は生成品質に直結）`
+        // 「見本にクラスが足りない」は検出済みの確定した SSOT drift。
+        // warn だと CI が緑のまま焦点リング欠落の見本を配り続けるため error にする
+        // （melta の 40 契約は現状 drift 0 なので既存の緑は変わらない）
+        error(
+          `${file}: variant "${vkey}" のクラスが htmlSample.${vkey} に欠落: ${missing.join(" ")}（AI はこの例をコピーするため focus/hover 欠落は生成品質に直結）`
         );
       }
     }
   }
 
+  const unpairedTotal = unpairableContracts.length + unpairedVariantKeys.length;
   if (driftPairs === 0) {
-    ok(`htmlSample 自己整合 OK（${pairsChecked} variant/htmlSample ペア）`);
+    // 「OK」だけ出すと未検査分まで合格に見える。検査できた範囲を必ず添える
+    ok(
+      `htmlSample 自己整合: ${pairsChecked} ペア検査 / drift 0` +
+        (unpairedTotal > 0 ? `（未検査 ${unpairedVariants} variant）` : "")
+    );
+  }
+  if (unpairableContracts.length > 0) {
+    warn(
+      `htmlSample が単一文字列のため未検査: ${unpairableContracts.length} 契約` +
+        `（variant キーごとの object にすると検査対象になる: ${unpairableContracts.slice(0, 5).join(", ")}` +
+        `${unpairableContracts.length > 5 ? " ほか" : ""}）`
+    );
+  }
+  if (unpairedVariantKeys.length > 0) {
+    warn(
+      `htmlSample に対応する見本が無い variant: ${unpairedVariantKeys.length} 件` +
+        `（${unpairedVariantKeys.slice(0, 5).join(", ")}${unpairedVariantKeys.length > 5 ? " ほか" : ""}）`
+    );
   }
 }
 
@@ -1170,7 +1226,15 @@ section("9. recipes（web 鮮度 + app styleRefs 検証）");
       }
     }
     if (appStatusIssues === 0) {
-      ok(`appStatus 宣言 ${allContractFiles.length} 契約: enum / appNote / recipes-app 一致 OK`);
+      // 宣言していない契約まで「宣言 N 契約 ... 一致 OK」と数えると、
+      // app capability を持たない bundle で「検証していないものを合格と主張」してしまう。
+      // 実際に宣言していた件数だけを報告し、0 件なら非宣言であることを明示する。
+      const declaredCount = contracts.filter((c) => c.data?.appStatus != null).length;
+      if (declaredCount === 0) {
+        ok("appStatus 宣言なし（app capability 非宣言の bundle として必須検査を行わない）");
+      } else {
+        ok(`appStatus 宣言 ${declaredCount} 契約: enum / appNote / recipes-app 一致 OK`);
+      }
     }
   }
 

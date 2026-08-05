@@ -1,0 +1,30 @@
+{
+  "id": "data-grid",
+  "version": "1.0.0",
+  "name": "DataGrid",
+  "category": "data-table",
+  "intent": "表形式データを acme のリズムで並べる",
+  "variants": {
+    "default": {
+      "description": "既定。クラス文字列を legacy の tailwind キーで宣言している側の検体",
+      "tailwind": "acme-grid w-full text-ink"
+    }
+  },
+  "sizes": {
+    "md": {
+      "height": 44,
+      "tailwind": "gap-tight"
+    }
+  },
+  "states": ["default", "empty"],
+  "a11y": {
+    "role": "table",
+    "required": ["th には scope を付ける"],
+    "keyboard": []
+  },
+  "rules": [
+    { "id": "ACME_TABLE_HEADER_SCOPE", "severity": "error" },
+    { "id": "ACME_GRID_NEEDS_MARKER", "severity": "error" }
+  ],
+  "htmlSample": "<table class=\"acme-grid w-full text-ink\"><thead><tr><th scope=\"col\">名前</th></tr></thead><tbody><tr><td>acme</td></tr></tbody></table>"
+}

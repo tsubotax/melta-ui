@@ -1,0 +1,40 @@
+{
+  "id": "panel",
+  "version": "1.0.0",
+  "name": "Panel",
+  "category": "surface",
+  "intent": "情報のまとまりを平面的に区切る acme の基本面",
+  "variants": {
+    "flat": {
+      "description": "既定。影を使わず境界線で面を分ける",
+      "class": "bg-sand border border-ink/10"
+    },
+    "inset": {
+      "description": "親面より一段沈んだ面",
+      "class": "bg-sand/60 border border-ink/10"
+    }
+  },
+  "sizes": {
+    "md": {
+      "height": 44,
+      "class": "p-4 gap-tight"
+    },
+    "lg": {
+      "height": 56,
+      "class": "p-6 gap-loose"
+    }
+  },
+  "states": ["default"],
+  "a11y": {
+    "role": "group",
+    "required": [],
+    "keyboard": []
+  },
+  "rules": [
+    { "id": "ACME_NO_LOUD_SHADOW", "severity": "warn" }
+  ],
+  "htmlSample": {
+    "flat": "<div class=\"bg-sand border border-ink/10 p-4 gap-tight\" role=\"group\">panel</div>",
+    "inset": "<div class=\"bg-sand/60 border border-ink/10 p-4 gap-tight\" role=\"group\">panel</div>"
+  }
+}

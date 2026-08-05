@@ -1,0 +1,67 @@
+{
+  "version": "1.0.0",
+  "description": "acme design system の禁止ルール（架空・melta とは無関係）",
+  "rules": [
+    {
+      "id": "ACME_NO_PURE_BLACK",
+      "category": "brand-color",
+      "severity": "error",
+      "description": "純黒は acme のブランドトーンから外れる",
+      "detector": "tailwind-class",
+      "pattern": "text-black",
+      "alternative": "text-ink",
+      "contractLint": "enforce"
+    },
+    {
+      "id": "ACME_NO_LOUD_SHADOW",
+      "category": "surface",
+      "severity": "warn",
+      "description": "強い影は acme の平面志向に反する",
+      "detector": "tailwind-class-prefix",
+      "pattern": null,
+      "prefixPatterns": ["shadow-xl", "shadow-2xl"],
+      "alternative": "border border-sand",
+      "contractLint": "warn"
+    },
+    {
+      "id": "ACME_TABLE_HEADER_SCOPE",
+      "category": "data-table",
+      "severity": "error",
+      "description": "th には scope が要る（列見出しか行見出しかを支援技術に伝える）",
+      "detector": "html-attr",
+      "pattern": null,
+      "alternative": "scope=\"col\" または scope=\"row\" を付ける",
+      "contractLint": "skip",
+      "htmlAttrCheck": {
+        "kind": "tag-missing-attr",
+        "tag": "th",
+        "requiredAttr": "scope"
+      }
+    },
+    {
+      "id": "ACME_GRID_NEEDS_MARKER",
+      "category": "data-table",
+      "severity": "error",
+      "description": "表は acme-grid クラスを付けて data-grid 契約の適用対象であることを示す",
+      "detector": "composition",
+      "pattern": null,
+      "alternative": "table に acme-grid を付ける",
+      "contractLint": "skip",
+      "compositionCheck": {
+        "kind": "dom-class-required",
+        "selector": "table",
+        "requireAnyClass": ["acme-grid"]
+      }
+    },
+    {
+      "id": "ACME_VOICE_NO_SHOUTING",
+      "category": "content",
+      "severity": "warn",
+      "description": "見出しを全角感嘆符で煽らない（acme のトーン規定・静的検査の対象外）",
+      "detector": "manual",
+      "pattern": null,
+      "alternative": "事実を述べる見出しにする",
+      "contractLint": "skip"
+    }
+  ]
+}
