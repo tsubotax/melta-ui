@@ -699,6 +699,43 @@ test.describe("カバレッジ集計は rule ID の集合演算", () => {
   });
 });
 
+test.describe("bundle の互換性宣言（schemaVersion / engineCompat）", () => {
+  /** rules.json の meta を差し替えた bundle を作る */
+  function useBundleMeta(meta: Record<string, unknown>): void {
+    useRulesetRaw(JSON.stringify({ version: "1.0.0", ...meta, rules: [] }));
+  }
+
+  test("宣言が無い bundle は初版とみなして通す（既存 melta との互換）", () => {
+    useBundleMeta({});
+    expect(() => checkHtml("<div>x</div>", "html")).not.toThrow();
+  });
+
+  test("engine と同じ schemaVersion は通る", () => {
+    useBundleMeta({ schemaVersion: 1 });
+    expect(() => checkHtml("<div>x</div>", "html")).not.toThrow();
+  });
+
+  test("schemaVersion が違う bundle は fail-fast（黙って別解釈で動かさない）", () => {
+    useBundleMeta({ schemaVersion: 2 });
+    expect(() => checkHtml("<div>x</div>", "html")).toThrow(/schemaVersion 2[\s\S]*1 と異なります/);
+  });
+
+  test("schemaVersion が整数でなければ落ちる", () => {
+    useBundleMeta({ schemaVersion: "1" });
+    expect(() => checkHtml("<div>x</div>", "html")).toThrow(/schemaVersion は整数/);
+  });
+
+  test("engineCompat は空文字を許さない", () => {
+    useBundleMeta({ engineCompat: "" });
+    expect(() => checkHtml("<div>x</div>", "html")).toThrow(/engineCompat/);
+  });
+
+  test("engineCompat の範囲指定は S2 時点では形だけ見る", () => {
+    useBundleMeta({ engineCompat: ">=1 <2" });
+    expect(() => checkHtml("<div>x</div>", "html")).not.toThrow();
+  });
+});
+
 test.describe("loader の診断（アセット欠落・不正 JSON）", () => {
   /** 全アセットの診断が満たすべき最低ライン */
   function expectAssetDiagnostics(message: string, relPath: string, root: string) {
@@ -792,9 +829,15 @@ test.describe("ランタイムの実装一覧と schema の一致（多重定義
     readFileSync(resolve(process.cwd(), "design/schemas/rule.schema.json"), "utf-8")
   );
 
-  test("detector の全集合が rule.schema.json と一致する", () => {
-    const schemaDetectors: string[] = schema.properties.rules.items.properties.detector.enum;
-    expect([...KNOWN_DETECTORS].sort()).toEqual([...schemaDetectors].sort());
+  test("rule.schema.json は detector / category を列挙しない（open vocabulary）", () => {
+    // S2 W1: detector の妥当性は engine の capability 表が判定する。
+    // schema に enum を置くと「engine を差し替えたら実装済み detector が変わる」を表現できず、
+    // 第三者 DS が独自 detector を持ち込む余地も塞ぐ。
+    const detector = schema.properties.rules.items.properties.detector;
+    expect(detector.enum, "detector は schema で列挙しない").toBeUndefined();
+    expect(detector.type).toBe("string");
+    const category = schema.properties.rules.items.properties.category;
+    expect(category.enum, "category は DS ごとの語彙なので列挙しない").toBeUndefined();
   });
 
   test("htmlAttrCheck.kind の実装一覧が schema と一致する", () => {
@@ -815,6 +858,25 @@ test.describe("ランタイムの実装一覧と schema の一致（多重定義
     const props = getRules!.inputSchema.properties as Record<string, { enum?: readonly string[] }>;
     expect([...(props.detector.enum ?? [])].sort()).toEqual([...KNOWN_DETECTORS].sort());
     expect([...(props.severity.enum ?? [])].sort()).toEqual([...KNOWN_SEVERITIES].sort());
+  });
+
+  test("component-contract.schema.json の severity enum も capability 表と一致する", () => {
+    const contractSchema = JSON.parse(
+      readFileSync(resolve(process.cwd(), "design/schemas/component-contract.schema.json"), "utf-8")
+    );
+    const schemaSeverities: string[] =
+      contractSchema.properties.rules.items.properties.severity.enum;
+    expect([...KNOWN_SEVERITIES].sort()).toEqual([...schemaSeverities].sort());
+  });
+
+  test("component-contract.schema.json は category を列挙せず appStatus も必須にしない", () => {
+    const contractSchema = JSON.parse(
+      readFileSync(resolve(process.cwd(), "design/schemas/component-contract.schema.json"), "utf-8")
+    );
+    expect(contractSchema.properties.category.enum, "category は DS 語彙").toBeUndefined();
+    expect(contractSchema.required, "appStatus は melta 固有のプラットフォーム軸").not.toContain(
+      "appStatus"
+    );
   });
 
   test("severity の全集合が schema と一致する", () => {

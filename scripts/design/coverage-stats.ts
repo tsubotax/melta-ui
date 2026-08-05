@@ -267,12 +267,24 @@ if (isCli) {
   console.log(`  disabled spec       ${sc.disabledCovered} / ${sc.disabledRequired}（${scPct}）= states に disabled を持つ contract のうち spec 済み`);
   console.log(`  Phase1b backlog     ${sc.disabledRequired - sc.disabledCovered} contract（disabled spec 未定義）\n`);
 
-  // README.md（日本語）/ README.en.md（英語）の経路別マトリクスを再生成
+  // README.md（日本語）/ README.en.md（英語）の経路別マトリクスを再生成。
+  //
+  // ⚠️ 読み root（アセット）と書き root（engine）が違うときは書かない。
+  // MELTA_ROOT で別 DS のアセットを読んだ状態で engine の README を上書きすると、
+  // **他人の DS の数値で melta のドキュメントを破壊する**（実際に踏んだ）。
+  const crossRoot = root !== engineRoot;
+  if (crossRoot) {
+    console.log(
+      `\n  ⏭️  README のカバレッジ表は更新しません（アセット root = ${root} が engine root と異なるため）\n` +
+        "     別 DS のデータで engine のドキュメントを書き換えないための安全弁です。"
+    );
+  }
+
   const targets: Array<[string, string, string, () => string]> = [
     [resolve(engineRoot, "README.md"), COVERAGE_BEGIN, COVERAGE_END, renderCoverageBlock],
     [resolve(engineRoot, "README.en.md"), COVERAGE_EN_BEGIN, COVERAGE_EN_END, renderCoverageBlockEn],
   ];
-  for (const [path, begin, end, render] of targets) {
+  for (const [path, begin, end, render] of crossRoot ? [] : targets) {
     const name = path.endsWith("README.en.md") ? "README.en.md" : "README.md";
     const result = embedCoverageBlock(path, begin, end, render);
     console.log(

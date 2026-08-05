@@ -1,6 +1,36 @@
 {
   "version": "2.1.0",
   "description": "melta UI 禁止ルール registry。foundations/prohibited.md の machine-readable 版（SSOT）。",
+  "schemaVersion": 1,
+  "vocabulary": {
+    "ruleCategories": [
+      "accessibility",
+      "ai-pattern",
+      "baseline",
+      "button",
+      "color",
+      "datepicker",
+      "divider",
+      "form",
+      "list",
+      "modal",
+      "motion",
+      "philosophy",
+      "skeleton",
+      "spacing",
+      "stepper",
+      "table",
+      "tag",
+      "typography"
+    ],
+    "componentCategories": [
+      "data-display",
+      "feedback",
+      "form-input",
+      "layout",
+      "navigation"
+    ]
+  },
   "rules": [
     {
       "id": "COLOR_NO_TEXT_BLACK",
@@ -564,7 +594,10 @@
       "compositionCheck": {
         "kind": "dom-class-required",
         "selector": "button.h-6, button.h-7, button.h-8, button.h-9, button.h-10",
-        "requireAnyClass": ["after:h-11", "min-h-11"],
+        "requireAnyClass": [
+          "after:h-11",
+          "min-h-11"
+        ],
         "excludeWhen": "icon-only"
       },
       "automationStatus": "auto"
@@ -1184,7 +1217,9 @@
       "compositionCheck": {
         "kind": "dom-attr-required",
         "selector": "button[disabled]",
-        "requireAnyAttr": ["aria-disabled"]
+        "requireAnyAttr": [
+          "aria-disabled"
+        ]
       }
     },
     {
@@ -1194,7 +1229,11 @@
       "description": "CSS Anchor Positioning は Baseline Limited（2026-07 時点, webstatus.dev）。fallback なしでは非対応ブラウザで配置が崩壊する。Baseline Widely available 未達機能は fallback 併記 + コメント明示宣言がない限り使わない",
       "detector": "tailwind-class-prefix",
       "pattern": "[anchor-name:",
-      "prefixPatterns": ["[position-anchor:", "[position-area:", "[position-try"],
+      "prefixPatterns": [
+        "[position-anchor:",
+        "[position-area:",
+        "[position-try"
+      ],
       "alternative": "absolute + top/left トークン系ユーティリティによる従来配置（DESIGN.md の配置パターン準拠）",
       "contractLint": "warn"
     },
@@ -1207,7 +1246,10 @@
       "pattern": null,
       "alternative": "明示的な JS イベントリスナー、または dialog は showModal() 呼び出しで開閉する",
       "contractLint": "skip",
-      "htmlAttrCheck": { "kind": "attr-present", "attr": "(?:commandfor|command)" }
+      "htmlAttrCheck": {
+        "kind": "attr-present",
+        "attr": "(?:commandfor|command)"
+      }
     },
     {
       "id": "BASELINE_NO_POPOVER_ATTR",
@@ -1218,7 +1260,10 @@
       "pattern": null,
       "alternative": "dropdown/tooltip contract の実装パターン（絶対配置 + JS toggle）を使う",
       "contractLint": "skip",
-      "htmlAttrCheck": { "kind": "attr-present", "attr": "popover" }
+      "htmlAttrCheck": {
+        "kind": "attr-present",
+        "attr": "popover"
+      }
     },
     {
       "id": "BASELINE_NO_VIEW_TRANSITION",
@@ -1227,7 +1272,9 @@
       "description": "View Transitions は same-document が Baseline Newly / cross-document が Limited（2026-07 時点）。演出前提の UI 構造にすると非対応環境で意味が壊れる",
       "detector": "tailwind-class-prefix",
       "pattern": "[view-transition-name:",
-      "prefixPatterns": ["[view-transition-class:"],
+      "prefixPatterns": [
+        "[view-transition-class:"
+      ],
       "alternative": "motion トークン（duration/easing）による CSS transition で代替する",
       "contractLint": "warn"
     },
@@ -1238,7 +1285,10 @@
       "description": "text-box-trim / text-box-edge は Baseline Newly（2026-07 時点）。行ボックスの光学調整に依存したレイアウトは非対応環境で余白がズレる",
       "detector": "tailwind-class-prefix",
       "pattern": "[text-box-trim:",
-      "prefixPatterns": ["[text-box-edge:", "[text-box:"],
+      "prefixPatterns": [
+        "[text-box-edge:",
+        "[text-box:"
+      ],
       "alternative": "spacing トークン（py-* / leading-*）で余白を明示指定する",
       "contractLint": "warn"
     }

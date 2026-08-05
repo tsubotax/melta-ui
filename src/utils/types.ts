@@ -58,7 +58,8 @@ export interface ComponentSize {
 export interface ComponentAccessibility {
   role: string;
   required: string[];
-  focusRing: string;
+  /** 契約が宣言した場合のみ存在する（engine は既定値を補わない） */
+  focusRing?: string;
 }
 
 /** state ごとの生成仕様（P2-1）。tailwind は base/variant からの差分クラスのみ */
@@ -218,6 +219,15 @@ export interface LintViolation {
 /** rules.json ファイル全体 */
 export interface RulesFile {
   version: string;
+  /** bundle の構造バージョン。engine の BUNDLE_SCHEMA_VERSION と一致しなければ fail-fast */
+  schemaVersion?: number;
+  /** この bundle が要求する engine パッケージのバージョン範囲（semver range） */
+  engineCompat?: string;
+  /** bundle が自分に課す語彙。宣言した場合、範囲外の category は typo として弾かれる */
+  vocabulary?: {
+    ruleCategories?: string[];
+    componentCategories?: string[];
+  };
   rules: RuleEntry[];
 }
 

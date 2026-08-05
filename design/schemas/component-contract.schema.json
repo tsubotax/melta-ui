@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "melta UI Component Contract",
   "type": "object",
-  "required": ["id", "version", "name", "category", "intent", "appStatus", "variants", "sizes", "states", "a11y", "rules"],
+  "required": ["id", "version", "name", "category", "intent", "variants", "sizes", "states", "a11y", "rules"],
   "properties": {
     "$schema": { "type": "string" },
     "id": {
@@ -14,7 +14,8 @@
     "name": { "type": "string" },
     "category": {
       "type": "string",
-      "enum": ["form-input", "data-display", "feedback", "layout", "navigation"]
+      "minLength": 1,
+      "description": "コンポーネントの分類。DS ごとの語彙なので engine は値を制約しない（melta の語彙は form-input / data-display / feedback / layout / navigation）"
     },
     "intent": { "type": "string" },
     "docPath": { "type": "string" },

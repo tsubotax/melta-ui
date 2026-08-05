@@ -22,6 +22,7 @@ import {
 } from "../../src/utils/detectors.js";
 import { tokenize, matches, isAutoDetectable, expandRulePatterns } from "../../src/utils/matcher.js";
 import { isStaticallyDetectable, isUnclassified, isUnguardedError } from "./coverage-stats.js";
+import { assertBundleCompat } from "../../src/utils/rule-diagnostics.js";
 import type { RuleEntry, RulesFile } from "../../src/utils/types.js";
 import { serializeDtcg, DTCG_PATH } from "./export-dtcg.js";
 import { serializeWebRecipe, WEB_RECIPES_DIR } from "./export-recipes.js";
@@ -39,7 +40,7 @@ const root = process.env.MELTA_ROOT
 // vendor 先のアセットが melta のトークン構造を持たない場合に該当検査だけ外す:
 //  - dtcg: DTCG serializer は color.primary 等 melta の token 構造を前提とする
 //  - recipes-app: app recipe の styleRefs token 参照はブランド固有の token パスを指す
-const VALID_SKIP_CAPABILITIES = new Set(["dtcg", "recipes-app"]);
+const VALID_SKIP_CAPABILITIES = new Set(["dtcg", "recipes-app", "recipes-web", "app-status"]);
 const skipCapabilities = new Set(
   (process.env.MELTA_VALIDATE_SKIP ?? "")
     .split(",")
@@ -90,7 +91,7 @@ for (const cap of skipCapabilities) {
 interface SimpleSchema {
   type?: string;
   required?: string[];
-  properties?: Record<string, { type?: string | string[]; enum?: string[]; pattern?: string; items?: SimpleSchema }>;
+  properties?: Record<string, { type?: string | string[]; enum?: string[]; pattern?: string; minLength?: number; items?: SimpleSchema }>;
   items?: SimpleSchema;
   additionalProperties?: SimpleSchema | boolean;
 }
@@ -126,6 +127,11 @@ function validateAgainstSchema(
           issues.push(`${label}: "${path}.${key}" の値 "${val}" は enum ${JSON.stringify(propSchema.enum)} に含まれない`);
         }
 
+        // minLength チェック（enum を撤廃した自由文字列フィールドの空文字を弾く）
+        if (propSchema.minLength != null && typeof val === "string" && val.length < propSchema.minLength) {
+          issues.push(`${label}: "${path}.${key}" は ${propSchema.minLength} 文字以上が必要（実際は ${JSON.stringify(val)}）`);
+        }
+
         // pattern チェック
         if (propSchema.pattern && typeof val === "string") {
           const re = new RegExp(propSchema.pattern);
@@ -138,7 +144,10 @@ function validateAgainstSchema(
         if (propSchema.type) {
           const types = Array.isArray(propSchema.type) ? propSchema.type : [propSchema.type];
           const actualType = val === null ? "null" : Array.isArray(val) ? "array" : typeof val;
-          if (!types.includes(actualType)) {
+          // JSON Schema の "integer" は JS の typeof では "number"。整数かどうかで判定する
+          const satisfiesInteger =
+            types.includes("integer") && typeof val === "number" && Number.isInteger(val);
+          if (!satisfiesInteger && !types.includes(actualType)) {
             issues.push(`${label}: "${path}.${key}" の型が ${types.join("|")} ではなく ${actualType}`);
           }
         }
@@ -210,6 +219,13 @@ function loadJSON(path: string, base: string = root): unknown {
 
 section("1. rules.json の検証");
 
+// bundle の互換宣言は design:check でも見る。
+// loadRules() 経由でないと assertBundleCompat が呼ばれず、
+// schemaVersion 不一致を最初に検知するのが design:drift になってしまうため。
+
+// bundle が宣言した component category 語彙（セクション 3 の契約検査でも使う）
+let declaredComponentCategories: Set<string> | null = null;
+
 const rulesData = loadJSON("design/contracts/rules.json") as RulesFile | null;
 
 // 自動検出可否の判定は matcher.isAutoDetectable に一本化（segment 含む）。
@@ -258,6 +274,31 @@ if (rulesData) {
     error("rules.json の rules が配列ではありません");
   } else {
     ok(`ルール件数: ${rulesData.rules.length}`);
+
+    try {
+      assertBundleCompat(rulesData, "design/contracts/rules.json");
+      const declaredCompat = (rulesData as unknown as { schemaVersion?: number; engineCompat?: string });
+      if (declaredCompat.schemaVersion != null || declaredCompat.engineCompat != null) {
+        ok(
+          `bundle 互換宣言 OK（schemaVersion=${declaredCompat.schemaVersion ?? "未宣言"} / engineCompat=${declaredCompat.engineCompat ?? "未宣言"}）`
+        );
+      }
+    } catch (e) {
+      error((e as Error).message);
+    }
+
+    // bundle 側の語彙宣言（任意）。宣言が無い bundle では category を制約しない
+    const vocabulary = (rulesData as unknown as { vocabulary?: { ruleCategories?: string[]; componentCategories?: string[] } })
+      .vocabulary;
+    const declaredRuleCategories = Array.isArray(vocabulary?.ruleCategories)
+      ? new Set(vocabulary!.ruleCategories)
+      : null;
+    declaredComponentCategories = Array.isArray(vocabulary?.componentCategories)
+      ? new Set(vocabulary!.componentCategories)
+      : null;
+    if (declaredRuleCategories) {
+      ok(`bundle が rule category 語彙を ${declaredRuleCategories.size} 件宣言`);
+    }
 
     // 必須フィールドチェック
     const requiredFields = ["id", "category", "severity", "description", "detector", "alternative"];
@@ -341,6 +382,16 @@ if (rulesData) {
     let statusConflicts = 0;
     for (const rule of rulesData.rules) {
       const detectable = isStaticallyDetectable(rule);
+      // bundle が語彙を宣言しているなら、それに含まれない category は typo とみなす。
+      // schema から enum を外した（第三者 DS が独自語彙を持てるように）代わりに、
+      // 「語彙を宣言した bundle は自分の語彙を守る」という形で検査を残す。
+      if (declaredRuleCategories && rule.category && !declaredRuleCategories.has(rule.category)) {
+        error(
+          `ルール ${rule.id}: category "${rule.category}" は bundle が宣言した語彙にありません` +
+            `（typo か、vocabulary.ruleCategories への追加漏れ）`
+        );
+      }
+
       // automationStatus はカバレッジ集計の排他的な partition を作る。
       // covered-by-test も「静的検出はしない」側の宣言なので、静的検出機構を持つルールに
       // 付くと staticAuto と両方に計上され、合計が総数を超える。
@@ -438,6 +489,16 @@ if (existsSync(contractDir)) {
     const contract = loadJSON(`design/contracts/components/${file}`) as ComponentContract | null;
     if (!contract) continue;
     contractFiles.push(file);
+
+    // bundle が宣言した語彙にない category は typo とみなす
+    // （schema の enum を外した = 第三者 DS が独自語彙を持てる、の代償を宣言で埋める）
+    const contractCategory = (contract as unknown as { category?: string }).category;
+    if (declaredComponentCategories && contractCategory && !declaredComponentCategories.has(contractCategory)) {
+      error(
+        `${file}: category "${contractCategory}" は bundle が宣言した語彙にありません` +
+          `（typo か、vocabulary.componentCategories への追加漏れ）`
+      );
+    }
 
     // 必須フィールド
     const required = ["id", "version", "name", "category", "intent", "variants", "sizes", "states", "a11y", "rules"];
@@ -894,8 +955,19 @@ section("9. recipes（web 鮮度 + app styleRefs 検証）");
 {
   const componentsDir = resolve(root, "design/contracts/components");
   const webDir = resolve(root, WEB_RECIPES_DIR);
+  // recipes/web は契約の class 文字列から melta の generator で作る導出物。
+  // 第三者 DS は生成パイプラインごと持っていないので、recipes-app と同じく
+  // capability 単位で外せるようにする（非対称の解消 — Phase 2 / S2 W4）
+  const skipWebRecipes = isSkipped("recipes-web");
+  if (skipWebRecipes) {
+    noteSkipped("recipes-web", "web recipes 鮮度検査（契約の class から生成する melta の導出物）");
+  }
   const appDir = resolve(root, "design/contracts/recipes/app");
-  const allContractFiles = readdirSync(componentsDir).filter((f) => f.endsWith(".contract.json"));
+  // 契約ディレクトリを持たない bundle（rules だけの ruleset）でクラッシュしないようガードする。
+  // data-only 化で現実的な構成になったため、未処理例外ではなく検査スキップにする。
+  const allContractFiles = existsSync(componentsDir)
+    ? readdirSync(componentsDir).filter((f) => f.endsWith(".contract.json"))
+    : [];
   const contractIds = new Set<string>();
 
   // 9a. web recipes 鮮度（契約から再生成した内容と byte 一致するか）
@@ -904,6 +976,7 @@ section("9. recipes（web 鮮度 + app styleRefs 検証）");
     const contract = loadJSON(`design/contracts/components/${file}`) as ComponentContract | null;
     if (!contract) continue;
     contractIds.add(contract.id);
+    if (skipWebRecipes) continue;
     const recipePath = resolve(webDir, `${contract.id}.recipe.json`);
     if (!existsSync(recipePath)) {
       error(`recipes/web/${contract.id}.recipe.json が存在しません（npm run design:recipes で生成）`);
@@ -924,7 +997,7 @@ section("9. recipes（web 鮮度 + app styleRefs 検証）");
       }
     }
   }
-  if (webIssues === 0) {
+  if (webIssues === 0 && !skipWebRecipes) {
     ok(`web recipes ${allContractFiles.length} 件が契約から再生成した内容と一致（orphan 0）`);
   }
 
@@ -949,19 +1022,41 @@ section("9. recipes（web 鮮度 + app styleRefs 検証）");
   }
 
   // 9c. appStatus（プラットフォーム差分の SSOT 宣言、公開 P0）
-  // 全契約に appStatus 必須（新契約が宣言漏れで増える経路を塞ぐ）。
+  // melta は全契約に appStatus 必須（新契約が宣言漏れで増える経路を塞ぐ）。
   // 不変条件: appStatus=implemented ⇔ recipes/app/<id>.recipe.json が存在（宣言と実物の一致）
-  {
+  //
+  // ただし appStatus は「RN 実装の有無」という melta 固有のプラットフォーム軸なので、
+  // app を持たない DS には要求しない（Phase 2 / S2 W2）:
+  //  - MELTA_VALIDATE_SKIP=app-status で検査ごと外せる
+  //  - 宣言が 1 つも無い bundle は「app capability 非宣言」とみなし必須検査をしない
+  //  - ただし app recipe が実在するなら宣言漏れなので従来どおり error
+  if (isSkipped("app-status")) {
+    noteSkipped("app-status", "appStatus 検査（RN 実装の有無は melta 固有のプラットフォーム軸）");
+  } else {
     let appStatusIssues = 0;
+    // bundle 全体で 1 つでも appStatus を宣言していれば「app capability あり」とみなす。
+    // 契約は下のループでも読むので、ここで 1 度だけ読んで使い回す（loadJSON はキャッシュを持たない）
+    const contracts = allContractFiles.map((f) => ({
+      file: f,
+      data: loadJSON(`design/contracts/components/${f}`) as
+        | (ComponentContract & { appStatus?: string; appMapping?: string; appNote?: string })
+        | null,
+    }));
+    const appCapabilityDeclared = contracts.some((c) => c.data?.appStatus != null);
     const validStatuses = new Set(["implemented", "planned", "not-planned"]);
     const validMappings = new Set(["native", "adapted"]);
-    for (const file of allContractFiles) {
-      const contract = loadJSON(`design/contracts/components/${file}`) as
-        | (ComponentContract & { appStatus?: string; appMapping?: string; appNote?: string })
-        | null;
+    for (const { file, data: contract } of contracts) {
       if (!contract) continue;
       if (!contract.appStatus) {
-        error(`${file}: appStatus がありません（implemented / planned / not-planned を宣言）`);
+        // app capability 非宣言の bundle では要求しない。ただし app recipe があるなら宣言漏れ
+        const hasAppRecipe = existsSync(
+          resolve(root, "design/contracts/recipes/app", `${contract.id}.recipe.json`)
+        );
+        if (!appCapabilityDeclared && !hasAppRecipe) continue;
+        error(
+          `${file}: appStatus がありません（implemented / planned / not-planned を宣言）` +
+            (hasAppRecipe ? " — recipes/app に実物があります" : "")
+        );
         appStatusIssues++;
         continue;
       }

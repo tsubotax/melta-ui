@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isAutoDetectable } from "./matcher.js";
-import { assertValidRules } from "./rule-diagnostics.js";
+import { assertBundleCompat, assertValidRules } from "./rule-diagnostics.js";
 import type {
   Tokens,
   ComponentsData,
@@ -139,6 +139,8 @@ export function loadTokens(): Tokens {
     const tokensPath = resolve(meltaRoot(), "design/contracts/tokens.json");
     try {
       tokensCache = JSON.parse(readFileSync(tokensPath, "utf-8")) as Tokens;
+      // bundle のどのアセットに宣言されていても同じ互換ゲートを通す
+      assertBundleCompat(tokensCache, tokensPath);
     } catch (e) {
       throw assetLoadError("design/contracts/tokens.json", tokensPath, e);
     }
@@ -151,6 +153,7 @@ export function loadComponents(): ComponentsData {
     const componentsPath = resolve(meltaRoot(), "metadata/components.json");
     try {
       componentsCache = JSON.parse(readFileSync(componentsPath, "utf-8")) as ComponentsData;
+      assertBundleCompat(componentsCache, componentsPath);
     } catch (e) {
       throw assetLoadError("metadata/components.json", componentsPath, e);
     }
@@ -177,6 +180,7 @@ export function loadRules(): RulesFile {
     // 構造が壊れた ruleset を「読めたこと」にしない。不正 severity は
     // error 件数 0 に丸められて passed: true を返すため、ここで落とす。
     // ※ S3 で resolver の合成後に ajv の全 schema 検証へ差し替える前哨。
+    assertBundleCompat(parsed, rulesPath);
     assertValidRules(parsed?.rules, rulesPath);
     rulesFileCache = parsed;
   }

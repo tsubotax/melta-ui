@@ -38,7 +38,8 @@ interface LegacySize {
 interface LegacyAccessibility {
   role: string;
   required: string[];
-  focusRing: string;
+  /** 契約が宣言した場合のみ。engine 側で既定値を補わない（下記 contractToLegacy 参照） */
+  focusRing?: string;
 }
 
 /** state ごとの生成仕様（P2-1）。tailwind は base/variant からの差分クラスのみ */
@@ -209,10 +210,15 @@ function contractToLegacy(contract: ComponentContract, rulesData: RulesData): Le
   });
 
   // accessibility
+  // focusRing は契約が宣言したものだけを載せる。
+  // 以前は melta の "focus:ring-2 focus:ring-primary-500/50" を既定値として補っていたが、
+  // それは第三者 DS の metadata / MCP 応答に **その DS に存在しない melta のクラス**を
+  // 混入させる経路だった（AI がそれを読んで未定義クラスを出力する）。
+  // melta の 40 契約はすべて focusRing を宣言済みなので、削除しても出力は変わらない。
   const accessibility: LegacyAccessibility = {
     role: contract.a11y.role,
     required: contract.a11y.required,
-    focusRing: contract.a11y.focusRing || "focus:ring-2 focus:ring-primary-500/50",
+    ...(contract.a11y.focusRing ? { focusRing: contract.a11y.focusRing } : {}),
   };
 
   // htmlSample: contract の値をそのまま渡す（string でも object でも LegacyComponent 型は両方受け入れる）

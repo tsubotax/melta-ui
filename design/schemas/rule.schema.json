@@ -2,15 +2,30 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "melta UI Rule Registry",
   "type": "object",
-  "required": ["version", "rules"],
+  "required": [
+    "version",
+    "rules"
+  ],
   "properties": {
-    "version": { "type": "string" },
-    "description": { "type": "string" },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
     "rules": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "category", "severity", "description", "detector", "alternative", "contractLint"],
+        "required": [
+          "id",
+          "category",
+          "severity",
+          "description",
+          "detector",
+          "alternative",
+          "contractLint"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -19,36 +34,55 @@
           },
           "category": {
             "type": "string",
-            "enum": ["color", "philosophy", "motion", "typography", "spacing", "ai-pattern", "button", "form", "modal", "list", "table", "tag", "divider", "stepper", "datepicker", "skeleton", "accessibility", "baseline"]
+            "minLength": 1,
+            "description": "ルールの分類。DS ごとの語彙なので engine は値を制約しない（melta の語彙は color / spacing / accessibility / button / modal など）"
           },
           "severity": {
             "type": "string",
-            "enum": ["error", "warn"]
+            "enum": [
+              "error",
+              "warn"
+            ]
           },
-          "description": { "type": "string" },
+          "description": {
+            "type": "string"
+          },
           "detector": {
             "type": "string",
-            "enum": ["tailwind-class", "tailwind-class-prefix", "tailwind-class-segment", "html-attr", "composition", "manual"],
-            "description": "検出方式。manual は自動検出不可。tailwind-class-segment は base を-分割し matchPatterns と segment 一致。composition は DOM をパースして要素間の関係・ネスト・色数を判定（compositionCheck spec が必要）"
+            "minLength": 1,
+            "description": "検出方式。値の妥当性は engine の capability 表（src/utils/detectors.ts）が判定する — schema では列挙しない（engine を差し替えれば実装済み detector が変わるため）。melta engine v1 の実装: 検出方式。manual は自動検出不可。tailwind-class-segment は base を-分割し matchPatterns と segment 一致。composition は DOM をパースして要素間の関係・ネスト・色数を判定（compositionCheck spec が必要）"
           },
           "pattern": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tailwind クラスの検出パターン。manual detector の場合 null"
           },
           "matchPatterns": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "prefix 検出用の具体的なマッチパターン一覧"
           },
           "prefixPatterns": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "tailwind-class-prefix 専用の純粋な前方一致パターン一覧（bg-[rgb( 等の任意値回避経路の検知用）。matchPatterns は完全一致 + /modifier のみで意味論が異なる"
           },
-          "alternative": { "type": "string" },
+          "alternative": {
+            "type": "string"
+          },
           "contractLint": {
             "type": "string",
-            "enum": ["enforce", "warn", "skip"],
+            "enum": [
+              "enforce",
+              "warn",
+              "skip"
+            ],
             "description": "P1b contract lint での適用方針。enforce=違反検出、warn=警告のみ、skip=対象外（manual/html-attr/文脈依存ルール）"
           },
           "requiresContext": {
@@ -58,35 +92,143 @@
           "htmlAttrCheck": {
             "type": "object",
             "description": "detector=html-attr のうち機械判定できるものに付与（Q5）。正規表現ベースの属性検査 spec",
-            "required": ["kind"],
+            "required": [
+              "kind"
+            ],
             "properties": {
-              "kind": { "type": "string", "enum": ["attr-value-forbidden", "attr-value-contains", "tag-missing-attr", "element-present", "tag-present", "attr-present"] },
-              "attr": { "type": "string", "description": "検査する属性名。attr-present では正規表現の選択肢（(?:commandfor|command) 等）も可" },
-              "valueRegex": { "type": "string" },
-              "tag": { "type": "string" },
-              "requiredAttr": { "type": "string" },
-              "attrValue": { "type": "string" }
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "attr-value-forbidden",
+                  "attr-value-contains",
+                  "tag-missing-attr",
+                  "element-present",
+                  "tag-present",
+                  "attr-present"
+                ]
+              },
+              "attr": {
+                "type": "string",
+                "description": "検査する属性名。attr-present では正規表現の選択肢（(?:commandfor|command) 等）も可"
+              },
+              "valueRegex": {
+                "type": "string"
+              },
+              "tag": {
+                "type": "string"
+              },
+              "requiredAttr": {
+                "type": "string"
+              },
+              "attrValue": {
+                "type": "string"
+              }
             }
           },
           "compositionCheck": {
             "type": "object",
             "description": "detector=composition に付与（S2）。DOM をパースして合成（ネスト/関係/a11y属性）を判定する spec",
-            "required": ["kind"],
+            "required": [
+              "kind"
+            ],
             "properties": {
-              "kind": { "type": "string", "enum": ["nested-selector", "dom-attr-required", "dom-class-required"] },
-              "selector": { "type": "string" },
-              "requireAnyAttr": { "type": "array", "items": { "type": "string" }, "description": "dom-attr-required: このいずれかの属性が必須" },
-              "requireAnyClass": { "type": "array", "items": { "type": "string" }, "description": "dom-class-required: このいずれかの class が必須" },
-              "excludeWhen": { "type": "string", "enum": ["icon-only", "text-glyph"], "description": "dom-class-required: 候補から除外する述語" },
-              "scope": { "type": "string", "enum": ["self", "ancestor-or-self"], "description": "dom-attr-required: 属性の存在場所（既定 self）" },
-              "when": { "type": "string", "enum": ["icon-only", "text-glyph"], "description": "dom-attr-required: 候補を絞る述語" },
-              "glyphs": { "type": "array", "items": { "type": "string" }, "description": "when=text-glyph 用のグリフ集合" }
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "nested-selector",
+                  "dom-attr-required",
+                  "dom-class-required"
+                ]
+              },
+              "selector": {
+                "type": "string"
+              },
+              "requireAnyAttr": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "dom-attr-required: このいずれかの属性が必須"
+              },
+              "requireAnyClass": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "dom-class-required: このいずれかの class が必須"
+              },
+              "excludeWhen": {
+                "type": "string",
+                "enum": [
+                  "icon-only",
+                  "text-glyph"
+                ],
+                "description": "dom-class-required: 候補から除外する述語"
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "self",
+                  "ancestor-or-self"
+                ],
+                "description": "dom-attr-required: 属性の存在場所（既定 self）"
+              },
+              "when": {
+                "type": "string",
+                "enum": [
+                  "icon-only",
+                  "text-glyph"
+                ],
+                "description": "dom-attr-required: 候補を絞る述語"
+              },
+              "glyphs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "when=text-glyph 用のグリフ集合"
+              }
             }
           },
           "automationStatus": {
             "type": "string",
-            "enum": ["auto", "covered-by-test", "impossible-static", "llm-judge-candidate", "human-only"],
+            "enum": [
+              "auto",
+              "covered-by-test",
+              "impossible-static",
+              "llm-judge-candidate",
+              "human-only"
+            ],
             "description": "現在の自動検証状態（P1-5、棚卸しは 2026-07）。auto=静的検出が稼働 / covered-by-test=interaction test が担保 / impossible-static=意味依存で静的検出が原理的に不能（静的検出可能性の軸。runtime test での検証は可能 — MODAL_ROLE_DIALOG_REQUIRED が実証） / llm-judge-candidate=現在は自動検証なし・将来の LLM 審査（shadow judge）候補（candidate は計画であり稼働中の検証ではない。無防備として数える） / human-only=現在は自動検証なし・人間レビューでのみ守る。静的検出機構を持つルールには付与しない（検出可能性は detector/spec から導出する）"
+          }
+        }
+      }
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "description": "bundle の構造バージョン。engine の BUNDLE_SCHEMA_VERSION と一致しない場合は fail-fast する"
+    },
+    "engineCompat": {
+      "type": "string",
+      "minLength": 1,
+      "description": "この bundle が要求する engine パッケージのバージョン範囲（semver range。engine 名は含めない）"
+    },
+    "vocabulary": {
+      "type": "object",
+      "description": "bundle が自分に課す語彙。宣言すると範囲外の category は typo として弾かれる（engine は値を規定しない）",
+      "properties": {
+        "ruleCategories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "componentCategories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
           }
         }
       }

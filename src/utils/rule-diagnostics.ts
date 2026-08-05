@@ -17,6 +17,7 @@
 
 import {
   ALL_MATCH_SOURCES,
+  BUNDLE_SCHEMA_VERSION,
   CHECK_KIND_SHAPES,
   DETECTOR_CAPABILITIES,
   KNOWN_DETECTORS,
@@ -71,6 +72,65 @@ export function rulesetError(params: {
  * 不正 severity は「error 件数 0 に丸められて passed: true」を生むため、
  * ruleset を読んだ時点で落とす（S3 の schema 検証が入るまでの前哨）。
  */
+/**
+ * bundle の互換性宣言を検査する（S2 W7）。
+ *
+ * - `schemaVersion`: bundle の構造バージョン。engine の実装と食い違ったら fail-fast。
+ *   宣言が無ければ初版（1）とみなす（既存 melta の rules.json は宣言を持たない）
+ * - `engineCompat`: bundle が要求する engine の名前とバージョン範囲。
+ *   ここでは「宣言があれば形が正しいこと」までを見る（実際の範囲照合は S4 の resolver で行う）
+ */
+export function assertBundleCompat(file: unknown, source: string): void {
+  const meta = (file ?? {}) as Record<string, unknown>;
+
+  if (meta.schemaVersion != null) {
+    if (typeof meta.schemaVersion !== "number" || !Number.isInteger(meta.schemaVersion)) {
+      throw new Error(
+        `[melta-ui] bundle を評価できません: schemaVersion は整数が必要です（実際は ${JSON.stringify(meta.schemaVersion)}）\n` +
+          `  該当ファイル: ${source}`
+      );
+    }
+    if (meta.schemaVersion !== BUNDLE_SCHEMA_VERSION) {
+      throw new Error(
+        `[melta-ui] bundle の schemaVersion ${meta.schemaVersion} は、この engine が解釈できる ` +
+          `${BUNDLE_SCHEMA_VERSION} と異なります。\n` +
+          `  該当ファイル: ${source}\n` +
+          "  engine か bundle のどちらかを合わせてください（黙って別バージョンの解釈で動かさない方針です）。"
+      );
+    }
+  }
+
+  if (meta.engineCompat != null) {
+    // 意味論（S2 で確定）: **engine パッケージのバージョンに対する semver range**。
+    // engine 名は含めない（bundle は 1 つの engine 実装を前提にする。複数 engine を
+    // 想定するなら { engine, range } へ拡張するが、v1 のスコープ外）。
+    // ここでは文法だけを見る。実際の範囲照合は S4 の resolver が engine の version と突き合わせる。
+    if (typeof meta.engineCompat !== "string" || meta.engineCompat.trim().length === 0) {
+      throw new Error(
+        `[melta-ui] bundle を評価できません: engineCompat は空でない文字列が必要です（実際は ${JSON.stringify(meta.engineCompat)}）\n` +
+          `  該当ファイル: ${source}`
+      );
+    }
+    if (!SEMVER_RANGE.test(meta.engineCompat.trim())) {
+      throw new Error(
+        `[melta-ui] bundle を評価できません: engineCompat ${JSON.stringify(meta.engineCompat)} は semver range として解釈できません\n` +
+          `  該当ファイル: ${source}\n` +
+          '  engine パッケージのバージョン範囲を書いてください（例 ">=1", "^1.2.0", ">=1 <2", "1.x"）。engine 名は含めません。'
+      );
+    }
+  }
+}
+
+/**
+ * engineCompat に許す semver range の文法（保守的なサブセット）。
+ * 比較演算子つき範囲・キャレット/チルダ・x-range・スペース結合・`||` を許し、
+ * `"banana"` のような任意文字列は弾く。厳密な解釈は S4 の resolver が行う。
+ */
+const SEMVER_COMPARATOR = String.raw`(?:[<>]=?|=|\^|~)?\s*\d+(?:\.(?:\d+|[xX*]))?(?:\.(?:\d+|[xX*]))?(?:-[0-9A-Za-z.-]+)?`;
+const SEMVER_RANGE = new RegExp(
+  `^${SEMVER_COMPARATOR}(?:\\s+${SEMVER_COMPARATOR})*(?:\\s*\\|\\|\\s*${SEMVER_COMPARATOR}(?:\\s+${SEMVER_COMPARATOR})*)*$`
+);
+
 export function assertValidRules(rules: unknown, source: string): asserts rules is RuleEntry[] {
   if (!Array.isArray(rules)) {
     throw new Error(

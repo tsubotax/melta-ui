@@ -16,6 +16,13 @@
  * **黙って素通りさせず診断で落とす**（G-C）。
  */
 
+/**
+ * engine が解釈できる bundle schema のバージョン。
+ * bundle 側が宣言した値がこれと違えば、黙って古い/新しい解釈で動かず fail-fast する。
+ * 宣言が無い bundle は「1（初版）」とみなす（既存 melta との互換）。
+ */
+export const BUNDLE_SCHEMA_VERSION = 1;
+
 /** matcher.matches() が参照しうる pattern 系フィールド */
 export type MatchSource = "pattern" | "matchPatterns" | "prefixPatterns";
 
