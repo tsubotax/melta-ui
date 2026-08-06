@@ -88,5 +88,8 @@
     "tsx": "^4.0.0",
     "typescript": "^5.4.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  }
 }
