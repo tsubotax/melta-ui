@@ -3,7 +3,7 @@
   "id": "checkbox",
   "platform": "app",
   "contractVersion": "2.0.0",
-  "description": "RN 実装（src/components/Checkbox.tsx）の具象レシピ（styleRefs 形式）。RN にネイティブ checkbox が無いため Pressable + 描画で実装する。checkmark は rotate した View の L 字 border（react-native-svg 非依存 = 本体エントリの依存ゼロ維持）、indeterminate variant は横棒。box は 20px（web の 16px より大きいのはタッチ前提、実タッチ領域は hitSlop で 44 を確保）。checked/error は state 差分、labelStyle は variant 非依存の共通部として default にのみ載せる。markColor は checked 時の checkmark / indeterminate の横棒の色。",
+  "description": "RN 実装（src/components/Checkbox.tsx）の具象レシピ（styleRefs 形式）。RN にネイティブ checkbox が無いため Pressable + 描画で実装する。checkmark は rotate した View の L 字 border（react-native-svg 非依存 = 本体エントリの依存ゼロ維持）、indeterminate variant は横棒。box は 20px（web の 16px より大きいのはタッチ前提、実タッチ標的は行の minHeight で 44 を確保 — 行は背景を持たないため hitSlop でなく寸法で満たす。A11Y_MIN_TAP_TARGET_44 / 縦積みの隣接行と当たり判定が重ならない）。checked/error は state 差分、labelStyle は variant 非依存の共通部として default にのみ載せる。markColor は checked 時の checkmark / indeterminate の横棒の色。",
   "variants": {
     "default": {
       "boxStyle": {

@@ -132,12 +132,25 @@ console.log("\n=== Validating background semantic token collisions ===\n");
 /** 検査対象。面の重なりを表す背景トークンのみ（input-bg 等は別の意味論なので含めない） */
 const BG_TOKENS = ["bg-page", "bg-page-alt", "bg-surface", "bg-surface-alt"] as const;
 
-/** 意図的に同値な組（キーは BG_TOKENS 2 つを "|" で結んだもの。BG_TOKENS の順序に従う） */
-const ALLOWED_SAME: Record<string, string> = {
+/**
+ * 意図的に同値な組。キーは `${mode}|${a}|${b}`（a, b は BG_TOKENS の順序に従う）。
+ * value には**登録時点の実値**を固定する — ペア名だけの許可にすると、値が変わって
+ * 別の意味で再衝突しても素通りする（Codex レビュー指摘の fail-open）。
+ * 実値が登録と食い違ったら error、同値でなくなった登録も error（宣言の削除を要求）。
+ */
+const ALLOWED_SAME: Record<string, { value: string; reason: string }> = {
   // surface-alt は「surface の中の一段沈んだ帯」で、地色（page）と同じ面に落とすのが設計。
   // light も dark も page と一致するのは意図した重ね順（color.md の background/surface 2 系統）
-  "bg-page|bg-surface-alt": "surface-alt は page と同じ面に沈める設計（light/dark 共通）",
+  "light|bg-page|bg-surface-alt": {
+    value: "#f9fafb",
+    reason: "surface-alt は page と同じ面に沈める設計",
+  },
+  "dark|bg-page|bg-surface-alt": {
+    value: "#0f172a",
+    reason: "surface-alt は page と同じ面に沈める設計",
+  },
 };
+const usedAllowedSame = new Set<string>();
 
 for (const mode of ["light", "dark"] as const) {
   const semantic = tokens.color.semantic[mode] as Record<
@@ -153,23 +166,40 @@ for (const mode of ["light", "dark"] as const) {
         error(`semantic.${mode}: 背景トークン ${va === undefined ? a : b} がありません`);
         continue;
       }
-      const key = `${a}|${b}`;
+      const key = `${mode}|${a}|${b}`;
       const allowed = ALLOWED_SAME[key];
+      if (allowed) usedAllowedSame.add(key);
       if (va.toLowerCase() === vb.toLowerCase()) {
-        if (allowed) {
-          info(`${mode}: ${a} == ${b}（${va}）— 意図的な同値: ${allowed}`);
+        if (allowed && allowed.value.toLowerCase() === va.toLowerCase()) {
+          info(`${mode}: ${a} == ${b}（${va}）— 意図的な同値: ${allowed.reason}`);
+        } else if (allowed) {
+          error(
+            `${mode}: ${a} と ${b} が同値 '${va}' だが、ALLOWED_SAME の登録値は '${allowed.value}'。` +
+              `登録時と別の値で再衝突している（意図的なら登録値を更新、そうでなければ値を分ける）`
+          );
         } else {
           error(
             `${mode}: ${a} と ${b} が同値 '${va}'（コントラスト比 1.00:1 = 一方の面に置いた要素が消える）。` +
-              `値を分けるか、意図的なら ALLOWED_SAME に理由付きで登録する`
+              `値を分けるか、意図的なら ALLOWED_SAME に mode・実値・理由付きで登録する`
           );
         }
       } else if (allowed) {
-        info(`${mode}: ${a} != ${b}（ALLOWED_SAME 登録済みだが現在は別値。登録は残してよい）`);
+        error(
+          `${mode}: ${a} != ${b} なのに ALLOWED_SAME に登録が残っている（'${allowed.value}'）。` +
+            `将来の再衝突を素通りさせないため、同値でなくなった登録は削除する`
+        );
       } else {
         info(`${mode}: ${a} != ${b} OK`);
       }
     }
+  }
+}
+
+// ALLOWED_SAME に検査ループが一度も参照しなかった登録（typo・対象外トークン名）が
+// あれば error — 死んだ許可宣言は「塞いだつもりの穴」になるため
+for (const key of Object.keys(ALLOWED_SAME)) {
+  if (!usedAllowedSame.has(key)) {
+    error(`ALLOWED_SAME の登録 '${key}' がどの検査にも一致しなかった（typo か対象外トークン）`);
   }
 }
 
