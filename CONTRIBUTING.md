@@ -37,7 +37,11 @@ npx playwright install --with-deps chromium
 
 ```bash
 npm run design:check                 # schema / rules / contracts の静的 harness
-npm run design:lint-generated -- <変更した .html/.tsx/.jsx/.vue>   # 生成物の禁止パターン検査
+# 変更した .html/.tsx/.jsx/.vue の禁止パターン検査（CI と同じ対象抽出。対象なしなら何も走らない）
+git diff --name-only --diff-filter=d "$(git merge-base main HEAD)" HEAD \
+  | grep -E '\.(html|tsx|jsx|vue)$' \
+  | grep -v '^tests/fixtures/external-ds/[^/]*/samples/' \
+  | xargs -r npm run design:lint-generated --
 npm run design:lint-generated -- --baseline .design-baseline.json examples/*.html docs/*.html
 npm run design:drift                 # docs ↔ contracts の drift（README 日英 parity を含む）
 npm run design:designmd-lint         # DESIGN.md を Google 公式 design.md linter で検証
@@ -49,10 +53,12 @@ npm run build                        # TypeScript → dist/（MCP サーバー�
 npm run check:pack -- --require-network      # npm pack → 展開 → consumer import の smoke
 ```
 
-- 3 行目の full scan で使う `.design-baseline.json` は **warn のラチェット**です。既存 warn を
+- full scan で使う `.design-baseline.json` は **warn のラチェット**です。既存 warn を
   増やさないための基準線なので、勝手に緩めないでください（緩和は human gate）
-- CI の 2 行目は「PR で変更された `.html/.tsx/.jsx/.vue`」だけを対象にします。ローカルでは
-  自分が触ったファイルを引数に渡してください（`git diff --name-only main...HEAD` が目安）
+- 変更ファイル lint の対象抽出は CI と同じ条件にしてあります: **merge-base 基準**・
+  **削除ファイル除外**（`--diff-filter=d`）・**`tests/fixtures/external-ds/*/samples/` 除外**
+  （外部 DS の意図的な違反検体。melta の違反として誤検出されるため。その検査は
+  `tests/external-ds.spec.ts` が担当）
 - `--require-network` の 2 つは npm registry の公開版を照会します。オフラインでは
   フラグを外すと skip されますが、**PR 前は必ずネットワークありで通してください**
 
@@ -104,13 +110,13 @@ melta は「**authoring source（人が書く）**」と「**generated view（�
 
 | 生成物 | 生成コマンド | 生成元 |
 |---|---|---|
-| `metadata/components.json` | `npm run design:build` | `design/contracts/components/*.contract.json` |
+| `metadata/components.json` | `npm run design:build` | `design/contracts/components/*.contract.json` + `rules.json` + `recipes/app/*.recipe.json` |
 | `llms.txt` / `llms-full.txt` | `npm run design:llms` | contracts + DESIGN.md ほか |
 | `design/contracts/recipes/web/*.recipe.json` | `npm run design:recipes` | 契約の `tailwind` フィールド |
 | `design/contracts/tokens.dtcg.json` | `npm run design:dtcg` | `design/contracts/tokens.json` |
-| `DESIGN.md` の YAML front matter | `npm run design:designmd` | `design/contracts/tokens.json` |
+| `DESIGN.md` の YAML front matter | `npm run design:designmd` | `design/contracts/tokens.json` + `recipes/web/*.recipe.json` |
 | `scripts/ds-theme.css` / `scripts/ds-config.js` / `docs/melta-pen-variables.json` | `npm run generate` | `design/contracts/tokens.json` |
-| `README.md` / `README.en.md` の coverage ブロック | `npm run design:coverage` | `design/contracts/rules.json` |
+| `README.md` / `README.en.md` の coverage ブロック | `npm run design:coverage` | `design/contracts/rules.json` + 契約の `stateSpecs` |
 | `docs/index.html` の統計・バージョン表示 | `npm run design:update-showcase` | contracts + `package.json` |
 | `dist/` | `npm run build` | `src/` |
 
