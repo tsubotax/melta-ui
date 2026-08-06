@@ -3,7 +3,7 @@
   "id": "button",
   "platform": "app",
   "contractVersion": "2.1.0",
-  "description": "RN 実装（src/primitives/Button.tsx）の具象レシピ（styleRefs 形式）。pressedStyle は Pressable pressed 時差分（web hover 対応）。contained/brand-outline 以外の pressedBg は contract に native token が無いため実装が hover tailwind と同値のトークンで近似したもの。focus は FocusRing overlay（絶対配置 inset -3 / borderWidth 2 / color.primary.500 / borderRadius = radius.md + 3）で表現し element style には現れない。gap は icon-label 間（spacing.2）。iconOnly 時は paddingHorizontal の代わりに width = iconOnlyWidth の正方形。",
+  "description": "RN 実装（src/primitives/Button.tsx）の具象レシピ（styleRefs 形式）。pressedStyle は Pressable pressed 時差分（web hover 対応）。contained/brand-outline 以外の pressedBg は contract に native token が無いため実装が hover tailwind と同値のトークンで近似したもの。focus は FocusRing overlay（絶対配置 inset -3 / borderWidth 2 / color.primary.500 / borderRadius = radius.md + 3）で表現し element style には現れない。gap は icon-label 間（spacing.2）。ラベル付きの sizes は height ではなく minHeight（RN の fontScale でテキストが拡大したときにラベルがクリップされないための下限。視覚寸法は既定 fontScale=1 で従来と同じ）。iconOnly 時は paddingHorizontal の代わりに iconOnlyWidth × iconOnlyHeight の固定正方形（ラベルを持たないので拡大不要。minHeight にすると縦だけ伸びて正方形が崩れる）。",
   "variants": {
     "contained": {
       "style": {
@@ -75,22 +75,25 @@
   },
   "sizes": {
     "small": {
-      "height": 32,
+      "minHeight": 32,
       "paddingHorizontal": { "token": "spacing.3" },
       "fontSize": { "token": "typography.fontSize.sm" },
-      "iconOnlyWidth": 32
+      "iconOnlyWidth": 32,
+      "iconOnlyHeight": 32
     },
     "medium": {
-      "height": 40,
+      "minHeight": 40,
       "paddingHorizontal": { "token": "spacing.4" },
       "fontSize": { "token": "typography.fontSize.base" },
-      "iconOnlyWidth": 40
+      "iconOnlyWidth": 40,
+      "iconOnlyHeight": 40
     },
     "large": {
-      "height": 48,
+      "minHeight": 48,
       "paddingHorizontal": { "token": "spacing.6" },
       "fontSize": { "token": "typography.fontSize.base" },
-      "iconOnlyWidth": 48
+      "iconOnlyWidth": 48,
+      "iconOnlyHeight": 48
     }
   },
   "states": {

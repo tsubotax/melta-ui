@@ -29,7 +29,7 @@ AI にガイドラインを読ませることはできる。守るかどうか�
 <!-- sec: proof -->
 ## Proof — 主張には検証経路をつける
 
-- **105 禁止ルールのうち 48 / 105 を静的に自動検出**。残りも「なぜ自動検出しないか」を `automationStatus` で分類・可視化する（[rules.json](./design/contracts/rules.json) / 内訳は[制約と正直な範囲](#制約と正直な範囲)）
+- **106 禁止ルールのうち 48 / 106 を静的に自動検出**。残りも「なぜ自動検出しないか」を `automationStatus` で分類・可視化する（[rules.json](./design/contracts/rules.json) / 内訳は[制約と正直な範囲](#制約と正直な範囲)）
 - **Playwright + axe-core 248 tests** が CI 必須ゲート（[.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [実行履歴](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml)）
 - **5 種の代表的リセット CSS 環境で VRT 差分ピクセル 0**。pixelmatch の literal 比較で機械検証（[tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts)、`npm run test:reset-vrt`）
 - **npm 3 パッケージ + MCP Registry で配布**（[melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app)、Registry ID `io.github.tsubotax/melta-ui`）
@@ -145,7 +145,7 @@ npm run design:lint-generated -- /tmp/melta-bad.html
 ```
 ① 契約（SSOT）        design/contracts/
                         tokens.json      101 デザイントークン
-                        rules.json       105 禁止ルール（ID + severity + detector + alternative）
+                        rules.json       106 禁止ルール（ID + severity + detector + alternative）
                         components/      40 contract（web 28 / app 先行 12）
                         recipes/         プラットフォーム具象（web: 生成ミラー / app: RN styleRefs）
                       DESIGN.md / AGENTS.md   AI が最初に読む憲法と作業ガイド
@@ -171,7 +171,7 @@ MCP が公開するツール:
 | `get_component` | コンポーネント仕様取得（variants / sizes / stateSpecs / anatomy / a11y） | `{ "id": "button" }` |
 | `check_rule` | クラス文字列の禁止パターン検査（34パターン自動検出）。文脈依存は conditional 付き | `{ "classes": "text-black shadow-2xl" }` |
 | `check_html` | 生成 HTML / JSX 全体を CI / hook と同一ロジックで lint | `{ "source": "<div class=...>" }` |
-| `get_rules` | 105 禁止ルール参照（manual 含む全件、filter 対応） | `{ "category": "accessibility" }` |
+| `get_rules` | 106 禁止ルール参照（manual 含む全件、filter 対応） | `{ "category": "accessibility" }` |
 | `search` | 全文検索（最大 20 件 + truncated 通知） | `{ "query": "card" }` |
 
 Resource は `melta://design-constitution`（`DESIGN.md` 全文）/ `melta://tokens` / `melta://components` / `melta://components/{id}` / `melta://rules` / `melta://rules/auto-detectable`。
@@ -195,15 +195,15 @@ melta-app は消費者プロジェクト向けの eslint plugin も npm で配�
 <!-- sec: limits -->
 ## 制約と正直な範囲
 
-**48 / 105 の意味**。「105 禁止ルールを強制する」とは言えない。静的に自動検出できるのは 48 件で、残りは検証経路を `automationStatus` で分類して可視化している（宣言だけのルールをゼロにするための棚卸し）。
+**48 / 106 の意味**。「106 禁止ルールを強制する」とは言えない。静的に自動検出できるのは 48 件で、残りは検証経路を `automationStatus` で分類して可視化している（宣言だけのルールをゼロにするための棚卸し）。
 
 <!-- BEGIN:coverage (npm run design:coverage で再生成) -->
 | 経路 | 件数 | 内容 |
 |------|------|------|
-| 静的自動検証 | **48 / 105** | class マッチ 34（MCP `check_rule` 同経路）+ html-attr 7 + composition 7（ネスト + a11y DOM） |
+| 静的自動検証 | **48 / 106** | class マッチ 34（MCP `check_rule` 同経路）+ html-attr 7 + composition 7（ネスト + a11y DOM） |
 | interaction test | 3 | `tests/modal.spec.ts` が focus trap / Escape / focus 復帰を実機検証 |
 | 静的検出 不能 | 3（うち error 3） | `impossible-static`（active/selected/current の特定が意味依存） |
-| LLM 審査候補 | 42（うち error 30） | `llm-judge-candidate`（shadow judge 導入までは自動検証なし） |
+| LLM 審査候補 | 43（うち error 31） | `llm-judge-candidate`（shadow judge 導入までは自動検証なし） |
 | human-only | 9（うち error 9） | 人間レビューでのみ守る。`get_rules` で AI に提示 |
 | 未分類 | 0（うち error 0） | 棚卸し未了（automationStatus 未宣言） |
 <!-- END:coverage -->

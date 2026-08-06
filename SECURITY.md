@@ -51,7 +51,7 @@ backports to older minors.
 | パッケージ / Package | サポート対象 / Supported |
 |---|---|
 | [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | 1.5.x |
-| [`melta-contracts`](https://www.npmjs.com/package/melta-contracts) | 0.6.x |
+| [`melta-contracts`](https://www.npmjs.com/package/melta-contracts) | 0.7.x |
 
 React Native 実装 [`melta-app`](https://github.com/tsubotax/melta-app) は別リポジトリです。
 そちらの脆弱性は [melta-app の SECURITY.md](https://github.com/tsubotax/melta-app/blob/main/SECURITY.md)

@@ -123,6 +123,44 @@ const staticCSS = `
   }
 }`;
 
+/**
+ * Host-Reset Defense（DADS 取り込み B5）。
+ * ホストサイトのリセット CSS が melta より先に読まれても見た目が変わらないよう、
+ * ブラウザ既定に依存している値を明示宣言するブロック。
+ *
+ * ⚠️ 2026-08: このブロックは ds-theme.css に手書きで足されていて generator 側に無く、
+ * `npm run generate` を回すたびに黙って消えていた（reset-swap VRT の 3 検体が落ちる）。
+ * ds-theme.css は生成物なので、規範はここ（generator）に置く。
+ * 検証: npm run test:reset-vrt
+ */
+const hostResetDefense = `/* --- Host-Reset Defense (reset-swap VRT で機械検証) --------------------------
+   ホストサイトのリセットCSS（Reboot / Meyer / kiso.css 等）が melta より先に
+   読まれても見た目が変わらないよう、ブラウザ既定に依存している値を明示宣言する。
+   検証: npm run test:reset-vrt
+
+   1. Reboot 系は body 直指定の font/color で Preflight の html レベル指定を貫通する
+      → body で明示宣言して塞ぐ */
+body {
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  color: ${tokens.color.semantic.light["text-default"].value}; /* --text-default（:root 定義前のためリテラル。tokens.json color.semantic.light.text-default と同値） */
+  /* 3. kiso.css 系の日本語タイポプロパティは継承で全要素に流れ込みテキスト幅が変わる
+     → melta の規範値（= ブラウザ既定）を明示して inherit 連鎖を断つ */
+  line-break: auto;
+  overflow-wrap: normal;
+  text-autospace: no-autospace;
+  text-spacing-trim: normal;
+}
+/* 2. Meyer 系は要素セレクタ（div 等）の border:0 が Preflight の *（specificity 0）に
+   常に勝ち、border ユーティリティの枠線が消える → 同 specificity (0,0,1) を melta 側
+   （後読み）に置いて source order で取り返す。値は Preflight と同一 */
+html *, html *::before, html *::after {
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
+/* Reboot のテーブル既定（caption-side / tr ボーダー）も同様に明示で固定 */
+table { caption-side: top; border-color: inherit; }`;
+
 const output = `/* ==========================================================================
    melta UI — Shared Theme (ds-theme.css)
    Base styles, CSS variables, sidebar chrome, keyframes
@@ -131,6 +169,8 @@ const output = `/* =============================================================
 /* --- Base Styles --- */
 body { line-height: ${bodyLineHeight}; letter-spacing: ${bodyLetterSpacing}; }
 h1, h2, h3, h4, h5, h6 { line-height: ${headingLineHeight}; letter-spacing: ${headingLetterSpacing}; }
+
+${hostResetDefense}
 
 /* --- CSS Variables (Light Theme) --- */
 :root {

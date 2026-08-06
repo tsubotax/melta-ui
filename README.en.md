@@ -29,7 +29,7 @@ You can make an AI read your guidelines. Whether it *follows* them is up to the 
 <!-- sec: proof -->
 ## Proof — every claim has a verification path
 
-- **48 of the 105 prohibition rules are statically auto-detected.** The rest are classified and surfaced by `automationStatus` instead of being silently unenforced ([rules.json](./design/contracts/rules.json) / breakdown under [Limits](#limits-and-the-honest-scope))
+- **48 of the 106 prohibition rules are statically auto-detected.** The rest are classified and surfaced by `automationStatus` instead of being silently unenforced ([rules.json](./design/contracts/rules.json) / breakdown under [Limits](#limits-and-the-honest-scope))
 - **Playwright + axe-core, 248 tests**, as a required CI gate ([.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [run history](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml))
 - **0 diff pixels across five representative reset-CSS environments**, machine-verified with literal pixelmatch comparison ([tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts), `npm run test:reset-vrt`)
 - **Distributed as three npm packages plus the MCP Registry** ([melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app), Registry ID `io.github.tsubotax/melta-ui`)
@@ -147,7 +147,7 @@ npm run design:lint-generated -- /tmp/melta-bad.html
 ```
 ① Contract (SSOT)     design/contracts/
                         tokens.json      101 design tokens
-                        rules.json       105 prohibition rules (id + severity + detector + alternative)
+                        rules.json       106 prohibition rules (id + severity + detector + alternative)
                         components/      40 contracts (28 web / 12 app-first)
                         recipes/         platform concretions (web: generated mirror / app: RN styleRefs)
                       DESIGN.md / AGENTS.md   the constitution and working guide an agent reads first
@@ -199,15 +199,15 @@ melta-app also ships an eslint plugin on npm for consumer projects, so raw liter
 <!-- sec: limits -->
 ## Limits and the honest scope
 
-**What 48 / 105 means.** We do not claim to "enforce 105 prohibition rules". 48 are statically auto-detectable; for the rest, the verification path is classified and made visible via `automationStatus` — the point of the inventory is to leave zero rules that are declared but never checked.
+**What 48 / 106 means.** We do not claim to "enforce 106 prohibition rules". 48 are statically auto-detectable; for the rest, the verification path is classified and made visible via `automationStatus` — the point of the inventory is to leave zero rules that are declared but never checked.
 
 <!-- BEGIN:coverage-en (npm run design:coverage で再生成) -->
 | Route | Count | What |
 |-------|-------|------|
-| Static auto-detection | **48 / 105** | class-match 34 (same path as MCP `check_rule`) + html-attr 7 + composition 7 (nesting + a11y DOM) |
+| Static auto-detection | **48 / 106** | class-match 34 (same path as MCP `check_rule`) + html-attr 7 + composition 7 (nesting + a11y DOM) |
 | Interaction test | 3 | `tests/modal.spec.ts` verifies focus trap / Escape / focus return in a real browser |
 | Statically undetectable | 3 (3 error) | `impossible-static` (active/selected/current are semantically dependent) |
-| LLM-judge candidate | 42 (30 error) | `llm-judge-candidate` (no automated verification until the shadow judge ships) |
+| LLM-judge candidate | 43 (31 error) | `llm-judge-candidate` (no automated verification until the shadow judge ships) |
 | Human-only | 9 (9 error) | Guarded by human review only; surfaced to the AI via `get_rules` |
 | Unclassified | 0 (0 error) | Inventory pending (no automationStatus declared) |
 <!-- END:coverage-en -->

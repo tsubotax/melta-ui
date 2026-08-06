@@ -64,7 +64,7 @@ table { caption-side: top; border-color: inherit; }
 /* --- Dark Theme --- */
 html[data-theme="dark"] {
   --bg-page: #0f172a;
-  --bg-page-alt: #1e293b;
+  --bg-page-alt: #334155;
   --bg-surface: #1e293b;
   --bg-surface-alt: #0f172a;
   --text-heading: #f1f5f9;

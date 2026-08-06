@@ -3,7 +3,7 @@
   "id": "textfield",
   "platform": "app",
   "contractVersion": "2.0.0",
-  "description": "RN 実装（src/components/TextField.tsx）の具象レシピ（styleRefs 形式）。variant は入力の検証状態（default/error/success/disabled = 契約の variant 語彙）。labelStyle/helperTextStyle/errorTextStyle は variant 非依存の共通部として default にのみ載せる（実装 resolver は全 variant で同じものを返す）。focus は state 差分（borderColor のみ。web の ring は RN 非対応、border 幅を変えるとレイアウトシフトするため色だけ）。disabled のテキスト色は text-muted（実装は editable=false + accessibilityState.disabled）。",
+  "description": "RN 実装（src/components/TextField.tsx）の具象レシピ（styleRefs 形式）。variant は入力の検証状態（default/error/success/disabled = 契約の variant 語彙）。labelStyle/helperTextStyle/errorTextStyle は variant 非依存の共通部として default にのみ載せる（実装 resolver は全 variant で同じものを返す）。focus は state 差分（borderColor のみ。web の ring は RN 非対応、border 幅を変えるとレイアウトシフトするため色だけ）。disabled のテキスト色は text-muted（実装は editable=false + accessibilityState.disabled）。sizes の縦寸法は height ではなく minHeight（RN の fontScale で入力テキストが拡大したときに 1 行がクリップされないための下限。視覚寸法は既定 fontScale=1 で従来と同じ）。",
   "variants": {
     "default": {
       "inputStyle": {
@@ -56,13 +56,13 @@
   },
   "sizes": {
     "small": {
-      "inputStyle": { "height": 36, "paddingHorizontal": { "token": "spacing.3" }, "fontSize": { "token": "typography.fontSize.sm" } }
+      "inputStyle": { "minHeight": 36, "paddingHorizontal": { "token": "spacing.3" }, "fontSize": { "token": "typography.fontSize.sm" } }
     },
     "medium": {
-      "inputStyle": { "height": 42, "paddingHorizontal": { "token": "spacing.3" }, "fontSize": { "token": "typography.fontSize.base" } }
+      "inputStyle": { "minHeight": 42, "paddingHorizontal": { "token": "spacing.3" }, "fontSize": { "token": "typography.fontSize.base" } }
     },
     "large": {
-      "inputStyle": { "height": 48, "paddingHorizontal": { "token": "spacing.3" }, "fontSize": { "token": "typography.fontSize.lg" } }
+      "inputStyle": { "minHeight": 48, "paddingHorizontal": { "token": "spacing.3" }, "fontSize": { "token": "typography.fontSize.lg" } }
     }
   },
   "states": {

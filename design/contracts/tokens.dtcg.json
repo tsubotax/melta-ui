@@ -467,16 +467,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.1176,
-            0.1608,
-            0.2314
+            0.2,
+            0.2549,
+            0.3333
           ],
           "alpha": 1,
-          "hex": "#1e293b"
+          "hex": "#334155"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "bg-slate-800",
+            "tailwind": "bg-slate-700",
             "cssVar": "--bg-page-alt"
           }
         }

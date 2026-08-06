@@ -541,7 +541,7 @@ Lucide             : w-5 h-5 stroke="currentColor" fill="none" ← assets/icons/
 | `py-0.5` for buttons | `h-8` 以上 |
 | `bg-green-*` / `bg-yellow-*` | `bg-emerald-*` / `bg-amber-*` |
 
-> 全ルール（105 件）: `design/contracts/rules.json`（machine-readable）
+> 全ルール（106 件）: `design/contracts/rules.json`（machine-readable）
 > 人間向け解説: `foundations/prohibited.md`
 
 ---

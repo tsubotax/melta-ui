@@ -141,7 +141,7 @@ html[data-theme="dark"] { @mixin dark-tokens; }
 /* dark-tokens mixin（実際のCSS実装では共通ブロックにまとめる） */
 /*
   --bg-page:        #0f172a;    slate-900
-  --bg-page-alt:    #1e293b;    slate-800
+  --bg-page-alt:    #334155;    slate-700
   --bg-surface:     #1e293b;    slate-800
   --bg-surface-alt: #0f172a;    slate-900
   --text-heading:   #f1f5f9;    slate-100

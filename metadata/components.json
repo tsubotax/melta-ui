@@ -925,7 +925,7 @@
           "id": "button",
           "platform": "app",
           "contractVersion": "2.1.0",
-          "description": "RN 実装（src/primitives/Button.tsx）の具象レシピ（styleRefs 形式）。pressedStyle は Pressable pressed 時差分（web hover 対応）。contained/brand-outline 以外の pressedBg は contract に native token が無いため実装が hover tailwind と同値のトークンで近似したもの。focus は FocusRing overlay（絶対配置 inset -3 / borderWidth 2 / color.primary.500 / borderRadius = radius.md + 3）で表現し element style には現れない。gap は icon-label 間（spacing.2）。iconOnly 時は paddingHorizontal の代わりに width = iconOnlyWidth の正方形。",
+          "description": "RN 実装（src/primitives/Button.tsx）の具象レシピ（styleRefs 形式）。pressedStyle は Pressable pressed 時差分（web hover 対応）。contained/brand-outline 以外の pressedBg は contract に native token が無いため実装が hover tailwind と同値のトークンで近似したもの。focus は FocusRing overlay（絶対配置 inset -3 / borderWidth 2 / color.primary.500 / borderRadius = radius.md + 3）で表現し element style には現れない。gap は icon-label 間（spacing.2）。ラベル付きの sizes は height ではなく minHeight（RN の fontScale でテキストが拡大したときにラベルがクリップされないための下限。視覚寸法は既定 fontScale=1 で従来と同じ）。iconOnly 時は paddingHorizontal の代わりに iconOnlyWidth × iconOnlyHeight の固定正方形（ラベルを持たないので拡大不要。minHeight にすると縦だけ伸びて正方形が崩れる）。",
           "variants": {
             "contained": {
               "style": {
@@ -1097,34 +1097,37 @@
           },
           "sizes": {
             "small": {
-              "height": 32,
+              "minHeight": 32,
               "paddingHorizontal": {
                 "token": "spacing.3"
               },
               "fontSize": {
                 "token": "typography.fontSize.sm"
               },
-              "iconOnlyWidth": 32
+              "iconOnlyWidth": 32,
+              "iconOnlyHeight": 32
             },
             "medium": {
-              "height": 40,
+              "minHeight": 40,
               "paddingHorizontal": {
                 "token": "spacing.4"
               },
               "fontSize": {
                 "token": "typography.fontSize.base"
               },
-              "iconOnlyWidth": 40
+              "iconOnlyWidth": 40,
+              "iconOnlyHeight": 40
             },
             "large": {
-              "height": 48,
+              "minHeight": 48,
               "paddingHorizontal": {
                 "token": "spacing.6"
               },
               "fontSize": {
                 "token": "typography.fontSize.base"
               },
-              "iconOnlyWidth": 48
+              "iconOnlyWidth": 48,
+              "iconOnlyHeight": 48
             }
           },
           "states": {
@@ -1161,7 +1164,7 @@
       "prohibited": [
         "タップターゲットが小さすぎる",
         "操作内容がスクリーンリーダーに伝わらない",
-        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 SC 2.5.5 Target Size (Enhanced) = AAA の 44px 水準。AA の SC 2.5.8 は 24px だが melta は 44px を採る。インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（2026-07-19 に manual から composition 自動検出へ昇格）",
+        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 SC 2.5.5 Target Size (Enhanced) = AAA の 44px 水準。AA の SC 2.5.8 は 24px だが melta は 44px を採る。インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（2026-07-19 に manual から composition 自動検出へ昇格）。横断方針は A11Y_MIN_TAP_TARGET_44 が正。本ルールはその web（button）実装形",
         "重要度の区別がつかない（Neutralのみ例外）",
         "トグル状態の対比がないと意味不明"
       ],
@@ -2610,7 +2613,7 @@
         "focusRing": "focus:ring-2 focus:ring-primary-500/50"
       },
       "prohibited": [
-        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 SC 2.5.5 Target Size (Enhanced) = AAA の 44px 水準。AA の SC 2.5.8 は 24px だが melta は 44px を採る。インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（2026-07-19 に manual から composition 自動検出へ昇格）"
+        "高さ 44px 未満のボタン（h-6〜h-10）は当たり判定拡張が無いとモバイルで操作困難（WCAG 2.2 SC 2.5.5 Target Size (Enhanced) = AAA の 44px 水準。AA の SC 2.5.8 は 24px だが melta は 44px を採る。インラインテキストリンクを除く）。見た目を変えず after: 擬似要素でタップ領域だけ広げる。icon-only ボタンは幅拡張が別式のため第一弾対象外（2026-07-19 に manual から composition 自動検出へ昇格）。横断方針は A11Y_MIN_TAP_TARGET_44 が正。本ルールはその web（button）実装形"
       ],
       "htmlSample": "<nav aria-label=\"ページネーション\"><ul class=\"flex items-center gap-1\"><li><button class=\"w-10 h-10 inline-flex items-center justify-center text-base font-medium text-white bg-primary-500 rounded-lg\" aria-current=\"page\" aria-label=\"ページ 1\">1</button></li></ul></nav>"
     },
@@ -3837,7 +3840,7 @@
       "prohibited": [
         "スクリーンリーダーがボタンの目的を読み上げられない",
         "キーボードのみでは削除操作を発見できない",
-        "モバイルで誤タップが頻発する",
+        "モバイルで誤タップが頻発する。横断方針は A11Y_MIN_TAP_TARGET_44 が正。本ルールはその web（tag の × ボタン）実装形",
         "選択状態がスクリーンリーダーに伝わらない",
         "Badge はステータス表示、Tag はユーザー管理メタデータ"
       ],
@@ -4071,7 +4074,7 @@
           "id": "textfield",
           "platform": "app",
           "contractVersion": "2.0.0",
-          "description": "RN 実装（src/components/TextField.tsx）の具象レシピ（styleRefs 形式）。variant は入力の検証状態（default/error/success/disabled = 契約の variant 語彙）。labelStyle/helperTextStyle/errorTextStyle は variant 非依存の共通部として default にのみ載せる（実装 resolver は全 variant で同じものを返す）。focus は state 差分（borderColor のみ。web の ring は RN 非対応、border 幅を変えるとレイアウトシフトするため色だけ）。disabled のテキスト色は text-muted（実装は editable=false + accessibilityState.disabled）。",
+          "description": "RN 実装（src/components/TextField.tsx）の具象レシピ（styleRefs 形式）。variant は入力の検証状態（default/error/success/disabled = 契約の variant 語彙）。labelStyle/helperTextStyle/errorTextStyle は variant 非依存の共通部として default にのみ載せる（実装 resolver は全 variant で同じものを返す）。focus は state 差分（borderColor のみ。web の ring は RN 非対応、border 幅を変えるとレイアウトシフトするため色だけ）。disabled のテキスト色は text-muted（実装は editable=false + accessibilityState.disabled）。sizes の縦寸法は height ではなく minHeight（RN の fontScale で入力テキストが拡大したときに 1 行がクリップされないための下限。視覚寸法は既定 fontScale=1 で従来と同じ）。",
           "variants": {
             "default": {
               "inputStyle": {
@@ -4169,7 +4172,7 @@
           "sizes": {
             "small": {
               "inputStyle": {
-                "height": 36,
+                "minHeight": 36,
                 "paddingHorizontal": {
                   "token": "spacing.3"
                 },
@@ -4180,7 +4183,7 @@
             },
             "medium": {
               "inputStyle": {
-                "height": 42,
+                "minHeight": 42,
                 "paddingHorizontal": {
                   "token": "spacing.3"
                 },
@@ -4191,7 +4194,7 @@
             },
             "large": {
               "inputStyle": {
-                "height": 48,
+                "minHeight": 48,
                 "paddingHorizontal": {
                   "token": "spacing.3"
                 },
