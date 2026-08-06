@@ -1,6 +1,6 @@
 {
   "name": "melta-ds-mcp",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "melta UI — AI-Ready Design System with MCP server (design tokens, component contracts, prohibition rules, check_html self-verification)",
   "type": "module",
   "mcpName": "io.github.tsubotax/melta-ui",

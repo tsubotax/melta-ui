@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-06
+
+### 同梱 contracts を 0.7.0 へ更新（W5 契約層の配信）
+
+npm の 1.5.0 は contracts 0.6.0 相当のデータを同梱したままで、MCP（get_token / get_rules /
+check_html）が以下の更新を配れていなかった。データ同期のためのリリース（コード変更なし）。
+
+#### Changed
+
+- **dark の `bg-page-alt` = `#334155`** — 旧値 #1e293b は `bg-surface` と同値（コントラスト比
+  1.00:1）で、Tag basic / TextField disabled がカード上で不可視になる実害バグだった
+  （foundations/color.md の surface-tertiary と両モードで一致する値へ分離）
+- **ルール 106 本** — 横断 a11y ルール `A11Y_MIN_TAP_TARGET_44` を新設（タップ標的 44pt の
+  横断方針を accessibility カテゴリへ昇格。BTN_/TAG_X_MIN_TAP_TARGET はその実装形として相互参照）
+- **recipes/app の button / textfield を `minHeight` 表現へ**（fontScale クリップ対策の契約側。
+  button は `iconOnlyHeight` を追加し iconOnly の正方形固定を明示）、checkbox の description を
+  「行の minHeight で 44 を確保」へ（hitSlop 方式は縦積みで当たり判定が重なるため）
+- validate-tokens に背景セマンティックの同値衝突ガード（mode + 実値ピン止めの ALLOWED_SAME、
+  fail-open しない）を追加。ds-theme.css の Host-Reset Defense ブロックを generator へ移設
+  （手書き追加のままだと `npm run generate` で黙って消えていた）
+
 ## [1.5.0] - 2026-08-04
 
 ### 配布整備 — stale 配布の物理防止 + 公開 entry の明示 + vendor 経路の堅牢化
