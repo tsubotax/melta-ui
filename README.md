@@ -228,7 +228,8 @@ MCP サーバーも lint エンジンもローカルプロセスで完結する�
 - **個人メンテナンスの OSS**（tsubotax）。SLA も専任チームもない。実運用の dogfood（web showcase / RN アプリ）で回している
 - **0.x / 1.x の方針**: 契約パッケージ `melta-contracts` は 0.x で、破壊的変更は minor bump で入りうる。ただし破壊的変更の分類は人手ではなく `npm run design:compat` の機械判定で、semver bump を強制する
 - **変更の通知経路は [CHANGELOG.md](./CHANGELOG.md)**。リリースごとに Added / Changed / Removed を残す
-- **バグ・要望は [GitHub Issues](https://github.com/tsubotax/melta-ui/issues)** へ
+- **バグ・要望は [GitHub Issues](https://github.com/tsubotax/melta-ui/issues)** へ。手を動かすなら [CONTRIBUTING.md](./CONTRIBUTING.md)（ローカル CI ミラー・生成物の扱い・PR 前チェックリスト）
+- **脆弱性は issue ではなく [SECURITY.md](./SECURITY.md) の非公開経路**（GitHub private vulnerability reporting）へ。セキュリティ修正は各パッケージの最新 minor にのみ提供する
 
 <!-- sec: learn-more -->
 ## もっと知る

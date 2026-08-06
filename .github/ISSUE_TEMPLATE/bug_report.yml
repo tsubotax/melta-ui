@@ -1,0 +1,59 @@
+name: バグ報告
+description: 動かない・仕様と違う挙動を報告する
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        脆弱性の報告はここではなく [SECURITY.md](https://github.com/tsubotax/melta-ui/blob/main/SECURITY.md) の非公開経路を使ってください。
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: 対象
+      options:
+        - melta-ds-mcp（MCP サーバー / lint エンジン）
+        - melta-contracts（契約 JSON）
+        - リポジトリを clone したハーネス（CI / hook / npm scripts）
+        - ドキュメント（README / DESIGN.md / foundations 等）
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: バージョン
+      description: パッケージのバージョン、または clone した commit
+      placeholder: "melta-ds-mcp 1.5.0 / melta-contracts 0.6.0"
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: 実行環境
+      description: Node のバージョン（`node -v`）と OS。MCP 経由なら使っているクライアントも
+      placeholder: "Node 22.14.0 / macOS 15 / Claude Code"
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 再現手順
+      description: 実行したコマンドと、対象の HTML / 契約の抜粋があれば貼ってください
+      placeholder: |
+        1. `npm run design:check` を実行
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: 期待した結果 / 実際の結果
+      placeholder: |
+        期待: ルール ID xxx が error として報告される
+        実際: 何も報告されない
+    validations:
+      required: true

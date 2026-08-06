@@ -232,7 +232,8 @@ Both the MCP server and the lint engine run entirely as local processes. There i
 - **A personally maintained OSS project** (tsubotax). No SLA, no dedicated team. It is kept honest by dogfooding in production (the web showcase and an RN app)
 - **0.x / 1.x policy**: the contract package `melta-contracts` is still 0.x, so breaking changes can arrive in a minor bump. What is *not* left to judgement is the classification — `npm run design:compat` decides mechanically and forces the semver bump
 - **Changes are announced through [CHANGELOG.md](./CHANGELOG.md)**, with Added / Changed / Removed per release
-- **Bugs and requests go to [GitHub Issues](https://github.com/tsubotax/melta-ui/issues)**
+- **Bugs and requests go to [GitHub Issues](https://github.com/tsubotax/melta-ui/issues)**. If you want to send a patch, start from [CONTRIBUTING.md](./CONTRIBUTING.md) (local CI mirror, generated files, pre-PR checklist)
+- **Vulnerabilities go through [SECURITY.md](./SECURITY.md), not issues** (GitHub private vulnerability reporting). Security fixes land on the latest published minor of each package only
 
 <!-- sec: learn-more -->
 ## Learn more

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 脆弱性の報告（非公開）
+    url: https://github.com/tsubotax/melta-ui/security/advisories/new
+    about: セキュリティ上の問題は issue ではなく private vulnerability reporting から報告してください
+  - name: コントリビュートの手引き
+    url: https://github.com/tsubotax/melta-ui/blob/main/CONTRIBUTING.md
+    about: ローカル CI ミラー・生成物の扱い・PR 前チェックリスト

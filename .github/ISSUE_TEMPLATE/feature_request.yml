@@ -1,0 +1,39 @@
+name: 機能提案
+description: 新しいルール・契約・ツールの提案
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 解きたい問題
+      description: 「何ができない / 何が守れていない」から書いてください。解法よりも先に問題を
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提案
+      description: 想定する形（新ルール / 契約の項目 / MCP ツール / npm script など）
+    validations:
+      required: true
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: 影響する層
+      options:
+        - Layer 2 契約（tokens / rules / component contracts）
+        - Layer 3 検証（harness / CI / hook / lint）
+        - MCP サーバーの公開契約（ツール名・入出力）
+        - ドキュメント
+        - まだ分からない
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 検討した代替案 / 現状の回避策
+    validations:
+      required: false
