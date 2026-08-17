@@ -75,6 +75,90 @@ function createCliTransport(args: string[]): StdioClientTransport {
   });
 }
 
+test.describe("check_html の入力検証（MCP 境界の fail-open 閉塞）", () => {
+  // 以前は handler が型キャストだけで、schema の enum は runtime で照合されなかった。
+  // sourceType: "htlm" が composition 検査を無言で外し passed: true を返す
+  // （2026-08-17 Codex 監査で実測）。ここでは MCP 経由で isError: true になることを固定する。
+  const NESTED = '<div role="dialog"><div role="dialog">x</div></div>';
+
+  async function withInMemory<T>(fn: (client: Client) => Promise<T>): Promise<T> {
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const server = createServer();
+    const client = new Client({ name: "melta-check-html-args", version: "1.0.0" });
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    try {
+      return await fn(client);
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  }
+
+  test("未知の sourceType は isError: true で返す（throw ではなくツールエラー）", async () => {
+    await withInMemory(async (client) => {
+      const result = (await client.callTool({
+        name: "check_html",
+        arguments: { source: NESTED, sourceType: "htlm" },
+      })) as { isError?: boolean; content: Array<{ text?: string }> };
+      expect(result.isError).toBe(true);
+      expect(result.content[0]?.text ?? "").toMatch(/sourceType/);
+    });
+  });
+
+  test("sourceType: null は省略扱いにせず拒否する", async () => {
+    await withInMemory(async (client) => {
+      const result = (await client.callTool({
+        name: "check_html",
+        arguments: { source: NESTED, sourceType: null },
+      })) as { isError?: boolean };
+      expect(result.isError).toBe(true);
+    });
+  });
+
+  test("arguments 自体を省略した呼び出しも TypeError にならず isError: true", async () => {
+    await withInMemory(async (client) => {
+      const result = (await client.callTool({ name: "check_html" })) as { isError?: boolean };
+      expect(result.isError).toBe(true);
+    });
+  });
+
+  test("source が文字列でない場合も isError: true", async () => {
+    await withInMemory(async (client) => {
+      const result = (await client.callTool({
+        name: "check_html",
+        arguments: { source: 123 },
+      })) as { isError?: boolean };
+      expect(result.isError).toBe(true);
+    });
+  });
+
+  test("省略時は html として composition が走る（正規経路の回帰）", async () => {
+    await withInMemory(async (client) => {
+      const result = (await client.callTool({
+        name: "check_html",
+        arguments: { source: NESTED },
+      })) as { isError?: boolean; content: Array<{ text?: string }> };
+      expect(result.isError).toBeFalsy();
+      const body = JSON.parse(result.content[0]?.text ?? "{}");
+      expect(body.passed).toBe(false);
+      expect(body.violations.map((v: { ruleId: string }) => v.ruleId)).toContain("MODAL_NO_NESTED");
+    });
+  });
+
+  test("tool schema の sourceType enum は runtime の許容値と同一（二重 SSOT を持たない）", async () => {
+    await withInMemory(async (client) => {
+      const listed = (await client.listTools()) as {
+        tools: Array<{ name: string; inputSchema: { properties: { sourceType: { enum: string[] } } } }>;
+      };
+      const tool = listed.tools.find((t) => t.name === "check_html");
+      expect(tool).toBeDefined();
+      const { SOURCE_TYPES } = await import("../src/tools/check-html.js");
+      expect(tool!.inputSchema.properties.sourceType.enum).toEqual([...SOURCE_TYPES]);
+    });
+  });
+});
+
 test.describe("MCP onboarding", () => {
   test("initialize instructions が利用順と検証境界を常駐提示する", async () => {
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();

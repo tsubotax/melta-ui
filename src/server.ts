@@ -20,7 +20,7 @@ import { KNOWN_DETECTORS, KNOWN_SEVERITIES } from "./utils/detectors.js";
 import { getToken } from "./tools/get-token.js";
 import { getComponent } from "./tools/get-component.js";
 import { checkRule } from "./tools/check-rule.js";
-import { checkHtml, type SourceType } from "./tools/check-html.js";
+import { checkHtml, assertSourceType, SOURCE_TYPES, type SourceType } from "./tools/check-html.js";
 import { search } from "./tools/search.js";
 import type { RuleFilter } from "./utils/types.js";
 import { buildMcpInstructions } from "./guidance.js";
@@ -127,7 +127,9 @@ export function toolDefinitions(ruleCount: number, serverName: string = SERVER_N
             },
             sourceType: {
               type: "string",
-              enum: ["html", "jsx"],
+              // runtime 検証（assertSourceType）と同じ配列から導出する。
+              // 別々に持つと schema だけ増やして runtime が拒否する（またはその逆の）drift になる
+              enum: [...SOURCE_TYPES],
               description:
                 'Source type. "html" (default) also runs composition lint (nested modal etc.); "jsx" runs class + attr lint only',
             },
@@ -397,8 +399,24 @@ export function createServer(): Server {
       }
 
       case "check_html": {
-        const { source, sourceType } = args as { source: string; sourceType?: SourceType };
-        const result = checkHtml(source, sourceType ?? "html");
+        // 入力ミス（source 型不正 / sourceType 不正）は isError: true のツールエラーで返す。
+        // throw するとサーバー障害の経路に乗り、呼び出し元の LLM が「自分の入力を直す」か
+        // 「サーバーが壊れた」かを区別できない（MCP SDK の isError 規約に従う）。
+        // ruleset 不整合や loader 障害は従来どおり throw（engine 側の問題）。
+        const { source, sourceType } = (args ?? {}) as { source?: unknown; sourceType?: unknown };
+        if (typeof source !== "string") {
+          return {
+            isError: true,
+            content: [{ type: "text", text: "[melta-ui] check_html の source は文字列で渡してください" }],
+          };
+        }
+        let st: SourceType;
+        try {
+          st = sourceType === undefined ? "html" : assertSourceType(sourceType);
+        } catch (e) {
+          return { isError: true, content: [{ type: "text", text: (e as Error).message }] };
+        }
+        const result = checkHtml(source, st);
         return {
           content: [
             {

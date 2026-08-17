@@ -16,7 +16,27 @@ import { getAllRules } from "../utils/loader.js";
 import { isAutoDetectable } from "../utils/matcher.js";
 import { assertViolationSeverity } from "../utils/rule-diagnostics.js";
 
-export type SourceType = "html" | "jsx";
+/**
+ * 許容する sourceType。MCP tool schema の enum もここから導出する（二重 SSOT を持たない）。
+ * "html" は composition lint も走る / "jsx" は class + html-attr のみ（AST が要るため未対応）。
+ */
+export const SOURCE_TYPES = ["html", "jsx"] as const;
+export type SourceType = (typeof SOURCE_TYPES)[number];
+
+/**
+ * sourceType の runtime 検証。以前は型キャストのみで、"htlm" のような typo が
+ * composition 検査を無言で外して passed: true を返していた（未知値 = fail-open）。
+ * 省略（undefined）は呼び出し側で "html" に倒す。null は省略ではないので拒否する。
+ */
+export function assertSourceType(value: unknown): SourceType {
+  if (typeof value === "string" && (SOURCE_TYPES as readonly string[]).includes(value)) {
+    return value as SourceType;
+  }
+  throw new Error(
+    `[melta-ui] check_html の sourceType が不正です: ${JSON.stringify(value)}。` +
+      `許容値は ${SOURCE_TYPES.map((s) => `"${s}"`).join(" / ")}（省略時は "html"）`
+  );
+}
 
 export interface CheckHtmlResult {
   passed: boolean;
@@ -29,11 +49,13 @@ export interface CheckHtmlResult {
   };
 }
 
-export function checkHtml(source: string, sourceType: SourceType = "html"): CheckHtmlResult {
+export function checkHtml(source: string, sourceType?: SourceType): CheckHtmlResult {
+  // undefined だけを省略とみなす（?? だと null も "html" に丸まる）
+  const st = sourceType === undefined ? "html" : assertSourceType(sourceType);
   let violations = lintSource(source);
   // 合成 lint（ネスト modal / interactive 内 interactive 等）は DOM パース前提なので
   // html のみ。JSX は AST が必要な別物（lint-generated.ts と同じ扱い）
-  if (sourceType === "html") {
+  if (st === "html") {
     violations = violations.concat(lintComposition(source));
   }
 
@@ -63,7 +85,7 @@ export function checkHtml(source: string, sourceType: SourceType = "html"): Chec
   const automatedIds = new Set<string>([
     ...classIds,
     ...attrIds,
-    ...(sourceType === "html" ? compositionIds : []),
+    ...(st === "html" ? compositionIds : []),
   ]);
   const autoCount = classIds.size;
   const attrCount = attrIds.size;
@@ -77,11 +99,18 @@ export function checkHtml(source: string, sourceType: SourceType = "html"): Chec
     warnCount,
     violations,
     coverage: {
-      automated: `${rules.length} ルール中 ${automatedTotal} 件を自動検査（class: ${autoCount} / html-attr: ${attrCount}${sourceType === "html" ? ` / composition: ${compositionCount}` : ""}）`,
+      automated: `${rules.length} ルール中 ${automatedTotal} 件を自動検査（class: ${autoCount} / html-attr: ${attrCount}${st === "html" ? ` / composition: ${compositionCount}` : ""}）`,
       // 未検査の内訳は detector="manual" だけではない（spec を持たない html-attr /
       // composition ルールも含む）。get_rules({detector:"manual"}) だけを案内すると
       // 該当ルールに辿り着けないため、実際に発見できる経路を書く。
-      notAutomated: `残り ${manualCount} 件はこのツールでは検査されない（detector="manual" のほか、検査 spec を持たない html-attr / composition ルールと、pattern を持たない class ルールを含む。interaction test 担保 / 静的検出不能 / 文脈依存。理由は各ルールの automationStatus 参照）。violations が空でも完全準拠の保証ではないため、必要に応じて get_rules() で全件を取得し automationStatus を確認すること`,
+      // jsx では composition が丸ごと未検査になる。件数からは除外済みだが、
+      // 「jsx だから外れた」ことを説明文でも明示しないと違反ゼロが完全準拠に見える。
+      notAutomated:
+        `残り ${manualCount} 件はこのツールでは検査されない（detector="manual" のほか、検査 spec を持たない html-attr / composition ルールと、pattern を持たない class ルールを含む。interaction test 担保 / 静的検出不能 / 文脈依存。理由は各ルールの automationStatus 参照）。` +
+        (st === "jsx"
+          ? `sourceType="jsx" のため composition ルール ${compositionCount} 件は未検査（DOM パース前提のため。HTML として検査するなら sourceType="html"）。`
+          : "") +
+        `violations が空でも完全準拠の保証ではないため、必要に応じて get_rules() で全件を取得し automationStatus を確認すること`,
     },
   };
 }

@@ -52,6 +52,32 @@ test.describe("check_html: lint-generated と同一判定", () => {
     expect(withClass.violations.map((v) => v.ruleId)).toContain("COLOR_NO_TEXT_BLACK");
   });
 
+  // sourceType の runtime 検証。以前は型キャストだけで、"htlm" のような typo が
+  // composition 検査を無言で外して passed: true を返していた（2026-08-17 Codex 監査で実測）。
+  test.describe("sourceType の runtime 検証（fail-open 閉塞）", () => {
+    const nested = '<div role="dialog"><div role="dialog">x</div></div>';
+
+    for (const bad of ["htlm", "HTML", "banana", ""]) {
+      test(`未知の sourceType ${JSON.stringify(bad)} は throw する（無言で通さない）`, () => {
+        expect(() => checkHtml(nested, bad as never)).toThrow(/sourceType/);
+      });
+    }
+
+    test("null は省略扱いにしない（?? で html に丸めない）", () => {
+      expect(() => checkHtml(nested, null as never)).toThrow(/sourceType/);
+    });
+
+    test("省略（undefined）は従来どおり html として composition が走る", () => {
+      const result = checkHtml(nested, undefined);
+      expect(result.violations.map((v) => v.ruleId)).toContain("MODAL_NO_NESTED");
+    });
+
+    test("jsx の coverage は composition が未検査であることを明示する", () => {
+      const result = checkHtml(nested, "jsx");
+      expect(result.coverage.notAutomated).toMatch(/jsx.*composition|composition.*jsx/);
+    });
+  });
+
   test("違反ゼロでも coverage を必ず返す（No violations = 完全準拠の誤読防止）", () => {
     const result = checkHtml('<div class="p-4">clean</div>');
     expect(result.passed).toBe(true);
