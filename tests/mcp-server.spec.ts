@@ -379,6 +379,40 @@ test.describe("アセット root の差し替え（vendor 経路）", () => {
     expect(() => parseMeltaRootArg(["--melta-root="])).toThrow(CliArgError);
   });
 
+  // 以前は --melta-root 以外を全部無視していたため、--melat-root=/x のような typo が
+  // 黙って内蔵 melta に fallback し、BYO-DS のつもりで別の DS が「合格」を返していた
+  // （2026-08-17 Codex 監査で実測 = 最悪の fail-open）。
+  test.describe("--melta-* 名前空間内の未知オプションは即時失敗する（fail-open 閉塞）", () => {
+    test("--melta-config のような未知の --melta-* は CliArgError", () => {
+      expect(() => parseMeltaRootArg(["--melta-config=/x"])).toThrow(CliArgError);
+      expect(() => parseMeltaRootArg(["--melta-roto=/x"])).toThrow(CliArgError);
+      expect(() => parseMeltaRootArg(["--melta-root-dir", "/x"])).toThrow(CliArgError);
+    });
+
+    test("実測事故の綴り --melat-root / --metla-root は予約 typo として拒否する", () => {
+      expect(() => parseMeltaRootArg(["--melat-root=/x"])).toThrow(CliArgError);
+      expect(() => parseMeltaRootArg(["--melat-root", "/x"])).toThrow(CliArgError);
+      expect(() => parseMeltaRootArg(["--metla-root=/x"])).toThrow(CliArgError);
+    });
+
+    test("正しい指定の後ろに未知の --melta-* があっても見逃さない（引数順に依存しない）", () => {
+      expect(() => parseMeltaRootArg(["--melta-root=/good", "--melta-config=/bad"])).toThrow(CliArgError);
+      // 空白区切りで値を消費した後の走査も続く
+      expect(() => parseMeltaRootArg(["--melta-root", "/good", "--melta-config=/bad"])).toThrow(CliArgError);
+    });
+
+    test("--melta-root の重複は異なる値ならエラー", () => {
+      expect(() => parseMeltaRootArg(["--melta-root=/a", "--melta-root=/b"])).toThrow(CliArgError);
+    });
+
+    test("melta 名前空間の外（--meta-root / --root / --verbose）は従来どおり無視する", () => {
+      // MCP ホストが独自引数を渡す可能性があるため、melta の名前空間だけを厳格にする
+      expect(parseMeltaRootArg(["--meta-root=/x"])).toBeNull();
+      expect(parseMeltaRootArg(["--root", "/x", "--verbose"])).toBeNull();
+      expect(parseMeltaRootArg(["--melta-root=/ok", "--verbose"])).toBe("/ok");
+    });
+  });
+
   test("CLI 起動 `--melta-root=<path>` で MCP サーバーが fixture のアセットを配る", async () => {
     const fixtureRoot = createMeltaRootFixture(undefined, "#333333");
     const client = new Client({ name: "melta-cli-test", version: "1.0.0" });
