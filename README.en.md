@@ -48,6 +48,8 @@ You can make an AI read your guidelines. Whether it *follows* them is up to the 
 
 > A bare import of `melta-ds-mcp` (`import "melta-ds-mcp"`) is unsupported: the entry is a CLI that boots a stdio server on import. Use `npx melta-ds-mcp` or the subpaths. Entry contract, deep-import compatibility and the package-split plan live in [docs/distribution.md](./docs/distribution.md).
 
+> **Want to check against your own design system (BYO-DS)?** `melta-ds-mcp` can switch the asset root it loads at startup to your own DS bundle (melta's rules are not mixed in). The four-file minimum, the setup steps and the limits are in [the BYO-DS section of docs/distribution.md](./docs/distribution.md#自分のデザインシステムを持ち込むbyo-ds).
+
 <!-- sec: requirements -->
 ## Requirements and compatibility
 
@@ -219,6 +221,7 @@ melta-app also ships an eslint plugin on npm for consumer projects, so raw liter
 - **The clone path and the npm path ship different layers.** The PostToolUse hook, CI and the lint CLI assume you cloned this repository; they do not reach a project that merely ran `npm install`. What the npm path gives you is `melta-ds-mcp/lint-core` (class and html-attr lint only; no composition lint) and the MCP `check_html` tool (composition included) — wire either into your own hook or CI
 - **Styling that isn't class-based cannot be inspected.** If style never lands in the markup (class / attributes), static lint fires on nothing
 - **Composition lint does not cover JSX.** Nesting and a11y-DOM checks are HTML-only; JSX gets class and attribute lint
+- **BYO-DS is data replacement only.** Write your DS's tokens and rules as JSON and the same engine checks against them, but the component-metadata generator is not shipped on npm and the detector set is fixed at 6 kinds (`manual` declares a rule as not auto-checked). New checking logic requires an engine change
 - **`check_html.passed` is not sign-off.** It means lint-clean draft, not brand-approved. The final call stays with a human
 
 <!-- sec: security -->
@@ -245,7 +248,7 @@ Both the MCP server and the lint engine run entirely as local processes. There i
 | [design/authority.md](./design/authority.md) | SSOT declaration and precedence when values conflict |
 | [docs/melta-loop-playbook.md](./docs/melta-loop-playbook.md) | Governance for loop / pipeline automation (three automation levels, SSOT write-protect, hard/soft human gates, audit log). W2 drift repair is live today |
 | [docs/benchmarks.md](./docs/benchmarks.md) | The benchmark protocol (five conditions × N trials measuring the lift in DS-compliance score) and its known limits |
-| [docs/distribution.md](./docs/distribution.md) | npm entry contract, deep-import compatibility, vendor path, package-split plan |
+| [docs/distribution.md](./docs/distribution.md) | npm entry contract, deep-import compatibility, BYO-DS (bring your own design system), package-split plan |
 | [docs/ai-ready-ds-maturity-model.md](./docs/ai-ready-ds-maturity-model.md) | An AI-Ready maturity model (Lv0 None → Lv4 Verified) you can run against any project |
 | [melta-screendiff](https://github.com/tsubotax/melta-screendiff) | A Claude Code plugin (separate repository) that compares Before/After of a UI-changing PR with real captures. The `.claude/screendiff.json` in this repository is its config, and a standing demo PR lives here too. It covers the side lint cannot reach — a human reviewing whether the change looks the way it was meant to |
 | [design/compat/google-designmd.md](./design/compat/google-designmd.md) | Mapping against the Google Labs [design.md spec](https://github.com/google-labs-code/design.md). melta's `DESIGN.md` carries spec-compatible front matter and passes `npx @google/design.md lint` with errors: 0. The difference in reach: the spec validates the DESIGN.md file itself, melta validates the generated code through CI and hooks |

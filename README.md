@@ -48,6 +48,8 @@ AI にガイドラインを読ませることはできる。守るかどうか�
 
 > `melta-ds-mcp` 自体の bare import（`import "melta-ds-mcp"`）は非サポート。entry は import しただけで stdio サーバーが起動する CLI なので、`npx melta-ds-mcp` か subpath 経由で使う。entry 規約・deep import 互換・パッケージ分割の予定は [docs/distribution.md](./docs/distribution.md)。
 
+> **自分のデザインシステムで検査したい場合（BYO-DS）**: `melta-ds-mcp` は起動時に読み込むアセット root を自分の DS bundle へ切り替えられる（melta のルールとは混在しない）。4 ファイルの最小構成から始める手順と限界は [docs/distribution.md の BYO-DS 節](./docs/distribution.md#自分のデザインシステムを持ち込むbyo-ds)。
+
 <!-- sec: requirements -->
 ## 前提条件・互換性
 
@@ -215,6 +217,7 @@ melta-app は消費者プロジェクト向けの eslint plugin も npm で配�
 - **clone 経路と npm 経路で届く層が違う**。PostToolUse hook / CI / lint CLI は「このリポジトリを clone して使う」前提の層で、`npm install` した消費者には届かない。npm 経路の強制層は `melta-ds-mcp/lint-core`（class / html-attr lint のみ。composition lint は含まない）と MCP の `check_html`（composition 込み）の 2 つで、これを各プロジェクトのフック / CI に自前で組み込む
 - **class ベースでないスタイリングは検査できない**。スタイルがマークアップ（class / 属性）に現れないコードでは静的 lint が空振りする
 - **JSX の composition lint は未対応**。ネスト構造・a11y DOM の検査は HTML のみ。JSX は class / 属性 lint まで
+- **BYO-DS はデータ差し替えのみ**。自分の DS のトークン・ルールを JSON で書けば同じエンジンで検査できるが、component metadata の生成ツールは npm に未同梱で、detector は 6 種固定（`manual` は自動検査しない宣言）。新しい検査ロジックはエンジン側の変更が要る
 - **`check_html.passed` は完成承認ではない**。lint-clean draft であってブランド適合の判定ではなく、最終判断は人間に渡す
 
 <!-- sec: security -->
@@ -241,7 +244,7 @@ MCP サーバーも lint エンジンもローカルプロセスで完結する�
 | [design/authority.md](./design/authority.md) | SSOT 宣言と値競合時の優先順位 |
 | [docs/melta-loop-playbook.md](./docs/melta-loop-playbook.md) | loop / pipeline 自動化の統治原則（自動化 3 Level 分類・SSOT write-protect・Human Gate の Hard / Soft 2 層化・監査ログ）。現状 W2 drift repair が稼働 |
 | [docs/benchmarks.md](./docs/benchmarks.md) | ベンチマークのプロトコル（5 条件 × N トライアルで DS 準拠スコアの lift を測る）と既知の限界 |
-| [docs/distribution.md](./docs/distribution.md) | npm entry 規約・deep import 互換・vendor 経路・パッケージ分割の予定 |
+| [docs/distribution.md](./docs/distribution.md) | npm entry 規約・deep import 互換・BYO-DS（自分の DS を持ち込む）・パッケージ分割の予定 |
 | [docs/ai-ready-ds-maturity-model.md](./docs/ai-ready-ds-maturity-model.md) | AI-Ready 成熟度モデル（Lv0 None → Lv4 Verified）。任意のプロジェクトに当てられる |
 | [melta-screendiff](https://github.com/tsubotax/melta-screendiff) | UI 変更 PR の Before/After を実キャプチャで比較する Claude Code plugin（別リポジトリ）。このリポジトリの `.claude/screendiff.json` がその設定ファイルで、常設のデモ PR も置いてある。lint が検知できない「見た目の意図」を人間がレビューする側を担う |
 | [design/compat/google-designmd.md](./design/compat/google-designmd.md) | Google Labs [design.md spec](https://github.com/google-labs-code/design.md) との対応表。melta の `DESIGN.md` は spec 互換の front matter を含み、`npx @google/design.md lint` が errors: 0 で通る。守備範囲の違いは「spec は DESIGN.md ファイル自体の検証まで、melta は生成コードの検証・CI・hook まで」 |
