@@ -216,7 +216,7 @@ melta-app also ships an eslint plugin on npm for consumer projects, so raw liter
 
 **Other limits**:
 
-- **The clone path and the npm path ship different layers.** The PostToolUse hook, CI and the lint CLI assume you cloned this repository; they do not reach a project that merely ran `npm install`. What the npm path gives you is `melta-ds-mcp/lint-core` and the MCP `check_html` tool — wire either into your own hook or CI
+- **The clone path and the npm path ship different layers.** The PostToolUse hook, CI and the lint CLI assume you cloned this repository; they do not reach a project that merely ran `npm install`. What the npm path gives you is `melta-ds-mcp/lint-core` (class and html-attr lint only; no composition lint) and the MCP `check_html` tool (composition included) — wire either into your own hook or CI
 - **Styling that isn't class-based cannot be inspected.** If style never lands in the markup (class / attributes), static lint fires on nothing
 - **Composition lint does not cover JSX.** Nesting and a11y-DOM checks are HTML-only; JSX gets class and attribute lint
 - **`check_html.passed` is not sign-off.** It means lint-clean draft, not brand-approved. The final call stays with a human

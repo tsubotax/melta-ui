@@ -56,6 +56,15 @@ export function extractClassStrings(source: string): string[] {
 /**
  * ソース文字列を lint し、自動検出ルール違反を返す。
  *
+ * **範囲は class lint + html-attr lint まで。composition lint（ネスト modal /
+ * interactive 内 interactive 等、DOM パース前提の合成検査）は含まない。**
+ * composition は MCP `check_html`（src/tools/check-html.ts）と CI の lint CLI
+ * （scripts/design/lint-generated.ts）が本関数の結果に別途足している。
+ * したがって本関数の `[]` は「class / html-attr の違反なし」であって、CI や
+ * check_html と同じ判定ではない。npm 公開 entry（melta-ds-mcp/lint-core）から
+ * これを呼ぶ消費者は、composition が要るなら check_html を使うこと。
+ * composition 込みの単一 API 化は Phase 2 S4 で扱う（2026-08-17 時点で未解決）。
+ *
  * @param source 生成物のソース（HTML/JSX/Vue 文字列）
  * @returns 違反リスト（error / warn 混在。呼び出し側で severity 判定）
  */

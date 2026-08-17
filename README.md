@@ -212,7 +212,7 @@ melta-app は消費者プロジェクト向けの eslint plugin も npm で配�
 
 **その他の制約**:
 
-- **clone 経路と npm 経路で届く層が違う**。PostToolUse hook / CI / lint CLI は「このリポジトリを clone して使う」前提の層で、`npm install` した消費者には届かない。npm 経路の強制層は `melta-ds-mcp/lint-core` と MCP の `check_html` の 2 つで、これを各プロジェクトのフック / CI に自前で組み込む
+- **clone 経路と npm 経路で届く層が違う**。PostToolUse hook / CI / lint CLI は「このリポジトリを clone して使う」前提の層で、`npm install` した消費者には届かない。npm 経路の強制層は `melta-ds-mcp/lint-core`（class / html-attr lint のみ。composition lint は含まない）と MCP の `check_html`（composition 込み）の 2 つで、これを各プロジェクトのフック / CI に自前で組み込む
 - **class ベースでないスタイリングは検査できない**。スタイルがマークアップ（class / 属性）に現れないコードでは静的 lint が空振りする
 - **JSX の composition lint は未対応**。ネスト構造・a11y DOM の検査は HTML のみ。JSX は class / 属性 lint まで
 - **`check_html.passed` は完成承認ではない**。lint-clean draft であってブランド適合の判定ではなく、最終判断は人間に渡す

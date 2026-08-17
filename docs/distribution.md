@@ -29,7 +29,10 @@ const rules = JSON.parse(readFileSync(require.resolve("melta-contracts/rules"), 
 
 ## `melta-ds-mcp` の entry 規約
 
-- **公開 entry**: `melta-ds-mcp/lint-core`（1.5.0 で `exports` に明示）。CI / hook / MCP `check_html` と同一の lint ロジック
+- **公開 entry**: `melta-ds-mcp/lint-core`（1.5.0 で `exports` に明示）。`lintSource(source)` は **class lint + html-attr lint まで**を返す。**composition lint（ネスト modal / interactive 内 interactive 等）は含まない** — composition は MCP `check_html` と CI の lint CLI が別途足している。つまり `lintSource()` の `[]` は「class / html-attr の違反なし」であって「CI と同じ判定で違反なし」ではない
+  - 以前この行は「CI / hook / MCP check_html と同一の lint ロジック」と書いていたが誤り（2026-08-17 訂正）
+  - composition まで含めた判定が要る場合は MCP の `check_html` を使う。`dist/tools/check-html.js` の deep import は動くが公開 API として推奨しない（下記 passthrough は互換維持であって契約ではない）
+  - **未解決**: npm 経路の消費者が composition 込みの単一 API を持てない状態は残る。単一 `lint()` API 化は Phase 2 S4（config resolver + 公開 entry 整理）で扱う
 - **互換 passthrough**: `melta-ds-mcp/dist/*` / `melta-ds-mcp/design/*` / `melta-ds-mcp/metadata/*` の deep import は pattern で維持する。予告なく壊さない
 - **bare import は非サポート**: `import "melta-ds-mcp"` は entry ではない。`dist/index.js` は import しただけで stdio サーバーが起動する CLI entry であり、公開 API にしない。利用は `npx melta-ds-mcp`（MCP サーバー）か上記 subpath 経由
 - 解決経路は実際の Node 解決器で `tests/package-exports.spec.ts` が固定する
