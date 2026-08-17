@@ -3,6 +3,12 @@
 Phase 2 / S2 W8 の回帰対象。**melta のデータを 1 つも含まない** data-only bundle で、
 engine（MCP / lint）が第三者 DS を素通しで扱えることを `tests/external-ds.spec.ts` が端到端で測る。
 
+**BYO-DS の参照実装としても読める**（`docs/distribution.md` の「自分のデザインシステムを持ち込む」節から参照）。
+ただし役割は「CI で継続検証される完全例」で、コピー用の最小例は distribution.md 側の 4 ファイル構成。
+このディレクトリは **npm tarball には同梱されない**（このリポジトリを clone したときだけ手に入る）。
+detector 6 種のうち `tailwind-class-segment` 以外の 5 種を踏む。`DESIGN.md` は意図的に置いていない
+（doc capability off の側を測るため。自分の bundle では置くことを推奨）。
+
 melta との差分を意図的に付けてある（「melta のデータに fallback したら落ちる」を成立させるため）:
 
 | 軸 | melta | acme-ds |
@@ -17,7 +23,8 @@ melta との差分を意図的に付けてある（「melta のデータに fall
 ## 中身
 
 - `design/contracts/rules.json` — 5 ルール。detector は tailwind-class / tailwind-class-prefix /
-  html-attr / composition / manual を 1 つずつ = engine の capability 表を全種類踏む
+  html-attr / composition / manual を 1 つずつ（engine の capability 表 6 種のうち
+  `tailwind-class-segment` 以外）
 - `design/contracts/tokens.json` — melta に存在しない名前空間のトークン
 - `design/contracts/components/*.contract.json` — `class` 正と `tailwind` alias の両方（W3）
 - `metadata/components.json` / `design/contracts/recipes/web/*.json` — **contract からの導出物**。
