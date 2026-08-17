@@ -30,7 +30,7 @@ AI にガイドラインを読ませることはできる。守るかどうか�
 ## Proof — 主張には検証経路をつける
 
 - **106 禁止ルールのうち 48 / 106 を静的に自動検出**。残りも「なぜ自動検出しないか」を `automationStatus` で分類・可視化する（[rules.json](./design/contracts/rules.json) / 内訳は[制約と正直な範囲](#制約と正直な範囲)）
-- **Playwright + axe-core 248 tests** が CI 必須ゲート（[.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [実行履歴](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml)）
+- **Playwright + axe-core 372 tests** が CI 必須ゲート（[.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [実行履歴](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml)）
 - **5 種の代表的リセット CSS 環境で VRT 差分ピクセル 0**。pixelmatch の literal 比較で機械検証（[tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts)、`npm run test:reset-vrt`）
 - **npm 3 パッケージ + MCP Registry で配布**（[melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app)、Registry ID `io.github.tsubotax/melta-ui`）
 - **別リポジトリの React Native 実装が同じ契約を購読**し、契約の破壊的変更は APP 側が契約バージョンを取り込んだ時点で consumer テストが検出する（[melta-app](https://github.com/tsubotax/melta-app) / npm 公開版との互換は `npm run design:compat` が publish 前に検査）

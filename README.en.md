@@ -30,7 +30,7 @@ You can make an AI read your guidelines. Whether it *follows* them is up to the 
 ## Proof — every claim has a verification path
 
 - **48 of the 106 prohibition rules are statically auto-detected.** The rest are classified and surfaced by `automationStatus` instead of being silently unenforced ([rules.json](./design/contracts/rules.json) / breakdown under [Limits](#limits-and-the-honest-scope))
-- **Playwright + axe-core, 248 tests**, as a required CI gate ([.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [run history](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml))
+- **Playwright + axe-core, 372 tests**, as a required CI gate ([.github/workflows/design-check.yml](./.github/workflows/design-check.yml) / [run history](https://github.com/tsubotax/melta-ui/actions/workflows/design-check.yml))
 - **0 diff pixels across five representative reset-CSS environments**, machine-verified with literal pixelmatch comparison ([tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts), `npm run test:reset-vrt`)
 - **Distributed as three npm packages plus the MCP Registry** ([melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app), Registry ID `io.github.tsubotax/melta-ui`)
 - **A React Native implementation in a separate repository subscribes to the same contract**; breaking contract changes are caught by its consumer tests when the APP side picks up the new contract version ([melta-app](https://github.com/tsubotax/melta-app) / `npm run design:compat` checks compatibility against the published npm version before publishing)

@@ -9,7 +9,7 @@
  *   1. セクションキーの集合と順序（`<!-- sec: <key> -->` マーカー）
  *   2. セクションごとのコードフェンス数
  *   3. 外部リンク URL の集合
- *   4. 主要数値（106 / 48 / 248 / 40 / 28 / 101）の同値出現
+ *   4. 主要数値（106 / 48 / 372 / 40 / 28 / 101）の同値出現
  *
  * 単独実行: npm run check:readme-parity
  * 統合実行: npm run design:drift（drift-check.ts が checkReadmeParity を呼ぶ）
@@ -23,7 +23,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const defaultRoot = resolve(__dirname, "../..");
 
 /** 両 README に同値で出現すべき主要数値（設計書 v2.1 で固定） */
-export const PARITY_NUMBERS = [106, 48, 248, 40, 28, 101] as const;
+export const PARITY_NUMBERS = [106, 48, 372, 40, 28, 101] as const;
 
 const SECTION_MARKER = /<!--\s*sec:\s*([a-z0-9-]+)\s*-->/g;
 
