@@ -2,8 +2,19 @@
  * build-llms-txt.ts — llms.txt / llms-full.txt を contracts から生成
  *
  * llms.txt 標準（https://llmstxt.org/）に従い、AI エージェント向けの入口を
- * リポジトリルートに生成する。Netlify は publish="." なので
- * https://melta.tsubotax.com/llms.txt でそのまま配信される。
+ * リポジトリルートに生成する。
+ *
+ * リンク先は GitHub raw（main ブランチ固定）。melta.tsubotax.com は showcase 専用で、
+ * ドキュメント・契約の正本は GitHub リポジトリ（2026-08-17 確定）。
+ * 経緯: 2026-07-06 の allowlist 化で publish が site-public に変わり、llms.txt が列挙する
+ * 自サイト URL が 42 日間すべて 404 だった。自サイト配信を復旧する案もあったが、
+ * llms.txt を主要 LLM プロバイダがほぼ読んでいない実測（Google は不採用宣言）を踏まえ、
+ * 配信面を増やさず GitHub を正とする。
+ *
+ * main 固定の性質: 常に最新版を指す living docs であって、過去タグ時点の llms.txt から
+ * 辿っても当時の内容は再現できない。リリース時点の内容が要るなら npm の melta-contracts を使う。
+ * raw.githubusercontent.com は Content-Type: text/plain で返す（md も json も）。
+ * 取得して parse する用途では問題ない。匿名アクセスは rate limit の対象（429）。
  *
  * - llms.txt      : インデックス（H1 + 要約 + 注釈付きリンク）
  * - llms-full.txt : 主要ドキュメントの連結（DESIGN.md / authority / theme /
@@ -20,7 +31,7 @@ import { getContractStats } from "../../src/utils/contract-stats.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "../..");
-const BASE = "https://melta.tsubotax.com";
+const BASE = "https://raw.githubusercontent.com/tsubotax/melta-ui/main";
 
 // 全文連結の上限（コンテキスト破壊防止。超過時は contract サマリから削る）
 const FULL_MAX_CHARS = 400_000;

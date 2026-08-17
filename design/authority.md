@@ -25,7 +25,7 @@
 | MCP `melta://design-constitution` レスポンス | `DESIGN.md` | MCP だけで接続する AI の最初の入口（runtime 直読、内容の複製なし） |
 | MCP `melta://rules` レスポンス | `design/contracts/rules.json` | AI エージェントからのルール参照 |
 | `docs/` の component count・nav | contracts + tokens | 公開サイト表示 |
-| `llms.txt` / `llms-full.txt` | contracts + DESIGN.md ほか（`build-llms-txt.ts`） | Web 配信される AI エージェント入口（llmstxt.org 形式） |
+| `llms.txt` / `llms-full.txt` | contracts + DESIGN.md ほか（`build-llms-txt.ts`） | AI エージェント入口（llmstxt.org 形式）。リンク先は GitHub raw。melta.tsubotax.com は showcase 専用で配信しない |
 
 ## Human-Readable Docs（参照用。値の SSOT ではない）
 

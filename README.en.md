@@ -5,7 +5,7 @@
 
 **Turn AI design guidelines into executable contracts that catch violations.**
 
-> 🇯🇵 日本語版（正本）: [README.md](./README.md) · Site: https://melta.tsubotax.com
+> 🇯🇵 日本語版（正本）: [README.md](./README.md) · Showcase: https://melta.tsubotax.com (docs and contracts live in this repository)
 
 <!-- sec: lead -->
 You can make an AI read your guidelines. Whether it *follows* them is up to the AI. melta UI replaces that "up to the AI" with machinery. A machine is in the loop at four points: **before** generation (the MCP server hands the agent the contract), **immediately after** (lint and the editor hook push violations back), **before merge** (CI blocks), and **afterwards** (drift checks keep catching docs and implementation rotting apart). Not just readable — enforced.
@@ -247,6 +247,7 @@ Both the MCP server and the lint engine run entirely as local processes. There i
 | [docs/benchmarks.md](./docs/benchmarks.md) | The benchmark protocol (five conditions × N trials measuring the lift in DS-compliance score) and its known limits |
 | [docs/distribution.md](./docs/distribution.md) | npm entry contract, deep-import compatibility, vendor path, package-split plan |
 | [docs/ai-ready-ds-maturity-model.md](./docs/ai-ready-ds-maturity-model.md) | An AI-Ready maturity model (Lv0 None → Lv4 Verified) you can run against any project |
+| [melta-screendiff](https://github.com/tsubotax/melta-screendiff) | A Claude Code plugin (separate repository) that compares Before/After of a UI-changing PR with real captures. The `.claude/screendiff.json` in this repository is its config, and a standing demo PR lives here too. It covers the side lint cannot reach — a human reviewing whether the change looks the way it was meant to |
 | [design/compat/google-designmd.md](./design/compat/google-designmd.md) | Mapping against the Google Labs [design.md spec](https://github.com/google-labs-code/design.md). melta's `DESIGN.md` carries spec-compatible front matter and passes `npx @google/design.md lint` with errors: 0. The difference in reach: the spec validates the DESIGN.md file itself, melta validates the generated code through CI and hooks |
 
 <!-- sec: license -->

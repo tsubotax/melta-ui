@@ -5,7 +5,7 @@
 
 **AI 向けデザインガイドラインを、違反を止める実行可能な契約へ。**
 
-> 🇬🇧 English: [README.en.md](./README.en.md) · Site: https://melta.tsubotax.com
+> 🇬🇧 English: [README.en.md](./README.en.md) · Showcase: https://melta.tsubotax.com （ドキュメント・契約の正本はこのリポジトリ）
 
 <!-- sec: lead -->
 AI にガイドラインを読ませることはできる。守るかどうかは AI 任せになる。melta UI は、その「任せ」を機械に置き換える。生成の**前**（MCP で契約を参照させる）・**直後**（lint / hook が違反を突き返す）・**マージ前**（CI が止める）・**その後**（drift 検査がドキュメントと実装の腐りを検知し続ける）の 4 点で機械が関与する。読ませるだけでなく、守らせる。
@@ -243,6 +243,7 @@ MCP サーバーも lint エンジンもローカルプロセスで完結する�
 | [docs/benchmarks.md](./docs/benchmarks.md) | ベンチマークのプロトコル（5 条件 × N トライアルで DS 準拠スコアの lift を測る）と既知の限界 |
 | [docs/distribution.md](./docs/distribution.md) | npm entry 規約・deep import 互換・vendor 経路・パッケージ分割の予定 |
 | [docs/ai-ready-ds-maturity-model.md](./docs/ai-ready-ds-maturity-model.md) | AI-Ready 成熟度モデル（Lv0 None → Lv4 Verified）。任意のプロジェクトに当てられる |
+| [melta-screendiff](https://github.com/tsubotax/melta-screendiff) | UI 変更 PR の Before/After を実キャプチャで比較する Claude Code plugin（別リポジトリ）。このリポジトリの `.claude/screendiff.json` がその設定ファイルで、常設のデモ PR も置いてある。lint が検知できない「見た目の意図」を人間がレビューする側を担う |
 | [design/compat/google-designmd.md](./design/compat/google-designmd.md) | Google Labs [design.md spec](https://github.com/google-labs-code/design.md) との対応表。melta の `DESIGN.md` は spec 互換の front matter を含み、`npx @google/design.md lint` が errors: 0 で通る。守備範囲の違いは「spec は DESIGN.md ファイル自体の検証まで、melta は生成コードの検証・CI・hook まで」 |
 
 <!-- sec: license -->
