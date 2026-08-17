@@ -130,12 +130,14 @@ npm run build                 # TypeScript → dist/（MCP サーバー）
 | 項目 | 値 |
 |------|-----|
 | ホスティング | Netlify（手動デプロイ） |
-| 本番URL | https://melta.tsubotax.com |
-| publish ディレクトリ | `.`（リポジトリルート）— `netlify.toml` で設定済み |
+| 本番URL | https://melta.tsubotax.com（**showcase 専用**。AI 導線・ドキュメントの正本は GitHub リポジトリ） |
+| publish ディレクトリ | `site-public`（`npm run site:build` の生成物 = 公開してよいファイルの allowlist）— `netlify.toml` で設定済み |
+| build コマンド | `npm run site:build` — `netlify.toml` の `command` で設定済み。`netlify deploy` が自動で実行する |
 
 ```bash
-# 本番デプロイ（--dir 指定不要。netlify.toml の publish = "." が使われる）
+# 本番デプロイ。build は netlify.toml の command（npm run site:build）が自動で走るので、
+# 手で site:build を挟まない（二重 build になる）。--dir も指定しない（publish 設定に従う）
 netlify deploy --prod
 ```
 
-> **注意**: `netlify deploy --prod --dir=docs` は NG。`publish = "."` なのでルートからデプロイしないとリダイレクトが 404 になる。
+> **注意**: `--dir=docs` や `--dir=.` を手で指定しない。`publish = "site-public"` の allowlist を迂回して非公開ファイルが出るか、リダイレクトが 404 になる。`site:build` に新しいページ・ファイルを足し忘れると**ローカルでは見えるのに本番に出ない**（2026-07-06 の allowlist 化以降、llms.txt 等がこれで 42 日間 404 だった）。公開したいファイルは `package.json` の `site:build` に追加すること。

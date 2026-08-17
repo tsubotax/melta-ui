@@ -19,6 +19,7 @@ import { isAutoDetectable } from "../../src/utils/matcher.js";
 import { getAllRules } from "../../src/utils/loader.js";
 import { buildFrontMatter } from "./export-designmd.js";
 import { checkReadmeParity } from "./check-readme-parity.js";
+import { checkDeployDocs } from "./check-deploy-docs.js";
 import {
   isDocOnlyGuarded,
   renderCoverageBlock,
@@ -550,6 +551,16 @@ section("11. README 日英 parity");
 const parity = checkReadmeParity(root);
 for (const o of parity.oks) ok(o);
 for (const d of parity.drifts) drift(d);
+
+// --- 12. AGENTS.md デプロイ手順 ↔ netlify.toml ---
+// 2026-07-06 の allowlist 化で publish が site-public に変わったのに AGENTS.md が
+// publish = "." のまま 42 日間残り、手順どおりだと stale な site-public が出る状態だった。
+// netlify.toml は本検査の対象外だったので拾えなかった（実装は check-deploy-docs.ts）。
+section("12. AGENTS.md デプロイ手順 ↔ netlify.toml");
+
+const deployDocs = checkDeployDocs(root);
+for (const o of deployDocs.oks) ok(o);
+for (const d of deployDocs.drifts) drift(d);
 
 // --- Summary ---
 section("Summary");
