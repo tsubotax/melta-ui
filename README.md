@@ -34,7 +34,7 @@ AI にガイドラインを読ませることはできる。守るかどうか�
 - **5 種の代表的リセット CSS 環境で VRT 差分ピクセル 0**。pixelmatch の literal 比較で機械検証（[tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts)、`npm run test:reset-vrt`）
 - **npm 3 パッケージ + MCP Registry で配布**（[melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app)、Registry ID `io.github.tsubotax/melta-ui`）
 - **別リポジトリの React Native 実装が同じ契約を購読**し、契約の破壊的変更は APP 側が契約バージョンを取り込んだ時点で consumer テストが検出する（[melta-app](https://github.com/tsubotax/melta-app) / npm 公開版との互換は `npm run design:compat` が publish 前に検査）
-- **外部プロジェクトで「AI が違反を書く → 即検出 → 自己修正」ループを実測**（2026-08、非公開 RN アプリへ npm 経由で導入。[melta-app README のステータス節](https://github.com/tsubotax/melta-app/blob/main/README.md#ステータス)）
+- **外部プロジェクトで「AI が違反を書く → 即検出 → 自己修正」ループを実測**（2026-08、非公開 RN アプリへ npm 経由で導入。[melta-app README の成熟度・メンテナンス節](https://github.com/tsubotax/melta-app/blob/main/README.md#成熟度メンテナンス)）
 - **drift 検査自身に負のテストがある**（わざと壊して発火することを固定：[tests/drift-heal.spec.ts](./tests/drift-heal.spec.ts)）
 
 <!-- sec: ships -->

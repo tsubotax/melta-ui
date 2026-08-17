@@ -34,7 +34,7 @@ You can make an AI read your guidelines. Whether it *follows* them is up to the 
 - **0 diff pixels across five representative reset-CSS environments**, machine-verified with literal pixelmatch comparison ([tests/reset-vrt.spec.ts](./tests/reset-vrt.spec.ts), `npm run test:reset-vrt`)
 - **Distributed as three npm packages plus the MCP Registry** ([melta-contracts](https://www.npmjs.com/package/melta-contracts) / [melta-ds-mcp](https://www.npmjs.com/package/melta-ds-mcp) / [melta-app](https://www.npmjs.com/package/melta-app), Registry ID `io.github.tsubotax/melta-ui`)
 - **A React Native implementation in a separate repository subscribes to the same contract**; breaking contract changes are caught by its consumer tests when the APP side picks up the new contract version ([melta-app](https://github.com/tsubotax/melta-app) / `npm run design:compat` checks compatibility against the published npm version before publishing)
-- **The "AI writes a violation → instant detection → self-repair" loop was measured on an outside project** (2026-08, installed via npm into a private RN app — see [the status section of the melta-app README](https://github.com/tsubotax/melta-app/blob/main/README.md#ステータス))
+- **The "AI writes a violation → instant detection → self-repair" loop was measured on an outside project** (2026-08, installed via npm into a private RN app — see [the maturity and maintenance section of the melta-app README](https://github.com/tsubotax/melta-app/blob/main/README.md#成熟度メンテナンス))
 - **The drift checks have negative tests of their own** — deliberately breaking things is pinned as a firing condition ([tests/drift-heal.spec.ts](./tests/drift-heal.spec.ts))
 
 <!-- sec: ships -->
