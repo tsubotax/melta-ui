@@ -1,0 +1,494 @@
+{
+  "version": "1.0.0",
+  "judgeProtocolVersion": 1,
+  "note": "shadow judge の審査観点（authoring source）。rules.json の派生ではなく人が書く。整合は tests/judge.spec.ts が固定する。",
+  "representativeAspects": [
+    "TYPO_NO_XS_BODY",
+    "FORM_SELECT_APPEARANCE_NONE",
+    "MODAL_OVERLAY_REQUIRED",
+    "SPACE_NO_DARK_SIDEBAR_BG",
+    "A11Y_NO_OUTLINE_NONE_WITHOUT_RING",
+    "TABLE_NO_LAYOUT_TABLE",
+    "DIVIDER_NO_DIV_BORDER_B"
+  ],
+  "aspects": [
+    {
+      "aspectId": "COLOR_ONLY_FORBIDDEN",
+      "question": "色だけで情報や状態を伝えている箇所は無いか（アイコン・テキスト・形状の併用があるか）",
+      "ruleIds": ["COLOR_ONLY_FORBIDDEN"],
+      "category": "color",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": [
+        "FORM_NO_COLOR_ONLY_ERROR",
+        "LIST_NO_COLOR_ONLY_SELECTION",
+        "STEPPER_NO_COLOR_ONLY_STATE",
+        "DATEPICKER_NO_COLOR_ONLY_TODAY"
+      ]
+    },
+    {
+      "aspectId": "PHILOSOPHY_NO_EXCESSIVE_ANIMATION",
+      "question": "操作の邪魔になる過剰なアニメーションを付けていないか（状態変化のフィードバックに限定されているか）",
+      "ruleIds": ["PHILOSOPHY_NO_EXCESSIVE_ANIMATION"],
+      "category": "philosophy",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "partial",
+      "siblings": ["A11Y_NO_DECORATIVE_ANIMATION"]
+    },
+    {
+      "aspectId": "MOTION_REDUCED_MOTION_REQUIRED",
+      "question": "アニメーションに prefers-reduced-motion の分岐が用意されているか",
+      "ruleIds": ["MOTION_REDUCED_MOTION_REQUIRED"],
+      "category": "motion",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "partial",
+      "siblings": []
+    },
+    {
+      "aspectId": "TYPO_NO_XS_BODY",
+      "question": "本文テキストに text-xs 相当の小さすぎる文字サイズを使っていないか",
+      "ruleIds": ["TYPO_NO_XS_BODY"],
+      "category": "typography",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "TYPO_NO_PLACEHOLDER_ONLY",
+      "question": "入力欄の説明を placeholder だけに頼っていないか",
+      "ruleIds": ["TYPO_NO_PLACEHOLDER_ONLY"],
+      "category": "typography",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": ["FORM_NO_LABEL_OMIT"]
+    },
+    {
+      "aspectId": "SPACE_NO_M0_PAGE",
+      "question": "ページ外周の余白が無く、コンテンツが画面端に張り付いていないか",
+      "ruleIds": ["SPACE_NO_M0_PAGE"],
+      "category": "spacing",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "SPACE_NO_DARK_SIDEBAR_BG",
+      "question": "サイドバーに暗い背景色を敷いてメインとのコントラストを付けすぎていないか",
+      "ruleIds": ["SPACE_NO_DARK_SIDEBAR_BG"],
+      "category": "spacing",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "SPACE_NO_ROUNDED_XL_NAV",
+      "question": "ナビゲーション項目の角丸が rounded-xl 以上になっていないか",
+      "ruleIds": ["SPACE_NO_ROUNDED_XL_NAV"],
+      "category": "spacing",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "SPACE_NO_LARGE_NAV_ICON",
+      "question": "ナビゲーションのアイコンが DS 標準サイズより大きくなっていないか",
+      "ruleIds": ["SPACE_NO_LARGE_NAV_ICON"],
+      "category": "spacing",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "SPACE_NO_DRAWER_NO_FOCUS_TRAP",
+      "question": "ドロワーにフォーカストラップが実装されているか",
+      "ruleIds": ["SPACE_NO_DRAWER_NO_FOCUS_TRAP"],
+      "category": "spacing",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "SPACE_NO_3COL_LAYOUT",
+      "question": "3 カラムレイアウトで認知負荷を上げていないか",
+      "ruleIds": ["SPACE_NO_3COL_LAYOUT"],
+      "category": "spacing",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "BTN_NO_SAME_STYLE_PARALLEL",
+      "question": "同じスタイルのボタンを並べて重要度の区別を失っていないか",
+      "ruleIds": ["BTN_NO_SAME_STYLE_PARALLEL"],
+      "category": "button",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "BTN_NO_LIGHTED_SOLO",
+      "question": "Lighted ボタンを単独で使っていないか（トグル状態の対比があるか）",
+      "ruleIds": ["BTN_NO_LIGHTED_SOLO"],
+      "category": "button",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_SELECT_APPEARANCE_NONE",
+      "question": "select がネイティブ矢印のままになっていないか（appearance-none + カスタムシェブロンか）",
+      "ruleIds": ["FORM_SELECT_APPEARANCE_NONE"],
+      "category": "form",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_NO_LABEL_OMIT",
+      "question": "入力欄に label が付いていない箇所は無いか",
+      "ruleIds": ["FORM_NO_LABEL_OMIT"],
+      "category": "form",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": ["TYPO_NO_PLACEHOLDER_ONLY"]
+    },
+    {
+      "aspectId": "FORM_NO_SIDE_LABEL",
+      "question": "ラベルを入力欄の横に置いていないか（上に置いているか）",
+      "ruleIds": ["FORM_NO_SIDE_LABEL"],
+      "category": "form",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_FIELDSET_LEGEND_REQUIRED",
+      "question": "関連する入力のグループに fieldset / legend が付いているか",
+      "ruleIds": ["FORM_FIELDSET_LEGEND_REQUIRED"],
+      "category": "form",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_NO_AUTO_HIDE_ERROR",
+      "question": "エラーメッセージが一定時間で自動的に消えないか",
+      "ruleIds": ["FORM_NO_AUTO_HIDE_ERROR"],
+      "category": "form",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_NO_COLOR_ONLY_ERROR",
+      "question": "エラー表示を色だけで行っていないか（アイコンとテキストを併用しているか）",
+      "ruleIds": ["FORM_NO_COLOR_ONLY_ERROR"],
+      "category": "form",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": ["COLOR_ONLY_FORBIDDEN"]
+    },
+    {
+      "aspectId": "FORM_NO_CARD_FIELDSET_LEGEND",
+      "question": "カードレベルの見出しに fieldset / legend を使っていないか",
+      "ruleIds": ["FORM_NO_CARD_FIELDSET_LEGEND"],
+      "category": "form",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_NO_DATE_EQUAL_WIDTH",
+      "question": "日付入力の年・月・日セレクトを等幅にして月日を広げすぎていないか",
+      "ruleIds": ["FORM_NO_DATE_EQUAL_WIDTH"],
+      "category": "form",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_NO_CHECK_ONLY_CONFIRM",
+      "question": "チェックボックスの操作だけで確定していないか（確認ボタンがあるか）",
+      "ruleIds": ["FORM_NO_CHECK_ONLY_CONFIRM"],
+      "category": "form",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_NO_AUTO_FOCUS_MOVE",
+      "question": "入力桁が埋まったときに次の欄へフォーカスを自動移動していないか",
+      "ruleIds": ["FORM_NO_AUTO_FOCUS_MOVE"],
+      "category": "form",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "FORM_NO_DISTANT_ERROR",
+      "question": "エラーメッセージが対象フィールドから離れた位置に出ていないか",
+      "ruleIds": ["FORM_NO_DISTANT_ERROR"],
+      "category": "form",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "MODAL_CLOSE_REQUIRED",
+      "question": "モーダルを閉じる手段が用意されているか（閉じるボタン / Esc / オーバーレイクリック）",
+      "ruleIds": ["MODAL_CLOSE_REQUIRED"],
+      "category": "modal",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "MODAL_OVERLAY_REQUIRED",
+      "question": "モーダルに背景を覆うオーバーレイがあるか",
+      "ruleIds": ["MODAL_OVERLAY_REQUIRED"],
+      "category": "modal",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "LIST_NO_FIXED_HEIGHT_MISMATCH",
+      "question": "リストアイテムに固定高さを与えてテキストの切れや余白の不均等を招いていないか",
+      "ruleIds": ["LIST_NO_FIXED_HEIGHT_MISMATCH"],
+      "category": "list",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "partial",
+      "siblings": []
+    },
+    {
+      "aspectId": "LIST_NO_COLOR_ONLY_SELECTION",
+      "question": "リストの選択状態を色だけで表していないか",
+      "ruleIds": ["LIST_NO_COLOR_ONLY_SELECTION"],
+      "category": "list",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": ["COLOR_ONLY_FORBIDDEN"]
+    },
+    {
+      "aspectId": "LIST_NO_GESTURE_ONLY",
+      "question": "スワイプ等のジェスチャーでしか実行できない操作が無いか",
+      "ruleIds": ["LIST_NO_GESTURE_ONLY"],
+      "category": "list",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "LIST_NO_ICON_BORDER",
+      "question": "リスト内のアイコンにボーダーを付けて情報の断絶を誤解させていないか",
+      "ruleIds": ["LIST_NO_ICON_BORDER"],
+      "category": "list",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "TABLE_NO_LAYOUT_TABLE",
+      "question": "レイアウト目的で table 要素を使っていないか",
+      "ruleIds": ["TABLE_NO_LAYOUT_TABLE"],
+      "category": "table",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "TAG_REMOVABLE_X_REQUIRED",
+      "question": "削除できる Tag に × ボタンが表示されているか",
+      "ruleIds": ["TAG_REMOVABLE_X_REQUIRED"],
+      "category": "tag",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "TAG_X_MIN_TAP_TARGET",
+      "question": "Tag の × ボタンのタップ領域が小さすぎないか",
+      "ruleIds": ["TAG_X_MIN_TAP_TARGET"],
+      "category": "tag",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "partial",
+      "siblings": ["A11Y_MIN_TAP_TARGET_44"]
+    },
+    {
+      "aspectId": "TAG_BADGE_CONFUSION",
+      "question": "ステータス表示に Tag を、メタデータ表示に Badge を使うなど役割を取り違えていないか",
+      "ruleIds": ["TAG_BADGE_CONFUSION"],
+      "category": "tag",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "DIVIDER_NO_DIV_BORDER_B",
+      "question": "区切り線を div の border で描いていないか（hr か role=separator か）",
+      "ruleIds": ["DIVIDER_NO_DIV_BORDER_B"],
+      "category": "divider",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "DIVIDER_NO_SLATE_400_PLUS",
+      "question": "区切り線の色が slate-400 以上で強すぎないか",
+      "ruleIds": ["DIVIDER_NO_SLATE_400_PLUS"],
+      "category": "divider",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "STEPPER_NO_COLOR_ONLY_STATE",
+      "question": "ステップの状態を色だけで表していないか",
+      "ruleIds": ["STEPPER_NO_COLOR_ONLY_STATE"],
+      "category": "stepper",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": ["COLOR_ONLY_FORBIDDEN"]
+    },
+    {
+      "aspectId": "STEPPER_MIN_INDICATOR_SIZE",
+      "question": "ステップインジケーターが最小サイズを下回っていないか",
+      "ruleIds": ["STEPPER_MIN_INDICATOR_SIZE"],
+      "category": "stepper",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": ["A11Y_MIN_TAP_TARGET_44"]
+    },
+    {
+      "aspectId": "STEPPER_NO_DARK_CONNECTOR",
+      "question": "ステップ間のコネクター線が濃すぎてノイズになっていないか",
+      "ruleIds": ["STEPPER_NO_DARK_CONNECTOR"],
+      "category": "stepper",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "DATEPICKER_NO_SHADOW_LG",
+      "question": "Datepicker のポップオーバーに shadow-lg 以上の強い影を付けていないか",
+      "ruleIds": ["DATEPICKER_NO_SHADOW_LG"],
+      "category": "datepicker",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": ["SPACE_NO_SHADOW_LG"]
+    },
+    {
+      "aspectId": "DATEPICKER_Z_INDEX_20",
+      "question": "Datepicker の z-index が Dropdown レイヤー（z-20）から外れていないか",
+      "ruleIds": ["DATEPICKER_Z_INDEX_20"],
+      "category": "datepicker",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "DATEPICKER_NO_COLOR_ONLY_TODAY",
+      "question": "「今日」の表現を色だけで行っていないか",
+      "ruleIds": ["DATEPICKER_NO_COLOR_ONLY_TODAY"],
+      "category": "datepicker",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": ["COLOR_ONLY_FORBIDDEN"]
+    },
+    {
+      "aspectId": "DATEPICKER_KEYBOARD_NAV_REQUIRED",
+      "question": "Datepicker が矢印キー・Enter・Escape で操作できるか",
+      "ruleIds": ["DATEPICKER_KEYBOARD_NAV_REQUIRED"],
+      "category": "datepicker",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "DATEPICKER_WEEKDAY_HEADER_REQUIRED",
+      "question": "Datepicker に曜日ヘッダーが表示されているか",
+      "ruleIds": ["DATEPICKER_WEEKDAY_HEADER_REQUIRED"],
+      "category": "datepicker",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "SKELETON_BG_SLATE_200_ONLY",
+      "question": "Skeleton の背景色が bg-slate-200 以外になっていないか",
+      "ruleIds": ["SKELETON_BG_SLATE_200_ONLY"],
+      "category": "skeleton",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "SKELETON_NO_SPINNER_ONLY",
+      "question": "ローディング表現をスピナーだけで済ませていないか",
+      "ruleIds": ["SKELETON_NO_SPINNER_ONLY"],
+      "category": "skeleton",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "SKELETON_ARIA_BUSY_RELEASE",
+      "question": "ローディング完了時に aria-busy が false へ戻るか",
+      "ruleIds": ["SKELETON_ARIA_BUSY_RELEASE"],
+      "category": "skeleton",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "A11Y_NO_OUTLINE_NONE_WITHOUT_RING",
+      "question": "outline-none を付けたまま代替のフォーカスリングを用意していない箇所は無いか",
+      "ruleIds": ["A11Y_NO_OUTLINE_NONE_WITHOUT_RING"],
+      "category": "accessibility",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "yes",
+      "siblings": []
+    },
+    {
+      "aspectId": "A11Y_NO_TIME_LIMIT",
+      "question": "操作に時間制限を設けていないか",
+      "ruleIds": ["A11Y_NO_TIME_LIMIT"],
+      "category": "accessibility",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "A11Y_NO_DECORATIVE_ANIMATION",
+      "question": "装飾目的のアニメーションを付けていないか",
+      "ruleIds": ["A11Y_NO_DECORATIVE_ANIMATION"],
+      "category": "accessibility",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "partial",
+      "siblings": ["PHILOSOPHY_NO_EXCESSIVE_ANIMATION"]
+    },
+    {
+      "aspectId": "A11Y_NO_TEXT_TRUNCATION_200",
+      "question": "200% 拡大時にテキストが切れないか",
+      "ruleIds": ["A11Y_NO_TEXT_TRUNCATION_200"],
+      "category": "accessibility",
+      "automationStatus": "human-only",
+      "staticObservability": "no",
+      "siblings": []
+    },
+    {
+      "aspectId": "A11Y_MIN_TAP_TARGET_44",
+      "question": "操作要素の実効タップ領域が 44px を下回っていないか",
+      "ruleIds": ["A11Y_MIN_TAP_TARGET_44"],
+      "category": "accessibility",
+      "automationStatus": "llm-judge-candidate",
+      "staticObservability": "partial",
+      "siblings": [
+        "TAG_X_MIN_TAP_TARGET",
+        "STEPPER_MIN_INDICATOR_SIZE",
+        "BTN_MIN_TAP_TARGET",
+        "SPACE_NO_PY_05_BTN"
+      ]
+    }
+  ]
+}

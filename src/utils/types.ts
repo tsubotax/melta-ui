@@ -307,6 +307,12 @@ export interface GenerateOptions {
   useTools?: boolean;
   /** サンプリング temperature（trial 間の自然なばらつきを得るため。未指定は provider 既定） */
   temperature?: number;
+  /**
+   * true なら provider は応答本文を加工せずそのまま返す（コードフェンス抽出をしない）。
+   * 未指定・false は従来どおり ```html ブロックを抽出する（ベンチマーク互換）。
+   * judge のように「出力全体が契約どおりか」を検証する用途では必ず true を渡す。
+   */
+  rawText?: boolean;
 }
 
 export interface ModelProvider {

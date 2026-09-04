@@ -21,6 +21,9 @@ skills-lock.json
 # ベンチマーク生成物
 design/benchmarks/results/
 
+# shadow judge の run 生成物（git に残る正本は design/judge/history.json）
+design/judge/results/
+
 # melta-screendiff の撮影・比較HTML出力
 output/screendiff/
 
