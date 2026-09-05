@@ -69,7 +69,14 @@ export const JUDGE_TOOLS_ENABLED = false;
  */
 export const JUDGE_RAW_TEXT = true;
 
-export type JudgeProviderId = "anthropic" | "mock";
+/**
+ * provider の種類。
+ *   anthropic … 実 API（有料）
+ *   mock      … 決定論スタブ（NOT EVIDENCE。history には書かない）
+ *   file      … 二相 CLI。モデルの応答は外部の実行者がファイルとして先に作り、
+ *               melta 側は入力を用意して出力を読むだけ（benchmarks の --score-dir と同じ形）
+ */
+export type JudgeProviderId = "anthropic" | "mock" | "file";
 
 const SECTION_DELIMITERS = {
   RULES: ["<<<RULES>>>", "<<<END RULES>>>"],
@@ -272,6 +279,31 @@ export function parseJudgeOutput(text: string): unknown {
   }
 }
 
+/**
+ * 1 trial の「処置」。provenance の treatmentHash に入る。
+ * file provider では temperature / tools が実行者側にあり melta 側で制御できないので、
+ * 0 や false と書かずに null にする（制御していないことを嘘にしないため）。
+ */
+export interface JudgeTreatment {
+  useTools: boolean | null;
+  temperature: number | null;
+  rawText: boolean | null;
+}
+
+/** API 経路（anthropic / mock）の処置。tools-off・temperature 0・原文取得を固定する */
+export const JUDGE_API_TREATMENT: JudgeTreatment = {
+  useTools: JUDGE_TOOLS_ENABLED,
+  temperature: JUDGE_TEMPERATURE,
+  rawText: JUDGE_RAW_TEXT,
+};
+
+/** file 経路の処置。melta 側は生成に関与しないので 3 つとも null */
+export const JUDGE_FILE_TREATMENT: JudgeTreatment = {
+  useTools: null,
+  temperature: null,
+  rawText: null,
+};
+
 export interface JudgeRunResult {
   inputs: JudgeInputs;
   raw: string;
@@ -313,7 +345,35 @@ export async function runJudgeTrial(args: {
     rawText: JUDGE_RAW_TEXT,
   });
 
-  const parsed = parseJudgeOutput(generation.text);
+  return evaluateJudgeOutputText({
+    inputs,
+    text: generation.text,
+    aspects: args.aspects,
+    knownRuleIds: args.knownRuleIds,
+    html: args.html,
+    generation,
+    treatment: JUDGE_API_TREATMENT,
+  });
+}
+
+/**
+ * 応答本文（原文）を検証器に通して JudgeRunResult に整える。
+ *
+ * provider を呼ぶ経路（runJudgeTrial）と、応答をファイルから読む経路（file provider）で
+ * **同じ検証と同じ hash 計算**を通すために切り出してある。ここで契約を分岐させると
+ * 「file 経路だけ通る出力」が生まれ、二相 CLI の実測が API 経路と比較できなくなる。
+ */
+export function evaluateJudgeOutputText(args: {
+  inputs: JudgeInputs;
+  text: string;
+  aspects: JudgeAspect[];
+  knownRuleIds: readonly string[];
+  html: string;
+  generation: GenerationResult;
+  treatment: JudgeTreatment;
+}): JudgeRunResult {
+  const { inputs } = args;
+  const parsed = parseJudgeOutput(args.text);
   const validation = validateJudgeOutput({
     llmOutput: parsed,
     aspects: args.aspects,
@@ -324,33 +384,34 @@ export async function runJudgeTrial(args: {
 
   return {
     inputs,
-    raw: generation.text,
+    raw: args.text,
     parsed,
     validation,
-    generation,
+    generation: args.generation,
     treatmentHash: sha256(
       JSON.stringify({
         system: inputs.system,
         prompt: inputs.prompt,
-        useTools: JUDGE_TOOLS_ENABLED,
-        temperature: JUDGE_TEMPERATURE,
-        rawText: JUDGE_RAW_TEXT,
+        useTools: args.treatment.useTools,
+        temperature: args.treatment.temperature,
+        rawText: args.treatment.rawText,
       })
     ),
     systemHash: sha256(inputs.system),
     promptHash: sha256(inputs.prompt),
     suppliedRuleSetHash: sha256(inputs.suppliedRules.map(formatRule).join("\n\n")),
-    rawHash: sha256(generation.text),
+    rawHash: sha256(args.text),
   };
 }
 
 /**
  * anthropic provider を tools-off 前提で生成する。
- * provider は anthropic | mock のみ（openai は placeholder で常に throw するので CLI が
- * 受け付けない）。mock 側の生成は providers/judge-mock.ts が持つ（循環 import を避ける）。
+ * provider は anthropic | mock | file のみ（openai は placeholder で常に throw するので CLI が
+ * 受け付けない）。mock 側の生成は providers/judge-mock.ts が、file 側は file-provider.ts が
+ * 持つ（循環 import を避ける）。
  */
 export function createAnthropicJudgeProvider(model: string): ModelProvider {
   return createAnthropicProvider({ model });
 }
 
-export const JUDGE_PROVIDER_IDS: readonly JudgeProviderId[] = ["anthropic", "mock"];
+export const JUDGE_PROVIDER_IDS: readonly JudgeProviderId[] = ["anthropic", "mock", "file"];

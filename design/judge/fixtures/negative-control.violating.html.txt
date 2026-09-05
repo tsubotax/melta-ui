@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>案件一覧 | 社内管理コンソール</title>
+</head>
+<body class="bg-white text-slate-800">
+  <div class="flex min-h-screen">
+    <aside class="w-64 p-4 bg-slate-900 text-white">
+      <p class="font-bold">Melta 管理画面</p>
+      <nav class="mt-4 space-y-2">
+        <a href="#" class="block">ダッシュボード</a>
+        <a href="#" class="block">案件一覧</a>
+      </nav>
+    </aside>
+    <main class="flex-1 p-8">
+      <h1 class="text-2xl font-bold">案件一覧</h1>
+      <p class="text-xs text-slate-600">直近 30 日に登録された案件を表示しています。</p>
+      <div class="my-6 border-b border-slate-200"></div>
+      <form class="flex items-end gap-4">
+        <div>
+          <label for="status" class="mb-1 block">ステータス</label>
+          <select id="status" class="h-10 px-3 rounded-lg border border-slate-200">
+            <option>すべて</option>
+            <option>進行中</option>
+          </select>
+        </div>
+        <button type="submit" class="h-10 px-4 rounded-lg outline-none bg-primary-500 text-white">絞り込む</button>
+      </form>
+      <table class="mt-6 w-full">
+        <tr>
+          <td class="align-top">左カラムの説明文をここに置く</td>
+          <td class="align-top">右カラムの説明文をここに置く</td>
+        </tr>
+      </table>
+    </main>
+  </div>
+  <div role="dialog" aria-modal="true" class="fixed inset-0 flex items-center justify-center">
+    <div class="w-96 p-6 rounded-xl bg-white">
+      <h2 class="text-lg font-bold">この案件を削除しますか</h2>
+      <p class="mt-2">削除すると元に戻せません。</p>
+    </div>
+  </div>
+</body>
+</html>

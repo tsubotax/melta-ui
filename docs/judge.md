@@ -61,6 +61,8 @@ with-rule を「評価された」で成功にすると、違反 fixture に `pa
 
 `aspects.json` の `representativeAspects` が `--negative-control` の既定対象。
 
+代表 7 aspect すべてに違反する fixture と、すべて適合する fixture が `design/judge/fixtures/` にある。違反行と文字列の対応表は同じディレクトリの `README.md`（テスト 27 が実ファイルと突き合わせる）。**拡張子を `.html` にしていない**のは、CI の Lint Generated UI が変更された `.html` を lint し、違反 fixture で落ちるため。
+
 ---
 
 ## 検証器が担保すること・しないこと
@@ -94,28 +96,39 @@ with-rule を「評価された」で成功にすると、違反 fixture に `pa
 
 したがって主張できるのは「該当ルールが無い観点について、判定を出さずに評価不可を返した」までである。「一般 UX 知識を一切使っていない」とは言えない。
 
-mock provider の abstain は mock が自分でそう作っている tautology で、モデルの挙動の証拠ではない。証拠になるのは実 provider の実測（PR3）だけ。
+mock provider の abstain は mock が自分でそう作っている tautology で、モデルの挙動の証拠ではない。証拠になるのはモデルが実際に答えた run、つまり `--provider file`（既定）か `--provider anthropic`（有料）の実測だけ。
+
+file provider の実測にも固有の限界がある。temperature を制御できない / tools 制限が構造でなく agent 定義に依存する / 実行環境が素の API と同条件ではない、の 3 点で、詳細は下の「API キー無しで回す」を参照。
 
 ---
 
 ## CLI
 
 ```
+# API を叩く（anthropic は有料 / mock は NOT EVIDENCE）
 tsx design/judge/run.ts --file <html> --provider anthropic|mock \
   [--drop-rule <ID>]... [--targets <ID,...>] [--trials N] [--negative-control] [--model <id>]
+
+# API キー無しで実測する（二相。生成は melta の外でやる）
+tsx design/judge/run.ts --provider file --phase prepare --run-dir <dir> --file <html> \
+  [--negative-control --expect fail|pass] [--targets <ID,...>] [--trials N]
+tsx design/judge/run.ts --provider file --phase collect --run-dir <dir> --runtime "<実行者>"
 ```
 
 | オプション | 意味 |
 |---|---|
-| `--file` | 審査対象 HTML。必須 |
-| `--provider` | `anthropic` か `mock` のみ。必須。`openai` は placeholder なので受け付けない |
+| `--file` | 審査対象 HTML。必須（`--phase collect` を除く） |
+| `--provider` | `anthropic` / `mock` / `file` のみ。必須。`openai` は placeholder なので受け付けない |
+| `--phase` | `--provider file` 専用。`prepare`（入力を書く）か `collect`（出力を集計する） |
+| `--run-dir` | `--provider file` 専用。両相が使う作業ディレクトリ。prepare 済みの dir への再 prepare は拒否する |
+| `--runtime` | `--phase collect` 専用・必須。誰がどのモデルで書いたかの自由文 |
 | `--drop-rule` | ルール本文を供給集合から抜く。複数回指定できる |
 | `--targets` | **drop と集計の対象を選ぶだけ**。LLM への入力と検証器の「全 aspect ちょうど 1 回」は常に全件 |
 | `--trials` | 条件ごとの試行数。既定 1 |
 | `--negative-control` | 対象 aspect について「ルールあり」「ルールなし」の 2 条件を回す。`--expect` か `--expect-map` が必須 |
 | `--expect` | with-rule 側の期待 verdict。全 target 共通。`fail` か `pass` |
 | `--expect-map` | target ごとの期待 verdict。`{"<aspectId>":"fail"}` 形式で `--expect` を個別に上書きする |
-| `--model` | 既定は `claude-opus-4-6` |
+| `--model` | 既定は `claude-opus-4-6`。`--provider file` では指定できない（実行モデルは `--runtime` に書く） |
 
 `--expect` / `--expect-map` は `--negative-control` と一緒にしか指定できない。`--targets` のいずれかに期待 verdict が無ければ起動前に落ちる。
 
@@ -138,7 +151,7 @@ judge は `temperature: 0` を固定で渡し、`design/benchmarks/providers/ant
 | 出力先 | 中身 | git |
 |---|---|---|
 | `design/judge/results/<日時>/` | trial ごとの `*.input.json`（送信した system / prompt の原文）と `*.output.json`（raw 出力・検証結果）・`provenance.json`・`report.md` | **ignore**（`design/benchmarks/results/` と同じ扱い） |
-| `design/judge/history.json` | run 単位 + trial 単位の provenance | **git 正本**。`--provider mock` では書かない |
+| `design/judge/history.json` | run 単位 + trial 単位の provenance | **git 正本**。`--provider mock` では書かない（`file` は実測なので書く） |
 | `.melta-loop/runs.jsonl` | 監査レコード 1 行 | ignore（playbook の Audit Log） |
 
 `history.json` は第三者が検算できる粒度で残す。run 単位に commit / dirty / model / temperature / `toolsEnabled=false` / fixture digest / 宣言した期待 verdict / 対象外 aspect 一覧と理由 / `aspects.json` と `rules.json` の hash、trial 単位に target aspect / drop ID / 期待 verdict / verdict / reason / ruleId / raw 出力の sha256 / **system prompt と user prompt の sha256** / 供給ルール集合の hash / treatment の hash。
@@ -151,9 +164,91 @@ artifact は **trial ごとに即時書き出す**。まとめ書きにすると
 
 ---
 
-## 実 provider で回す
+## API キー無しで回す（file provider）— 既定の実測経路
 
-`ANTHROPIC_API_KEY` が必要。CI には live API 呼び出しを入れない。
+**これが実測の既定経路**。`ANTHROPIC_API_KEY` は有料なので使わず、モデルは Claude Code のサブエージェント（サブスク枠）や Codex（別プール）に回す。前例はベンチマークの `--score-dir`（`docs/benchmarks.md`）で、モデル出力を先にファイルとして作り、決定論の採点器はそれを読むだけ、という形。
+
+judge は 2 相に分かれる。**melta が持つのは入力の用意と出力の検証だけ**で、生成そのものには関与しない。
+
+### 1. prepare — 入力を書く（LLM を呼ばない）
+
+```bash
+npx tsx design/judge/run.ts --provider file --phase prepare \
+  --run-dir design/judge/results/$(date +%Y-%m-%d)-file \
+  --file design/judge/fixtures/negative-control.violating.html.txt \
+  --negative-control --expect fail --trials 3
+```
+
+`--run-dir` の中身:
+
+| パス | 中身 | 実行者に渡す |
+|---|---|---|
+| `inputs/t01.input.json` | その trial に送る `system` と `prompt` の原文。**この 2 キーだけ** | ○ |
+| `tasks/t01.task.md` | 実行者 1 人に渡す指示（読むファイル・書く先・禁止事項） | ○ |
+| `outputs/` | 実行者がここに `t01.output.txt` を書く。prepare 直後は空 | ○（書き込み先） |
+| `meta/t01.meta.json` | 供給集合・drop ID・aspect 一覧・hash | **×** |
+| `MANIFEST.json` | 実行計画の正本。trial ↔ target / 条件 / 期待 verdict / 入力 hash の対応表 | **×** |
+
+**来歴を実行者向けファイルに同居させない。** `input.json` に `droppedRuleIds` や `suppliedRuleIds` が入っていると、指定ファイルだけを読む実行者にも「どのルールを抜いたか」が読めてしまい、測定条件を教えてから答えさせることになる。同じ理由で fixture の `<title>` にも「違反版」「陰性対照」と書かない（2 枚の `<title>` は同一にしてある）。
+
+collect はこの dir の直下に、API 経路と同じ成果物（`<target>-<条件>-t<n>.input.json` / `.output.json`・`provenance.json`・`report.md`）を足す。`inputs/` の中身と直下の `*.input.json` は同じ入力で、前者が実行者に渡した原文、後者が集計時に再構成した原文になる（両者の hash が合わないと collect は落ちる）。
+
+**実行者向けのファイル名は `t01` のような通し番号にしてある。** `<aspectId>-without-rule-t1` のような名前を渡すと、ファイル名自体が「このルールは意図的に抜いてある」という手がかりになり、測定条件を教えてから答えさせることになる。target と条件の対応は `MANIFEST.json` だけが持つ。
+
+### 2. 実行者に渡す
+
+Claude Code なら `.claude/agents/judge-runner.md`（`tools: Read, Write` に限定）に `tasks/<name>.task.md` を 1 件ずつ渡す。Codex でも「input.json だけを読み、JSON だけを output.txt に書く」を守れば同じ。
+
+### 3. collect — 出力を集計する
+
+```bash
+npx tsx design/judge/run.ts --provider file --phase collect \
+  --run-dir design/judge/results/2026-09-05-file \
+  --runtime "claude-code-subagent:haiku-4.5"
+```
+
+`--phase collect` は `--file` / `--targets` / `--trials` / `--expect` を受け取らない。prepare と collect で計画がズレると「実行者が答えた trial」と「集計した trial」が別物になるため、計画の正本は `MANIFEST.json` だけにしてある。
+
+collect は集計の前に 3 つの門を通す。1 つでも破れたら**集計せずに exit 2**（部分集計を実測として残さない）。
+
+| 門 | 見るもの | 破れる例 |
+|---|---|---|
+| 材料の同一性 | fixture / `aspects.json` / `rules.json` の sha256 | prepare 後にルールを足した |
+| 計画の自己整合 | `options` から再構成した計画と `trials[]` の全件一致（件数・target・条件・drop・期待 verdict・入出力パス） | `options.trials` を 3 → 1 に書き換えて 14 件だけ集計する |
+| 入力の同一性 | `inputs/tNN.input.json` の実バイトと、MANIFEST の hash と、いまのソースから再構成した入力の三者一致 | prepare 後に `input.json` の `system` を書き換えて別の質問をさせた |
+
+同じ run-dir で collect をやり直すと `history.json` に 2 件目が入る。欠落を埋めて回し直したときは、後の run が完全版になる（前の run の記録は消さない）。
+
+出力の読み取りから先は API 経路と同一の実装を通る（`JSON.parse(text.trim())` のみ → 検証器 → 集計 → report / provenance / history）。**出力が置かれていない trial は `missing-output` で invalid に数える**。未実施として集計から外すと、答えられなかった trial が母数から消えて成功率が上振れする。
+
+### `--runtime` の書き方
+
+provenance の `provider` は `file` としか書けない。**どのモデルがどの枠で答えたかは `runtime` にしか残らない**ので、後から読んで再現できる粒度で書く。
+
+| 例 | 意味 |
+|---|---|
+| `claude-code-subagent:haiku-4.5` | Claude Code のサブエージェント（judge-runner）、Haiku 4.5 |
+| `codex-companion:gpt-5.4` | Codex companion 経由、GPT-5.4 |
+
+### この経路の限界（記事で過大主張しない）
+
+| 項目 | 実 API 経路 | file 経路 |
+|---|---|---|
+| `temperature` | 0 を固定で渡し provenance に記録 | **制御できない**。provenance は `null` |
+| tools | `useTools: false` を構造で固定 | **構造では保証できない**。provenance は `null`。実行者の tools 制限は agent 定義（`tools: Read, Write`）に依存する |
+| 周囲の文脈 | system + prompt だけ | Claude Code のサブエージェントは `CLAUDE.md` や `AGENTS.md` を持つ実行環境の中にいる。**素の API と同条件ではない** |
+| ルールの再取得 | tools 無しなので不可能 | Read が使えるので `rules.json` を読みに行ける。**構造では止められない** |
+| trial の独立性 | 1 trial 1 API 呼び出しで独立 | 実行者次第。**同一セッション内で複数 trial を逐次処理した run は独立反復ではない**（同じ入力に前の出力を再利用しうる）。独立性が要るなら 1 trial 1 セッションで回し、raw の sha256 の種類数を数えて確かめる |
+
+最後の 1 点は検出はできる。供給していない ID を引用すれば検証器の `rule-id-not-supplied` に必ず現れるので、report では「供給外 ID の引用 = 再取得か幻覚のどちらか」として数える。ただし**読んだが引用しなかった場合は検出できない**。
+
+したがって file 経路の実測から言えるのは「この実行環境のこのモデルは、供給されたルールの外側について判定を出さなかった」までで、「素の API でも同じ」とは言えない。
+
+---
+
+## 実 provider で回す（有料）
+
+`ANTHROPIC_API_KEY` が必要で、**呼ぶたびに課金される**。既定の実測経路は上の file provider で、こちらは file 経路との突き合わせが要るときに使う。CI には live API 呼び出しを入れない。
 
 ```bash
 export ANTHROPIC_API_KEY=...   # このリポには置かない
@@ -169,7 +264,7 @@ npx tsx design/judge/run.ts \
 
 `--file` は実在する HTML を指す。`examples/` の既存ページはどれも DS 準拠なので、`--expect fail` を宣言すると with-rule 側は不一致として数えられる。**遷移表の証拠を取るには対象 aspect の違反を含む fixture が要る**。PR3 でその fixture を用意し、ここに正式なコマンドを書く。それまでは `--expect pass` で「ルールがあれば pass、抜けば not-evaluable」の配線確認に使う。
 
-API キーが無い環境では `--provider mock` だけが走る。mock の結果はレポートに `MOCK FIXTURE — NOT EVIDENCE` 表示が付き、`history.json` には書かれない。
+`--provider mock` の結果はレポートに `MOCK FIXTURE — NOT EVIDENCE` 表示が付き、`history.json` には書かれない。`--provider file` は実測なので `history.json` に書く。
 
 ---
 
@@ -192,6 +287,10 @@ API キーが無い環境では `--provider mock` だけが走る。mock の結�
 - 曖昧なルールを量産しない。評価不可を減らしたい一心で書くと試験官がばらつき、検証器の invalid が増える。「書き込むほど賢くなるとは限らない」
 
 一般知識による指摘は捨てず、契約審査（ルール ID つき、合否を信じてよい）とは別チャンネルの「参考意見」として出す設計を PR2 以降で検討する。混ぜないことが条件。
+
+## 実測の記録
+
+- 2026-09-05 陰性対照（代表 7 aspect × 2 条件 × 3 trial、Codex gpt-6-astra と Claude Sonnet 5）: `design/audits/2026-09-05_shadow-judge-negative-control.md`。集計の正本は `history.json`
 
 ## 次の PR
 
