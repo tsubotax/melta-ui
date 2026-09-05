@@ -264,7 +264,7 @@ npx tsx design/judge/run.ts \
   --trials 3
 ```
 
-`--file` は実在する HTML を指す。`examples/` の既存ページはどれも DS 準拠なので、`--expect fail` を宣言すると with-rule 側は不一致として数えられる。**遷移表の証拠を取るには対象 aspect の違反を含む fixture が要る**。PR3 でその fixture を用意し、ここに正式なコマンドを書く。それまでは `--expect pass` で「ルールがあれば pass、抜けば not-evaluable」の配線確認に使う。
+`--file` は実在する HTML を指す。`examples/` の既存ページはどれも DS 準拠なので、`--expect fail` を宣言すると with-rule 側は不一致として数えられる。**遷移表の証拠を取るには対象 aspect の違反を含む fixture が要る**。`design/judge/fixtures/` に代表 7 aspect の違反版と適合版を 1 組置いてある（`fixtures/README.md`）。違反版は `--expect fail`（X あり → fail@X / X なし → missing-rule）、適合版は `--expect pass`（X あり → pass@X / X なし → missing-rule）で回す。適合版の with-rule 側は実行者が `not-applicable` を返すことがあり（実測では table を grid に置き換えた aspect で 3 / 3）、これは期待不一致として数える。過剰 fail とは別物だが、`pass` であるべきかの妥当性は検証器では判定できない（監査レポート §1d・§3）。
 
 `--provider mock` の結果はレポートに `MOCK FIXTURE — NOT EVIDENCE` 表示が付き、`history.json` には書かれない。`--provider file` は実測なので `history.json` に書く。
 
@@ -294,6 +294,7 @@ npx tsx design/judge/run.ts \
 
 - 2026-09-05 陰性対照（代表 7 aspect × 2 条件 × 3 trial、Codex gpt-6-astra と Claude Sonnet 5）: `design/audits/2026-09-05_shadow-judge-negative-control.md`。集計の正本は `history.json`
 - 2026-09-05 追試（同じ Codex・同じ入力を 1 trial 1 job に揃えた 2 run。指示文 2 種で without-rule 21 / 21 と 21 / 21。本測定の 7 / 21 は同じモデルが実行方式を変えると消える数字で、機構は雛形化と推定）: 同じ監査レポートの §1b・§1c。`history.json` の run 3・4
+- 2026-09-05 適合 fixture の対照（同じ Codex・同じ条件で `--expect pass`。ルールがあって違反が無い target への fail 0 / 21、ルールがあるのに missing-rule 0 / 21。不一致 3 件は `TABLE_NO_LAYOUT_TABLE` の `not-applicable`）: 同じ監査レポートの §1d。`history.json` の run 5
 
 ## 次の PR
 
