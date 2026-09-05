@@ -175,6 +175,22 @@ function deriveResourceUri(name: string, args: unknown): string | null {
   }
 }
 
+/**
+ * 応答本文から返却テキストを決める。
+ *
+ * 既定（rawText 未指定 / false）は ```html ブロックを抽出する。ベンチマークは HTML を
+ * 採点するので、説明文を混ぜたまま渡すとスコアが崩れるため。
+ *
+ * rawText: true は抽出をしない。judge のように「出力全体が契約どおりか」を後段の検証器で
+ * 見る用途では、ここでフェンスを剥がすと「説明文 + フェンス内の正常 JSON」が valid に化け、
+ * 保存する raw と hash からも説明文とフェンスが消えて検算できなくなる。
+ */
+export function extractGenerationText(fullText: string, opts?: GenerateOptions): string {
+  if (opts?.rawText === true) return fullText;
+  const htmlMatch = fullText.match(/```html\n([\s\S]*?)```/);
+  return htmlMatch ? htmlMatch[1] : fullText;
+}
+
 export interface AnthropicProviderOptions {
   /** Anthropic model id (e.g. "claude-sonnet-4-20250514") */
   model: string;
@@ -289,9 +305,7 @@ export function createAnthropicProvider(
         .map((b) => b.text)
         .join("\n");
 
-      // ```html ... ``` ブロックを抽出、なければ全文
-      const htmlMatch = fullText.match(/```html\n([\s\S]*?)```/);
-      const text = htmlMatch ? htmlMatch[1] : fullText;
+      const text = extractGenerationText(fullText, opts);
 
       const usagePayload: GenerationResult["usage"] = {
         inputTokens: usage.inputTokens,
