@@ -1,15 +1,20 @@
 {
   "$schema": "../schemas/component-contract.schema.json",
   "id": "header",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Header",
   "category": "layout",
   "appStatus": "implemented",
-  "intent": "画面ヘッダー primitive（title + leading? / trailing? slot、下 border）。Screen の header slot に差して使う想定。title は text-heading の見出しとして読み上げる（dogfood 不足-3）。",
+  "intent": "画面ヘッダー。defaultは可視見出し、actionsは見出しを視覚的に隠した操作バー。どちらも意味のあるtitleを必須とし、leading/trailingの操作を個別に読み上げる。",
   "docPath": "components/header.md",
   "appFirst": true,
   "webStatus": "pending",
-  "anatomy": ["container", "title", "leading?", "trailing?"],
+  "anatomy": [
+    "container",
+    "title",
+    "leading?",
+    "trailing?"
+  ],
   "variants": {
     "default": {
       "description": "標準ヘッダー（bg-page・下 border・横 padding 4 / 縦 padding 3。title は Text xl bold text-heading 相当）",
@@ -21,13 +26,30 @@
         "titleColor": "color.semantic.light.text-heading"
       },
       "tailwind": ""
+    },
+    "actions": {
+      "description": "可視タイトルなしの操作バー。titleはheadingとして読み上げ可能なまま視覚的に隠す。defaultと同じ外側余白・下線を持ち、中央spacer前後のgapはspacing.1に抑える。",
+      "tokenRefs": {
+        "bg": "color.semantic.light.bg-page",
+        "border": "color.semantic.light.border-default",
+        "paddingX": "spacing.4",
+        "paddingY": "spacing.3",
+        "titleColor": "color.semantic.light.text-heading",
+        "gap": "spacing.1"
+      },
+      "tailwind": ""
     }
   },
   "sizes": {},
-  "states": ["default"],
+  "states": [
+    "default"
+  ],
   "a11y": {
     "role": "banner",
-    "required": ["title は heading（RN: accessibilityRole=\"header\"）として読み上げる"],
+    "required": [
+      "titleは空でない画面名。defaultでは可視heading、actionsでは視覚的に隠したheading（RN: accessibilityRole=\"header\"）として読み上げる",
+      "container全体を単一のaccessible要素にまとめない。leading/trailingの操作は独立してフォーカス・読み上げ・操作できる"
+    ],
     "keyboard": [],
     "focusRing": "N/A"
   },

@@ -2,10 +2,13 @@
   "$schema": "../../../schemas/recipe.schema.json",
   "id": "header",
   "platform": "web",
-  "contractVersion": "0.1.0",
+  "contractVersion": "0.2.0",
   "generatedFrom": "components/header.contract.json",
   "variants": {
     "default": {
+      "tailwind": ""
+    },
+    "actions": {
       "tailwind": ""
     }
   }

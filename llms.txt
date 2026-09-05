@@ -31,7 +31,7 @@ UI を生成する前に DESIGN.md を読むこと。exact value は design/cont
 - [divider](https://raw.githubusercontent.com/tsubotax/melta-ui/main/design/contracts/components/divider.contract.json): セクション間の視覚的区切り。水平 / テキスト付き / 垂直の3パターン。
 - [dropdown](https://raw.githubusercontent.com/tsubotax/melta-ui/main/design/contracts/components/dropdown.contract.json): ドロップダウンメニュー。キーボードナビゲーション対応。
 - [empty-state](https://raw.githubusercontent.com/tsubotax/melta-ui/main/design/contracts/components/empty-state.contract.json): データ無し時のプレースホルダー（アイコン + タイトル + 説明 + 任意のアクション）。Text + Button の compose。（web 実装は準備中）
-- [header](https://raw.githubusercontent.com/tsubotax/melta-ui/main/design/contracts/components/header.contract.json): 画面ヘッダー primitive（title + leading? / trailing? slot、下 border）。Screen の header slot に差して使う想定。title は text-heading の見出しとして読（web 実装は準備中）
+- [header](https://raw.githubusercontent.com/tsubotax/melta-ui/main/design/contracts/components/header.contract.json): 画面ヘッダー。defaultは可視見出し、actionsは見出しを視覚的に隠した操作バー。どちらも意味のあるtitleを必須とし、leading/trailingの操作を個別に読み上げる。（web 実装は準備中）
 - [icon](https://raw.githubusercontent.com/tsubotax/melta-ui/main/design/contracts/components/icon.contract.json): 統一アイコン primitive。name prop でグリフを選択し（グリフ集合は実装側の公開面 = assets/icons の Charcoal セット由来）、色は semantic token キー限定の prop（default （web 実装は準備中）
 - [image](https://raw.githubusercontent.com/tsubotax/melta-ui/main/design/contracts/components/image.contract.json): 画像表示 primitive。aspectRatio / radius / contentFit / onError fallback を持つ。Phase1 は RN コア Image、expo-image は Phase2。（web 実装は準備中）
 - [list](https://raw.githubusercontent.com/tsubotax/melta-ui/main/design/contracts/components/list.contract.json): リストアイテム。Link / Information / Action / Toggle / Selection の6タイプ。

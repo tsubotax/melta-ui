@@ -1856,7 +1856,7 @@
       "id": "header",
       "name": "Header",
       "category": "layout",
-      "description": "画面ヘッダー primitive（title + leading? / trailing? slot、下 border）。Screen の header slot に差して使う想定。title は text-heading の見出しとして読み上げる（dogfood 不足-3）。",
+      "description": "画面ヘッダー。defaultは可視見出し、actionsは見出しを視覚的に隠した操作バー。どちらも意味のあるtitleを必須とし、leading/trailingの操作を個別に読み上げる。",
       "docPath": "components/header.md",
       "anatomy": [
         "container",
@@ -1867,6 +1867,11 @@
       "variants": [
         {
           "name": "default",
+          "class": "",
+          "tailwind": ""
+        },
+        {
+          "name": "actions",
           "class": "",
           "tailwind": ""
         }
@@ -1881,8 +1886,8 @@
           "$schema": "../../../schemas/recipe.schema.json",
           "id": "header",
           "platform": "app",
-          "contractVersion": "0.1.0",
-          "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。containerStyle は横並び（leading? / title / trailing?）+ 下 border。title は melta の Text（variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"）を compose するため titleStyle は持たない（typography は text recipe が正）。titleWrapStyle の flex:1 で title が余白を占有し trailing を右端へ押す。",
+          "contractVersion": "0.2.0",
+          "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。containerStyle は横並び（leading? / title / trailing?）+ 下 border。title は melta の Text（variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"）を compose するため titleStyle は持たない（typography は text recipe が正）。titleWrapStyle の flex:1 で title が余白を占有し trailing を右端へ押す。 actionsはdefaultの外側余白・下線・titleWrapを保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しだけを視覚的に隠す。",
           "variants": {
             "default": {
               "containerStyle": {
@@ -1908,6 +1913,37 @@
               "titleWrapStyle": {
                 "flex": 1
               }
+            },
+            "actions": {
+              "containerStyle": {
+                "flexDirection": "row",
+                "alignItems": "center",
+                "gap": {
+                  "token": "spacing.1"
+                },
+                "paddingHorizontal": {
+                  "token": "spacing.4"
+                },
+                "paddingVertical": {
+                  "token": "spacing.3"
+                },
+                "backgroundColor": {
+                  "token": "color.semantic.light.bg-page"
+                },
+                "borderBottomWidth": 1,
+                "borderBottomColor": {
+                  "token": "color.semantic.light.border-default"
+                }
+              },
+              "titleWrapStyle": {
+                "flex": 1
+              },
+              "hiddenTitleStyle": {
+                "position": "absolute",
+                "width": 1,
+                "height": 1,
+                "overflow": "hidden"
+              }
             }
           },
           "sizes": {},
@@ -1917,7 +1953,8 @@
       "accessibility": {
         "role": "banner",
         "required": [
-          "title は heading（RN: accessibilityRole=\"header\"）として読み上げる"
+          "titleは空でない画面名。defaultでは可視heading、actionsでは視覚的に隠したheading（RN: accessibilityRole=\"header\"）として読み上げる",
+          "container全体を単一のaccessible要素にまとめない。leading/trailingの操作は独立してフォーカス・読み上げ・操作できる"
         ],
         "focusRing": "N/A"
       },
