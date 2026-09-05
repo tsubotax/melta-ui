@@ -43,6 +43,7 @@ import {
   checkManifestConsistency,
   checkManifestPlan,
   checkPreparedInputs,
+  checkPreparedTasks,
   createFileTrialRunner,
   loadManifest,
   nextStepsMessage,
@@ -980,14 +981,19 @@ async function runCollectPhase(ctx: MainContext, collect: JudgeCollectOptions): 
   ];
   if (structural.length > 0) fail(structural);
 
-  const inputProblems = checkPreparedInputs({
-    runDir,
-    manifest,
-    aspects: ctx.aspects,
-    rules: ctx.rules,
-    html,
-  });
-  if (inputProblems.length > 0) fail(inputProblems);
+  // 実行者が読んだもの（入力と指示）の両方を byte で照合する。
+  // 入力だけ見ていると、TASK.md に答えを 1 行足した run が通常の測定として通る
+  const executorProblems = [
+    ...checkPreparedInputs({
+      runDir,
+      manifest,
+      aspects: ctx.aspects,
+      rules: ctx.rules,
+      html,
+    }),
+    ...checkPreparedTasks({ runDir, manifest }),
+  ];
+  if (executorProblems.length > 0) fail(executorProblems);
 
   const { runTrial, outputs } = createFileTrialRunner({ runDir, manifest });
   const isoDate = new Date().toISOString();

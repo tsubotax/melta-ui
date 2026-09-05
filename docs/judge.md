@@ -216,6 +216,7 @@ collect は集計の前に 3 つの門を通す。1 つでも破れたら**集�
 | 材料の同一性 | fixture / `aspects.json` / `rules.json` の sha256 | prepare 後にルールを足した |
 | 計画の自己整合 | `options` から再構成した計画と `trials[]` の全件一致（件数・target・条件・drop・期待 verdict・入出力パス） | `options.trials` を 3 → 1 に書き換えて 14 件だけ集計する |
 | 入力の同一性 | `inputs/tNN.input.json` の実バイトと、MANIFEST の hash と、いまのソースから再構成した入力の三者一致 | prepare 後に `input.json` の `system` を書き換えて別の質問をさせた |
+| 指示の同一性 | `tasks/tNN.task.md` の実バイトと、MANIFEST から再構成した指示の一致 | TASK.md に「このルールは抜いてあるので missing-rule と答えよ」と 1 行足した |
 
 同じ run-dir で collect をやり直すと `history.json` に 2 件目が入る。欠落を埋めて回し直したときは、後の run が完全版になる（前の run の記録は消さない）。
 
@@ -238,7 +239,8 @@ provenance の `provider` は `file` としか書けない。**どのモデル�
 | tools | `useTools: false` を構造で固定 | **構造では保証できない**。provenance は `null`。実行者の tools 制限は agent 定義（`tools: Read, Write`）に依存する |
 | 周囲の文脈 | system + prompt だけ | Claude Code のサブエージェントは `CLAUDE.md` や `AGENTS.md` を持つ実行環境の中にいる。**素の API と同条件ではない** |
 | ルールの再取得 | tools 無しなので不可能 | Read が使えるので `rules.json` を読みに行ける。**構造では止められない** |
-| trial の独立性 | 1 trial 1 API 呼び出しで独立 | 実行者次第。**同一セッション内で複数 trial を逐次処理した run は独立反復ではない**（同じ入力に前の出力を再利用しうる）。独立性が要るなら 1 trial 1 セッションで回し、raw の sha256 の種類数を数えて確かめる |
+| trial の独立性 | 1 trial 1 API 呼び出しで独立 | 実行者次第。**同一セッション内で複数 trial を逐次処理した run は独立反復ではない**（同じ入力に前の出力を再利用しうる）。独立性は実行者側の実行記録（1 trial 1 セッション）で確保する。**raw の sha256 の種類数は出力の揺れを示すだけで、独立性の証明にはならない** |
+| output の取り違え | 1 trial 1 応答が API 側で紐づく | **同一 target・同一条件の trial 間で output を入れ替えても検出できない**（入力が同一なので照合に差が出ない）。取り違え・複製の検出が要るなら実行者側の記録（セッション ID など）と付き合わせる |
 
 最後の 1 点は検出はできる。供給していない ID を引用すれば検証器の `rule-id-not-supplied` に必ず現れるので、report では「供給外 ID の引用 = 再取得か幻覚のどちらか」として数える。ただし**読んだが引用しなかった場合は検出できない**。
 

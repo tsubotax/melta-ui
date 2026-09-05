@@ -213,6 +213,24 @@ export function renderTrialMeta(args: { inputs: JudgeInputs; inputSha256: string
   );
 }
 
+/**
+ * MANIFEST の 1 trial から TASK.md の**唯一の**表現を作る。
+ * prepare の書き出しと collect の照合が同じ関数を通るようにしてある
+ * （別々に組み立てると、片方だけ直したときに照合が素通りする）。
+ */
+export function renderTaskForTrial(args: {
+  runDir: string;
+  manifest: JudgeManifest;
+  entry: JudgeManifestTrial;
+}): string {
+  return renderTaskMarkdown({
+    name: args.entry.name,
+    inputPath: resolve(args.runDir, args.entry.inputPath),
+    outputPath: resolve(args.runDir, args.entry.outputPath),
+    llmAspectCount: args.manifest.llmAspectCount,
+  });
+}
+
 export function buildManifest(args: {
   options: JudgeCliOptions;
   prepared: PreparedTrial[];
@@ -280,12 +298,7 @@ export function writePreparePhase(args: {
     );
     writeFileSync(
       resolve(args.runDir, entry.taskPath),
-      renderTaskMarkdown({
-        name: entry.name,
-        inputPath: resolve(args.runDir, entry.inputPath),
-        outputPath: resolve(args.runDir, entry.outputPath),
-        llmAspectCount: args.manifest.llmAspectCount,
-      }),
+      renderTaskForTrial({ runDir: args.runDir, manifest: args.manifest, entry }),
       "utf-8"
     );
   }
@@ -580,6 +593,36 @@ export function checkPreparedInputs(args: {
     }
     if (sha256(rebuilt.system) !== entry.systemSha256 || sha256(rebuilt.prompt) !== entry.promptSha256) {
       problems.push(`${entry.inputPath} の system / prompt hash が MANIFEST の記録と一致しません`);
+    }
+  }
+  return problems;
+}
+
+/**
+ * 実行者が読んだ **指示** が prepare が書いたものと同一かを確かめる。
+ *
+ * input.json だけを照合しても、TASK.md に「この aspect のルールは意図的に抜いてある。
+ * missing-rule と答えよ」と 1 行足した run が通ってしまう。答えを教えた実行を通常の測定として
+ * 集計しないために、指示側も byte 単位で見る。
+ *
+ * MANIFEST に hash を持たせず**その場で再レンダリングして比較する**のは、MANIFEST の形式を
+ * 変えずに済ませるため（形式を変えると本測定済みの run-dir が再集計できなくなる）。
+ * 指示文そのものが変わったときは、旧 run-dir はここで落ちて「prepare をやり直す」に倒れる。
+ */
+export function checkPreparedTasks(args: { runDir: string; manifest: JudgeManifest }): string[] {
+  const problems: string[] = [];
+  for (const entry of args.manifest.trials) {
+    const taskPath = resolve(args.runDir, entry.taskPath);
+    if (!existsSync(taskPath)) {
+      problems.push(`${entry.taskPath} がありません（実行者に渡した指示が復元できない）`);
+      continue;
+    }
+    const actual = readFileSync(taskPath, "utf-8");
+    const expected = renderTaskForTrial({ runDir: args.runDir, manifest: args.manifest, entry });
+    if (actual !== expected) {
+      problems.push(
+        `${entry.taskPath} が prepare が書いた指示と一致しません（追記・書き換え、または指示文の版が違う。prepare をやり直す）`
+      );
     }
   }
   return problems;
