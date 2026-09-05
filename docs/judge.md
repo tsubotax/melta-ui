@@ -239,7 +239,7 @@ provenance の `provider` は `file` としか書けない。**どのモデル�
 | tools | `useTools: false` を構造で固定 | **構造では保証できない**。provenance は `null`。実行者の tools 制限は agent 定義（`tools: Read, Write`）に依存する |
 | 周囲の文脈 | system + prompt だけ | Claude Code のサブエージェントは `CLAUDE.md` や `AGENTS.md` を持つ実行環境の中にいる。**素の API と同条件ではない** |
 | ルールの再取得 | tools 無しなので不可能 | Read が使えるので `rules.json` を読みに行ける。**構造では止められない** |
-| trial の独立性 | 1 trial 1 API 呼び出しで独立 | 実行者次第。**同一セッション内で複数 trial を逐次処理した run は独立反復ではない**（同じ入力に前の出力を再利用しうる）。独立性は実行者側の実行記録（1 trial 1 セッション）で確保する。**raw の sha256 の種類数は出力の揺れを示すだけで、独立性の証明にはならない** |
+| trial の独立性 | 1 trial 1 API 呼び出しで独立 | 実行者次第。**同一セッション内で複数 trial を逐次処理した run は独立反復ではない**（同じ入力に前の出力を再利用しうる）。独立性は実行者側の実行記録（1 trial 1 セッション）で確保する。**raw の sha256 の種類数は出力の揺れを示すだけで、独立性の証明にはならない**。実測: 1 job で 14 trial を逐次処理した Codex 2 job は、without-rule 計 14 件すべてで規律から外れた（その 2 job の with-rule 14 / 14 は正常。run 全体の with-rule は 21 / 21）。実行者ログでは答案生成が雛形関数に集約され、関数が差し替え後の入力を評価していなかったと推定。同じモデル・同じ入力を 1 trial 1 job に揃えると、without-rule は 2 run とも 21 / 21（うち 1 run は with-rule に読み取り拒否の欠落 1）。`design/audits/2026-09-05_shadow-judge-negative-control.md` §1b・§1c |
 | output の取り違え | 1 trial 1 応答が API 側で紐づく | **同一 target・同一条件の trial 間で output を入れ替えても検出できない**（入力が同一なので照合に差が出ない）。取り違え・複製の検出が要るなら実行者側の記録（セッション ID など）と付き合わせる |
 
 最後の 1 点は検出はできる。供給していない ID を引用すれば検証器の `rule-id-not-supplied` に必ず現れるので、report では「供給外 ID の引用 = 再取得か幻覚のどちらか」として数える。ただし**読んだが引用しなかった場合は検出できない**。
@@ -293,6 +293,7 @@ npx tsx design/judge/run.ts \
 ## 実測の記録
 
 - 2026-09-05 陰性対照（代表 7 aspect × 2 条件 × 3 trial、Codex gpt-6-astra と Claude Sonnet 5）: `design/audits/2026-09-05_shadow-judge-negative-control.md`。集計の正本は `history.json`
+- 2026-09-05 追試（同じ Codex・同じ入力を 1 trial 1 job に揃えた 2 run。指示文 2 種で without-rule 21 / 21 と 21 / 21。本測定の 7 / 21 は同じモデルが実行方式を変えると消える数字で、機構は雛形化と推定）: 同じ監査レポートの §1b・§1c。`history.json` の run 3・4
 
 ## 次の PR
 
