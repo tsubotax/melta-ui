@@ -105,7 +105,14 @@ export type JudgeValidationCode =
   | "not-observable-static-not-allowed"
   | "unsupplied-aspect-non-missing-rule"
   | "missing-set-mismatch"
-  | "proposal-unrelated";
+  | "proposal-unrelated"
+  /**
+   * 実行者が output ファイルを置かなかった trial。
+   * **validateJudgeOutput は出さない**（検証器 13 条件は出力があることを前提にしている）。
+   * file provider の collect 層だけが付ける code で、「出力が無い = invalid」を
+   * 「valid でも invalid でもない未実施」に逃がさないために置いてある。
+   */
+  | "missing-output";
 
 export interface JudgeValidationResult {
   valid: boolean;

@@ -1,9 +1,15 @@
 .DS_Store
 # .claude/ は settings.json（hook 登録 = DS の enforcement 層）と
-# screendiff.json（melta-screendiff のPR視覚比較設定）だけ配布する
+# screendiff.json（melta-screendiff のPR視覚比較設定）と
+# agents/judge-runner.md（judge の実測でモデルを回す実行者定義 = 計測条件の一部）だけ配布する
 .claude/*
 !.claude/settings.json
 !.claude/screendiff.json
+# ディレクトリを一旦辿れるようにしてから、中身は judge-runner.md だけ許可する
+# （!.claude/agents/ だけだと以後この配下の新規ファイルが全部追跡対象になる）
+!.claude/agents/
+.claude/agents/*
+!.claude/agents/judge-runner.md
 .vscode/
 .netlify/
 node_modules/

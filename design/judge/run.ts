@@ -37,6 +37,22 @@ import {
   type JudgeProviderId,
   type JudgeRunResult,
 } from "./adapter.js";
+import {
+  buildManifest,
+  buildPreparedTrials,
+  checkManifestConsistency,
+  checkManifestPlan,
+  checkPreparedInputs,
+  checkPreparedTasks,
+  createFileTrialRunner,
+  loadManifest,
+  nextStepsMessage,
+  resolveRunDir,
+  trialBaseName,
+  writePreparePhase,
+  type FileOutputRecord,
+  type JudgePhase,
+} from "./file-provider.js";
 import { MOCK_FIXTURE_BANNER, createJudgeMockProvider } from "./providers/judge-mock.js";
 import type { JudgeAspect, JudgeVerdict } from "./schema.js";
 import { loadAspectsFile } from "./validate.js";
@@ -101,6 +117,10 @@ export interface JudgeCliOptions {
   targets: string[];
   /** target → with-rule 側の期待 verdict。--negative-control のときだけ非空 */
   expectByTarget: Record<string, ExpectedVerdict>;
+  /** file provider の相。anthropic / mock では null */
+  phase: JudgePhase | null;
+  /** file provider の作業ディレクトリ。anthropic / mock では null */
+  runDir: string | null;
   /** provenance に残す生の argv。parseJudgeArgs は埋めず、呼び出し側が足す */
   cli?: string[];
 }
@@ -116,9 +136,15 @@ export type ParseJudgeArgsResult =
   | { ok: false; error: string };
 
 export const USAGE = `使い方:
+  # API を叩く（anthropic は有料 / mock は NOT EVIDENCE）
   tsx design/judge/run.ts --file <html> --provider anthropic|mock \\
     [--drop-rule <ID>]... [--targets <ID,...>] [--trials N] [--model <id>] \\
-    [--negative-control --expect fail|pass [--expect-map '{"<ID>":"fail"}']]`;
+    [--negative-control --expect fail|pass [--expect-map '{"<ID>":"fail"}']]
+
+  # API キー無しで実測する（二相。生成は外部の実行者がやる）
+  tsx design/judge/run.ts --provider file --phase prepare --run-dir <dir> \\
+    --file <html> [--negative-control --expect fail|pass] [--targets <ID,...>] [--trials N]
+  tsx design/judge/run.ts --provider file --phase collect --run-dir <dir> --runtime "<実行者>"`;
 
 function getArg(args: string[], name: string): string | null {
   const i = args.indexOf(name);
@@ -147,6 +173,36 @@ export function parseJudgeArgs(args: string[], ctx: JudgeCliContext): ParseJudge
   const provider = getArg(args, "--provider");
   if (provider == null || !JUDGE_PROVIDER_IDS.includes(provider as JudgeProviderId)) {
     return fail(`--provider は ${JUDGE_PROVIDER_IDS.join(" | ")} のいずれかです（受領: ${provider ?? "(なし)"}）`);
+  }
+
+  // --provider file は二相 CLI。ここで扱うのは prepare だけで、collect は
+  // parseJudgeCli が MANIFEST 経由の別経路へ振り分ける（collect は --file を取らない）
+  const isFileProvider = provider === "file";
+  const phaseRaw = getArg(args, "--phase");
+  const phaseGiven = args.includes("--phase");
+  const runDirRaw = getArg(args, "--run-dir");
+  const runDirGiven = args.includes("--run-dir");
+  const runtimeGiven = args.includes("--runtime");
+  const modelGiven = args.includes("--model");
+
+  if (!isFileProvider) {
+    if (phaseGiven) return fail("--phase は --provider file のときだけ指定できます");
+    if (runDirGiven) return fail("--run-dir は --provider file のときだけ指定できます");
+    if (runtimeGiven) return fail("--runtime は --provider file --phase collect のときだけ指定できます");
+  } else {
+    if (!phaseGiven) return fail("--provider file には --phase prepare か --phase collect が必要です");
+    if (phaseRaw !== "prepare") {
+      return fail(`--phase は prepare か collect です（受領: "${phaseRaw ?? ""}"）`);
+    }
+    if (runDirRaw == null || runDirRaw.trim() === "") {
+      return fail("--phase prepare には --run-dir <dir> が必要です");
+    }
+    if (runtimeGiven) {
+      return fail("--runtime は --phase collect で指定します（prepare の時点では誰が実行するか決まっていません）");
+    }
+    if (modelGiven) {
+      return fail("--provider file では --model を指定できません。実行したモデルは --phase collect の --runtime に書きます");
+    }
   }
 
   const trialsRaw = getArg(args, "--trials") ?? "1";
@@ -201,7 +257,18 @@ export function parseJudgeArgs(args: string[], ctx: JudgeCliContext): ParseJudge
     }
     return {
       ok: true,
-      options: { filePath, provider: provider as JudgeProviderId, model, trials, negativeControl, dropRuleIds, targets, expectByTarget: {} },
+      options: {
+        filePath,
+        provider: provider as JudgeProviderId,
+        model,
+        trials,
+        negativeControl,
+        dropRuleIds,
+        targets,
+        expectByTarget: {},
+        phase: isFileProvider ? "prepare" : null,
+        runDir: isFileProvider ? (runDirRaw as string) : null,
+      },
     };
   }
 
@@ -252,8 +319,81 @@ export function parseJudgeArgs(args: string[], ctx: JudgeCliContext): ParseJudge
 
   return {
     ok: true,
-    options: { filePath, provider: provider as JudgeProviderId, model, trials, negativeControl, dropRuleIds, targets, expectByTarget },
+    options: {
+      filePath,
+      provider: provider as JudgeProviderId,
+      model,
+      trials,
+      negativeControl,
+      dropRuleIds,
+      targets,
+      expectByTarget,
+      phase: isFileProvider ? "prepare" : null,
+      runDir: isFileProvider ? (runDirRaw as string) : null,
+    },
   };
+}
+
+// ---------- 二相 CLI の入口（純関数） ----------
+
+/** --phase collect のオプション。実行計画は CLI ではなく MANIFEST.json が正本 */
+export interface JudgeCollectOptions {
+  runDir: string;
+  /** 誰がどのモデル・どの枠で書いたか（自由文。例 claude-code-subagent:haiku-4.5） */
+  runtime: string;
+}
+
+export type JudgeCliPlan =
+  | { ok: true; mode: "run"; options: JudgeCliOptions }
+  | { ok: true; mode: "collect"; options: JudgeCollectOptions }
+  | { ok: false; error: string };
+
+/**
+ * CLI の front door。--provider file --phase collect だけ別経路に振り分け、
+ * 残りは従来どおり parseJudgeArgs に渡す。
+ *
+ * collect が --file / --targets / --trials 等を受け取らないのは、prepare と collect で
+ * 実行計画がズレると「実行者が答えた trial」と「集計した trial」が別物になるため。
+ * 計画の正本は MANIFEST.json だけにする。
+ */
+export function parseJudgeCli(args: string[], ctx: JudgeCliContext): JudgeCliPlan {
+  const provider = getArg(args, "--provider");
+  const phase = getArg(args, "--phase");
+  if (provider === "file" && args.includes("--phase") && phase === "collect") {
+    const runDir = getArg(args, "--run-dir");
+    if (runDir == null || runDir.trim() === "") {
+      return { ok: false, error: "--phase collect には --run-dir <dir> が必要です" };
+    }
+    const runtime = getArg(args, "--runtime");
+    if (runtime == null || runtime.trim() === "") {
+      return {
+        ok: false,
+        error:
+          '--phase collect には --runtime "<実行者>" が必要です（例: "claude-code-subagent:haiku-4.5"）。' +
+          "provenance の provider は file としか書けず、どのモデルがどの枠で答えたかは runtime にしか残らない",
+      };
+    }
+    const forbidden = [
+      "--file",
+      "--targets",
+      "--drop-rule",
+      "--trials",
+      "--model",
+      "--expect",
+      "--expect-map",
+      "--negative-control",
+    ].filter((f) => args.includes(f));
+    if (forbidden.length > 0) {
+      return {
+        ok: false,
+        error: `--phase collect は ${forbidden.join(", ")} を受け取りません（実行計画の正本は ${runDir}/MANIFEST.json）`,
+      };
+    }
+    return { ok: true, mode: "collect", options: { runDir, runtime } };
+  }
+
+  const parsed = parseJudgeArgs(args, ctx);
+  return parsed.ok ? { ok: true, mode: "run", options: parsed.options } : { ok: false, error: parsed.error };
 }
 
 // ---------- 実行計画（純関数） ----------
@@ -415,8 +555,15 @@ export interface JudgeHistoryRecord {
   level: "observation";
   provider: string;
   model: string | null;
-  temperature: number;
-  toolsEnabled: false;
+  /**
+   * file provider のとき「誰がどのモデル・どの枠で書いたか」の自由文。
+   * provider は "file" としか書けないので、実測の主語はここにしか残らない。API 経路は null
+   */
+  runtime: string | null;
+  /** file provider では null（実行者側の設定で、melta 側は制御していない） */
+  temperature: number | null;
+  /** file provider では null（実行者の tools 制限は構造でなく agent 定義に依存する） */
+  toolsEnabled: boolean | null;
   git: GitInfo;
   fixture: { path: string; sha256: string };
   aspectsHash: string;
@@ -430,6 +577,8 @@ export interface JudgeHistoryRecord {
   summary: ConditionSummary[];
   trialRecords: TrialRecord[];
   cli: string[];
+  /** file provider が読んだ output ファイルの一覧（欠落も present:false で残す）。API 経路は null */
+  outputs: FileOutputRecord[] | null;
   /** 途中で落ちた run の中断情報。正常完了は null */
   interrupted: InterruptedInfo | null;
 }
@@ -449,13 +598,17 @@ export function buildReport(args: { record: JudgeHistoryRecord; isMock: boolean 
   let md = `# shadow judge run — ${record.date}\n\n`;
   md += `> **observation only**: judge の fail 判定は CI を落とさない。proposal は非 authoritative（rules.json へは人間が別 PR で反映する）。\n\n`;
   if (args.isMock) md += `> ${MOCK_FIXTURE_BANNER}\n\n`;
+  if (record.outputs != null) {
+    md += `> **file provider**: 応答は melta の外（\`${record.runtime ?? "(runtime 不明)"}\`）で生成され、このプロセスは入力の用意と出力の検証だけをした。temperature と tools は melta 側で制御していない。供給していない ruleId の引用（下表の invalid \`rule-id-not-supplied\`）は、実行者がルールを再取得したか幻覚したかのどちらかで、**構造では止められない**。\n\n`;
+  }
 
   md += `## 計測条件\n\n`;
   md += `| 項目 | 値 |\n|---|---|\n`;
   md += `| provider | ${record.provider} |\n`;
-  md += `| model | ${record.model ?? "(mock)"} |\n`;
-  md += `| temperature | ${record.temperature} |\n`;
-  md += `| toolsEnabled | ${record.toolsEnabled} |\n`;
+  md += `| model | ${record.model ?? (record.runtime != null ? "(runtime を参照)" : "(mock)")} |\n`;
+  if (record.runtime != null) md += `| runtime | ${record.runtime} |\n`;
+  md += `| temperature | ${record.temperature ?? "null（実行者側の設定。melta は制御していない）"} |\n`;
+  md += `| toolsEnabled | ${record.toolsEnabled ?? "null（実行者の tools 制限は agent 定義に依存し、構造では保証できない）"} |\n`;
   md += `| commit | ${record.git.commit ?? "(不明)"}${record.git.dirty ? " (dirty)" : ""} |\n`;
   md += `| fixture | ${record.fixture.path} (sha256 ${record.fixture.sha256.slice(0, 12)}) |\n`;
   md += `| aspects.json | sha256 ${record.aspectsHash.slice(0, 12)} |\n`;
@@ -493,6 +646,16 @@ export function buildReport(args: { record: JudgeHistoryRecord; isMock: boolean 
   }
   md += `\n`;
 
+  if (record.outputs != null) {
+    const missing = record.outputs.filter((o) => !o.present);
+    md += `## 実行者の出力（${record.outputs.length} 件中 欠落 ${missing.length} 件）\n\n`;
+    md += `| output | 有無 | sha256 |\n|---|---|---|\n`;
+    for (const o of record.outputs) {
+      md += `| ${o.name} | ${o.present ? "あり" : "**欠落**"} | ${o.sha256?.slice(0, 12) ?? "-"} |\n`;
+    }
+    md += `\n> 欠落した trial は \`missing-output\` で invalid に数える。未実施として集計から外すと、答えられなかった trial が消えて成功率が上振れする。\n\n`;
+  }
+
   md += `## 陰性対照の対象外 aspect（${record.excludedAspects.length} 件）\n\n`;
   md += `| aspectId | 理由 |\n|---|---|\n`;
   for (const e of record.excludedAspects) md += `| ${e.aspectId} | ${e.reason} |\n`;
@@ -525,6 +688,21 @@ function appendAuditLogTo(path: string, entry: Record<string, unknown>): void {
   appendFileSync(path, JSON.stringify(entry) + "\n", "utf-8");
 }
 
+/**
+ * 1 trial を実行して JudgeRunResult にする関数。既定は adapter の runJudgeTrial（provider を叩く）。
+ * file provider はここを差し替えて「provider を叩かず outputs/*.output.txt を読む」に変える。
+ * 差し替えても検証器・集計・成果物の書き出しは共通のままにする（経路ごとに契約を分けない）。
+ */
+export type TrialRunner = (args: {
+  provider: ModelProvider;
+  aspects: JudgeAspect[];
+  rules: RuleEntry[];
+  html: string;
+  knownRuleIds: readonly string[];
+  dropRuleIds: string[];
+  step: PlanStep;
+}) => Promise<JudgeRunResult>;
+
 export interface ExecuteJudgeRunDeps {
   provider: ModelProvider;
   aspects: JudgeAspect[];
@@ -543,6 +721,16 @@ export interface ExecuteJudgeRunDeps {
   isMock: boolean;
   providerLabel: string;
   modelLabel: string | null;
+  /** file provider の実行者。API 経路は省略（null になる） */
+  runtimeLabel?: string | null;
+  /** 省略時は JUDGE_TEMPERATURE。file provider は null を渡す */
+  temperature?: number | null;
+  /** 省略時は JUDGE_TOOLS_ENABLED。file provider は null を渡す */
+  toolsEnabled?: boolean | null;
+  /** 省略時は runJudgeTrial（provider を叩く） */
+  runTrial?: TrialRunner;
+  /** file provider が読んだ output の一覧を返す。record 組み立て時に 1 回だけ呼ぶ */
+  fileOutputs?: () => FileOutputRecord[];
   date?: string;
   gitInfo?: GitInfo;
   log?: (msg: string) => void;
@@ -571,22 +759,24 @@ export async function executeJudgeRun(deps: ExecuteJudgeRunDeps): Promise<Execut
   const plan = buildExecutionPlan(deps.options, deps.aspects);
   const records: TrialRecord[] = [];
   let interrupted: InterruptedInfo | null = null;
+  const runTrial: TrialRunner = deps.runTrial ?? ((a) => runJudgeTrial(a));
 
   for (const [index, step] of plan.entries()) {
     try {
       // 母集団は常に全 aspect。step が持つのは drop 対象と期待値だけ
-      const result = await runJudgeTrial({
+      const result = await runTrial({
         provider: deps.provider,
         aspects: deps.aspects,
         rules: deps.rules,
         html: deps.html,
         knownRuleIds: deps.knownRuleIds,
         dropRuleIds: step.dropRuleIds,
+        step,
       });
       const record = toTrialRecord({ result, step });
       records.push(record);
 
-      const base = `${step.targetAspectId}-${step.condition}-t${step.trial}`;
+      const base = trialBaseName(step);
       // 送信した system / prompt の原文を残す（第三者が drop 後の入力を検算できる粒度）
       writeFileSync(
         resolve(deps.runDir, `${base}.input.json`),
@@ -644,8 +834,9 @@ export async function executeJudgeRun(deps: ExecuteJudgeRunDeps): Promise<Execut
     level: "observation",
     provider: deps.providerLabel,
     model: deps.modelLabel,
-    temperature: JUDGE_TEMPERATURE,
-    toolsEnabled: JUDGE_TOOLS_ENABLED,
+    runtime: deps.runtimeLabel ?? null,
+    temperature: deps.temperature === undefined ? JUDGE_TEMPERATURE : deps.temperature,
+    toolsEnabled: deps.toolsEnabled === undefined ? JUDGE_TOOLS_ENABLED : deps.toolsEnabled,
     git: deps.gitInfo ?? getGitInfo(root),
     fixture: { path: deps.fixturePath, sha256: sha256(deps.html) },
     aspectsHash: deps.aspectsHash,
@@ -658,6 +849,7 @@ export async function executeJudgeRun(deps: ExecuteJudgeRunDeps): Promise<Execut
     summary: summarizeByCondition(records),
     trialRecords: records,
     cli: deps.options.cli ?? [],
+    outputs: deps.fileOutputs?.() ?? null,
     interrupted,
   };
 
@@ -707,23 +899,179 @@ export async function executeJudgeRun(deps: ExecuteJudgeRunDeps): Promise<Execut
   return { record, reportPath, invalidCount, exitCode: failed ? 1 : 0 };
 }
 
+/** collect が executeJudgeRun に渡す stub。file 経路はモデルを一度も呼ばない */
+const NEVER_CALLED_PROVIDER: ModelProvider = {
+  id: "file",
+  async generate() {
+    throw new Error("file provider はモデルを呼ばない（collect は outputs/*.output.txt を読むだけ）");
+  },
+};
+
+interface MainContext {
+  args: string[];
+  aspects: JudgeAspect[];
+  rules: RuleEntry[];
+  knownRuleIds: string[];
+  aspectsHash: string;
+  rulesFileHash: string;
+}
+
+/** --phase prepare: 入力と TASK.md と MANIFEST を書くだけ。LLM は呼ばない */
+function runPreparePhase(ctx: MainContext, options: JudgeCliOptions, absFile: string, html: string): void {
+  const runDir = resolveRunDir(options.runDir as string);
+  if (existsSync(resolve(runDir, "MANIFEST.json"))) {
+    console.error(
+      `${runDir} は既に prepare 済みです。別の --run-dir を使ってください（上書きすると、既に書かれた outputs が別の計画の孤児になる）`
+    );
+    process.exit(2);
+  }
+
+  const plan = buildExecutionPlan(options, ctx.aspects);
+  const prepared = buildPreparedTrials({ plan, aspects: ctx.aspects, rules: ctx.rules, html });
+  const manifest = buildManifest({
+    options: { ...options, cli: ctx.args },
+    prepared,
+    fixture: { path: relative(root, absFile), sha256: sha256(html) },
+    aspectsHash: ctx.aspectsHash,
+    rulesFileHash: ctx.rulesFileHash,
+    git: getGitInfo(root),
+    cli: ctx.args,
+    createdAt: new Date().toISOString(),
+    llmAspectCount: ctx.aspects.filter((a) => a.automationStatus !== "human-only").length,
+  });
+  writePreparePhase({ runDir, manifest, prepared });
+
+  console.log(nextStepsMessage({ runDir, manifest, root }));
+}
+
+/** --phase collect: outputs を読んで検証器・集計・成果物へ通す */
+async function runCollectPhase(ctx: MainContext, collect: JudgeCollectOptions): Promise<void> {
+  const runDir = resolve(collect.runDir);
+  let manifest;
+  try {
+    manifest = loadManifest(runDir);
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(2);
+  }
+
+  const absFile = resolve(root, manifest.fixture.path);
+  if (!existsSync(absFile)) {
+    console.error(`MANIFEST の fixture が見つかりません: ${absFile}`);
+    process.exit(2);
+  }
+  const html = readFileSync(absFile, "utf-8");
+  // 集計の前に 3 つ確かめる: (1) 材料が prepare 時と同じか (2) MANIFEST の options と
+  // trials[] が同じ計画か (3) 実行者が読んだ input.json が改変されていないか。
+  // どれも「別の質問への答え」を実測として集計しないための門
+  const fail = (problems: string[]): never => {
+    console.error(`prepare 時の計画・入力と一致しないので集計しません:\n  - ${problems.join("\n  - ")}`);
+    process.exit(2);
+  };
+  // 材料と計画を先に見る。構造が壊れた MANIFEST のまま入力照合へ進むと、
+  // 「何が壊れているか」でなく TypeError で落ちて原因が読めなくなる
+  const structural = [
+    ...checkManifestConsistency({
+      manifest,
+      fixtureSha256: sha256(html),
+      aspectsHash: ctx.aspectsHash,
+      rulesFileHash: ctx.rulesFileHash,
+    }),
+    ...checkManifestPlan({ manifest, plan: buildExecutionPlan(manifest.options, ctx.aspects) }),
+  ];
+  if (structural.length > 0) fail(structural);
+
+  // 実行者が読んだもの（入力と指示）の両方を byte で照合する。
+  // 入力だけ見ていると、TASK.md に答えを 1 行足した run が通常の測定として通る
+  const executorProblems = [
+    ...checkPreparedInputs({
+      runDir,
+      manifest,
+      aspects: ctx.aspects,
+      rules: ctx.rules,
+      html,
+    }),
+    ...checkPreparedTasks({ runDir, manifest }),
+  ];
+  if (executorProblems.length > 0) fail(executorProblems);
+
+  const { runTrial, outputs } = createFileTrialRunner({ runDir, manifest });
+  const isoDate = new Date().toISOString();
+
+  console.log("\n=== melta shadow judge（observation only / file provider collect）===\n");
+  console.log(`  provider: file, runtime: ${collect.runtime}, temperature: null, tools: null`);
+  console.log(`  run-dir: ${relative(root, runDir) || runDir}（trial ${manifest.trials.length} 件）`);
+  console.log(`  file: ${manifest.fixture.path}`);
+
+  const result = await executeJudgeRun({
+    provider: NEVER_CALLED_PROVIDER,
+    aspects: ctx.aspects,
+    rules: ctx.rules,
+    html,
+    knownRuleIds: ctx.knownRuleIds,
+    options: { ...manifest.options, cli: ctx.args },
+    fixturePath: manifest.fixture.path,
+    runDir,
+    auditLogPath,
+    // mock ではないので history に書く。実測の正本はここにしか残らない
+    historyPath,
+    aspectsHash: ctx.aspectsHash,
+    rulesFileHash: ctx.rulesFileHash,
+    isMock: false,
+    providerLabel: "file",
+    modelLabel: null,
+    runtimeLabel: collect.runtime,
+    temperature: null,
+    toolsEnabled: null,
+    runTrial,
+    fileOutputs: outputs,
+    date: isoDate,
+  });
+
+  console.log(`  レポート: ${relative(root, result.reportPath)}`);
+  for (const s of result.record.summary) {
+    console.log(
+      `  ${s.condition}: 期待一致 ${s.expectedVerdictMatches}/${s.expectationDeclared}、幻覚引用 ${s.hallucinatedCitations}、invalid ${s.invalid}`
+    );
+  }
+  const missing = (result.record.outputs ?? []).filter((o) => !o.present);
+  if (missing.length > 0) {
+    console.error(`  出力が欠けた trial: ${missing.map((o) => o.name).join(", ")}（missing-output で invalid に数えた）`);
+  }
+  if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const aspectsFile = loadAspectsFile();
   const aspects = aspectsFile.aspects;
   const rules = loadRules();
   const knownRuleIds = rules.map((r) => r.id);
+  const ctx: MainContext = {
+    args,
+    aspects,
+    rules,
+    knownRuleIds,
+    aspectsHash: sha256(readFileSync(resolve(__dirname, "aspects.json"), "utf-8")),
+    rulesFileHash: sha256(readFileSync(rulesPath, "utf-8")),
+  };
 
-  const parsed = parseJudgeArgs(args, {
+  const cliPlan = parseJudgeCli(args, {
     aspectIds: aspects.map((a) => a.aspectId),
     knownRuleIds,
     representativeAspects: aspectsFile.representativeAspects,
   });
-  if (!parsed.ok) {
-    console.error(`${parsed.error}\n${USAGE}`);
+  if (!cliPlan.ok) {
+    console.error(`${cliPlan.error}\n${USAGE}`);
     process.exit(2);
   }
-  const options = parsed.options;
+
+  if (cliPlan.mode === "collect") {
+    await runCollectPhase(ctx, cliPlan.options);
+    return;
+  }
+
+  const options = cliPlan.options;
 
   const absFile = resolve(options.filePath);
   if (!existsSync(absFile)) {
@@ -731,6 +1079,14 @@ async function main(): Promise<void> {
     process.exit(2);
   }
   const html = readFileSync(absFile, "utf-8");
+
+  if (options.provider === "file") {
+    console.log("\n=== melta shadow judge（observation only / file provider prepare）===\n");
+    console.log(`  LLM は呼ばない。入力・TASK.md・MANIFEST.json を書くだけ`);
+    console.log(`  file: ${relative(root, absFile)}`);
+    runPreparePhase(ctx, options, absFile, html);
+    return;
+  }
 
   const isMock = options.provider === "mock";
   const provider: ModelProvider = isMock
@@ -757,8 +1113,8 @@ async function main(): Promise<void> {
     runDir,
     auditLogPath,
     historyPath: isMock ? null : historyPath,
-    aspectsHash: sha256(readFileSync(resolve(__dirname, "aspects.json"), "utf-8")),
-    rulesFileHash: sha256(readFileSync(rulesPath, "utf-8")),
+    aspectsHash: ctx.aspectsHash,
+    rulesFileHash: ctx.rulesFileHash,
     isMock,
     providerLabel: isMock ? "mock" : `anthropic:${options.model}`,
     modelLabel: isMock ? null : options.model,
