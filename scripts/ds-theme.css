@@ -34,6 +34,13 @@ html *, html *::before, html *::after {
 }
 /* Reboot のテーブル既定（caption-side / tr ボーダー）も同様に明示で固定 */
 table { caption-side: top; border-color: inherit; }
+/* 4. kiso.css の :where(:root){ scrollbar-gutter: stable } は、クラシックスクロールバーの
+   環境（Linux 等。macOS はオーバーレイで幅 0 なので発現しない）でスクロールバー幅ぶんの
+   余白を予約する。fullPage 撮影でスクロールバー自体が出ない場合でも予約は効くため、
+   本文幅が縮んでページ全体が再レイアウトされる（CI Linux でのみ 31548px 差分・issue #14）
+   → melta の規範 = ブラウザ既定の auto。:where() は specificity 0 なので、
+   html（0,0,1）で明示すれば読み順に関係なく勝つ */
+html { scrollbar-gutter: auto; }
 
 /* --- CSS Variables (Light Theme) --- */
 :root {
