@@ -11,6 +11,13 @@
   hook が同経路で発火）。design-review skill の checklist にあった `[評価不可候補: ルール無し]` を
   1 件解消し、静的自動検証は 48 / 106 → 49 / 107（composition 7 → 8）になった
   （contracts 0.8.1。sidebar / breadcrumb / pagination の contract から参照）
+### Workflow Skill `build-screen` — 画面 1 枚の生成を契約引き当てから自己検証まで 1 手順に
+
+#### Added
+
+- **`skills/build-screen`（+ `.agents/skills/build-screen` symlink）** — `AGENTS.md` の「タスクベース読み込みガイド」で契約を引き当て → 最大 3 問の意図確認 → 生成 → `check_html`（無ければ `npm run design:lint-generated`）で error 0 まで最大 3 回のループ → coverage と評価不可（`automationStatus` 別）を報告、までを 1 本の手順にした Workflow Skill。参照の実体は MCP と contracts に置き、表や仕様は複製しない（drift させないため）
+- **`tests/build-screen-skill.spec.ts`（5 本）** — frontmatter の形（Claude Code 拡張キーを持たない）/ SKILL.md が参照するリポ内パス・npm script・MCP ツール名の実在 / 参照先の AGENTS.md 見出しの実在 / 「やらないこと」節の存在 / Step 2 の質問数上限。手順書が指す先が消えても無言で成立しないようにする
+
 ### `.cursor/` を「値を持たないポインタ」へ（並行正典の解体）
 
 `.cursor/rules/` の 3 本は tokens / component contract の値を手書きで複製した第二の正典で、
