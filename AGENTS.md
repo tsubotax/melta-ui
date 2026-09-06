@@ -3,6 +3,7 @@
 > AI coding agents（Claude Code / Codex / Cursor / Gemini CLI 等）共通の作業指示 SSOT。
 > デザイン仕様は `DESIGN.md`、exact value は `design/contracts/` を参照。
 > Claude Code 固有の挙動（PostToolUse hook / MCP 自動接続 / skills）は `CLAUDE.md`。
+> Cursor 固有の入口は `.cursor/`（MCP 設定の `mcp.json` と、所在ポインタの `rules/melta-ui.mdc`）。仕様・値は置かない。
 
 ---
 

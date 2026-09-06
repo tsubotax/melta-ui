@@ -11,6 +11,36 @@
   hook が同経路で発火）。design-review skill の checklist にあった `[評価不可候補: ルール無し]` を
   1 件解消し、静的自動検証は 48 / 106 → 49 / 107（composition 7 → 8）になった
   （contracts 0.8.1。sidebar / breadcrumb / pagination の contract から参照）
+### `.cursor/` を「値を持たないポインタ」へ（並行正典の解体）
+
+`.cursor/rules/` の 3 本は tokens / component contract の値を手書きで複製した第二の正典で、
+最終更新 2026-07-15 のまま drift 検査の外にあった（`melta-ui.mdc` の原則「セマンティックな
+背景クラスを使う」と `components.mdc` の全レシピが矛盾したまま半年並んでいた）。値を配るのは
+contracts / llms.txt / MCP の仕事なので、Cursor 向けには所在ポインタ 1 本と MCP 設定だけを残す。
+
+#### Added
+
+- **`.cursor/mcp.json`** — Cursor は Claude Code の `.mcp.json` を読まないため、`mcpServers` を
+  同一内容で置く。clone した Cursor ユーザーは `npm install` 後に同じサーバーへ自動接続する
+- **`tests/cursor-entry.spec.ts`** — ①追跡されている `.mdc` はポインタ 1 本だけ ②`alwaysApply:
+  true` と Cursor が解釈する frontmatter キーのみ ③本文に hex カラー / Tailwind 色クラス /
+  サイズレシピが 1 つも無い ④参照するリポ内パスと MCP ツール名が実在する ⑤`.cursor/mcp.json`
+  と `.mcp.json` の `mcpServers` が deep-equal（片方だけ直すと落ちる）
+
+#### Changed
+
+- **`.cursor/rules/melta-ui.mdc` を所在ポインタへ書き換え** — frontmatter は `description` +
+  `alwaysApply: true`（`globs` は廃止）。本文は `AGENTS.md` / `DESIGN.md` / `design/contracts/` /
+  `.agents/skills/` の所在、値が競合したときの優先順位、`check_html` の位置づけ（lint-clean
+  draft でありブランド承認ではない）だけを持つ
+- **README.md / README.en.md** の前提条件表と clone 経路（経路 B）に `.cursor/mcp.json` を明記
+- **AGENTS.md** に「Cursor 固有の入口は `.cursor/`、仕様・値は置かない」を追記
+
+#### Removed
+
+- **`.cursor/rules/color-system.mdc` / `.cursor/rules/components.mdc`** — tokens / component
+  contract の値の手書き複製。同じ内容は `design/contracts/` と `llms.txt`、MCP（`get_token` /
+  `get_component`）が配っており、複製側だけが検査の外だった
 
 ## [1.6.0] - 2026-08-06
 
