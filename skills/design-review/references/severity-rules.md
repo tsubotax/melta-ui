@@ -53,7 +53,7 @@
 
 ## 重大度の変換規則（固定ルールに無いルールを報告するとき）
 
-上の「重大度の固定ルール」が最優先。表にも固定ルールにも無いルール（`rules-index.md` から引いた 106 件のうち上に列挙されていないもの）は、`design/contracts/rules.json` の `severity` から機械的に変換する:
+上の「重大度の固定ルール」が最優先。表にも固定ルールにも無いルール（`rules-index.md` から引いたルールのうち上に列挙されていないもの）は、`design/contracts/rules.json` の `severity` から機械的に変換する:
 
 | rules.json の severity | 既定の重大度 |
 |---|---|

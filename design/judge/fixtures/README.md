@@ -7,6 +7,8 @@
 | `negative-control.violating.html.txt` | 代表 7 aspect すべてに違反する 1 枚 |
 | `negative-control.conforming.html.txt` | 同じ画面で 7 aspect すべてに適合する 1 枚。`lintSource` の error は 0 |
 
+`lintSource` は class / html-attr までで composition 検査を含まない。composition 側は `BTN_MIN_TAP_TARGET` 1 件が既知の未対応として残っており、`tests/judge.spec.ts` がその 1 件ちょうどであることを固定している（増減したら落ちる）。
+
 **`<title>` を業務画面の文言にしてある理由**: 実行者が読むのは HTML の原文（行番号つき）なので、`title` に「違反版」「陰性対照」と書くと**期待する答えの方向を教えてから答えさせる**ことになる。2 枚の `<title>` は同一で、見分けが付くのは違反箇所だけ。fixture 本文に条件を示す語を入れないこと。
 
 **拡張子が `.html` でない理由**: CI の Lint Generated UI が、変更された `.html` を external-ds samples 以外すべて lint する。違反 fixture を `.html` で置くとその job が落ちる。judge の `--file` はテキストなら拡張子を問わない。

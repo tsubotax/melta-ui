@@ -64,7 +64,7 @@
 |--------|------|:----:|------|
 | Container | `<aside>` | Yes | サイドバー全体。`flex flex-col` で3ゾーンを縦配置 |
 | Header | `<div>` | Yes | ロゴまたはアプリ名を表示 |
-| Navigation | `<nav>` | Yes | メインナビゲーション。`flex-1 overflow-y-auto` で残りの高さを占有 |
+| Navigation | `<nav aria-label="メインナビゲーション">` | Yes | メインナビゲーション。`aria-label`（または `aria-labelledby`）は必須。`flex-1 overflow-y-auto` で残りの高さを占有 |
 | Nav Item | `<a>` / `<button>` | Yes | 個々のナビゲーションリンク。アイコン + テキスト |
 | Nav Group Label | `<p>` | No | ナビゲーションのセクション見出し |
 | Separator | `<div>` | No | ナビグループ間の区切り線 |

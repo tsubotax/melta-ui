@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`A11Y_NAV_ARIA_LABEL_REQUIRED`（ルール 107 本目）** — `<nav>` / `role="navigation"` に
+  アクセシブルネーム（`aria-label` または `aria-labelledby`）が無いと error。スクリーンリーダーの
+  ランドマーク一覧で複数のナビゲーションを区別できないため、nav が 1 つの画面でも常に付与する。
+  detector=composition / kind=dom-attr-required の自動検出（lint / MCP `check_html` / PostToolUse
+  hook が同経路で発火）。design-review skill の checklist にあった `[評価不可候補: ルール無し]` を
+  1 件解消し、静的自動検証は 48 / 106 → 49 / 107（composition 7 → 8）になった
+  （contracts 0.8.1。sidebar / breadcrumb / pagination の contract から参照）
+
 ## [1.6.0] - 2026-08-06
 
 ### 同梱 contracts を 0.7.0 へ更新（W5 契約層の配信）

@@ -67,6 +67,8 @@ import {
 import type { JudgeAspect, JudgeVerdict } from "../design/judge/schema.js";
 import { loadAspectsFile, normalizeWhitespace, validateJudgeOutput } from "../design/judge/validate.js";
 import { lintSource } from "../src/utils/lint-core.js";
+import { lintComposition } from "../src/utils/composition-lint.js";
+import { parse as parseHtml } from "node-html-parser";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const rules: RuleEntry[] = (
@@ -1545,6 +1547,42 @@ test.describe("judge core", () => {
     // ここが確かめるのは「適合版に別の禁止パターンを混ぜていないこと」
     const errors = lintSource(readFixture(CONFORMING_FIXTURE_REL)).filter((v) => v.severity === "error");
     expect(errors.map((v) => `${v.ruleId}(${v.token})`)).toEqual([]);
+
+    // lintSource は class / html-attr までで composition を含まない（lint-core.ts の
+    // 仕様コメント参照）。適合 fixture が composition 側で何を出すかは別に固定する。
+    // BTN_MIN_TAP_TARGET 1 件は既知の未対応（送信ボタンにタップ領域拡張が無い）。
+    // これを直したらこの期待値も更新する = 別 PR の論点であって、ここで黙らせない。
+    const conformingComposition = lintComposition(readFixture(CONFORMING_FIXTURE_REL)).filter(
+      (v) => v.severity === "error"
+    );
+    expect(conformingComposition.map((v) => v.ruleId)).toEqual(["BTN_MIN_TAP_TARGET"]);
+
+    // 2 枚とも nav にアクセシブルネームがある（fixture に aria-label を足した回帰検知）
+    for (const rel of [FILE_FIXTURE_REL, CONFORMING_FIXTURE_REL]) {
+      const ids = lintComposition(readFixture(rel)).map((v) => v.ruleId);
+      expect(ids, `${rel} の nav に aria-label / aria-labelledby が無い`).not.toContain(
+        "A11Y_NAV_ARIA_LABEL_REQUIRED"
+      );
+    }
+
+    // 2 枚は違反箇所以外が同一であることが要件（fixtures/README.md）。上の lint 期待は
+    // 「nav が div に置き換わった」改変でも通ってしまうので、構造そのものを固定する。
+    const navOpenTags = (rel: string) =>
+      readFixture(rel)
+        .split("\n")
+        .filter((l) => /<nav[\s>]/.test(l));
+    for (const rel of [FILE_FIXTURE_REL, CONFORMING_FIXTURE_REL]) {
+      expect(navOpenTags(rel), `${rel} の <nav> 開始タグが 1 つでない`).toHaveLength(1);
+    }
+    expect(navOpenTags(FILE_FIXTURE_REL)[0]).toBe(navOpenTags(CONFORMING_FIXTURE_REL)[0]);
+
+    // 行テキストだけだと、10 行目末に `<!--` / 14 行目末に `-->` を足して nav ごと
+    // コメントアウトする改変が素通りする（行の中身も件数も README の行照合も変わらず、
+    // コメント内は lint 対象外なので nav 違反も出ない）。DOM 上の実要素数も固定する。
+    for (const rel of [FILE_FIXTURE_REL, CONFORMING_FIXTURE_REL]) {
+      const navs = parseHtml(readFixture(rel)).querySelectorAll("nav");
+      expect(navs, `${rel} の DOM 上の <nav> 要素が 1 つでない`).toHaveLength(1);
+    }
 
     // fixture を .html で置くと CI の Lint Generated UI が違反版で落ちる
     expect(FILE_FIXTURE_REL.endsWith(".html.txt")).toBe(true);

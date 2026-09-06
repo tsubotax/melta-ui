@@ -51,7 +51,10 @@ function hasAnyAttr(el: HTMLElement, attrs: string[], includeAncestors: boolean)
     typeof node.getAttribute === "function" &&
     attrs.some((a) => {
       const v = node.getAttribute(a);
-      return v != null && v !== "";
+      // 空白のみの属性値（aria-label=" "）はアクセシブルネームにならないので不在扱いにする。
+      // 支援技術は前後の空白を詰めた結果を名前として扱うため、空文字と区別する意味がない。
+      // 属性が「書いてあるだけ」で検査を素通りする穴を塞ぐ（dom-attr-required 全ルール共通）。
+      return v != null && v.trim() !== "";
     });
   if (has(el)) return true;
   if (!includeAncestors) return false;

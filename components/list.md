@@ -170,7 +170,7 @@
 ### Link List（ナビゲーション）
 
 ```html
-<nav>
+<nav aria-label="プロジェクトナビゲーション">
   <ul class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
     <li>
       <a href="#" class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">

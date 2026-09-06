@@ -57,6 +57,10 @@
     {
       "id": "BTN_MIN_TAP_TARGET",
       "severity": "error"
+    },
+    {
+      "id": "A11Y_NAV_ARIA_LABEL_REQUIRED",
+      "severity": "error"
     }
   ],
   "htmlSample": "<nav aria-label=\"ページネーション\"><ul class=\"flex items-center gap-1\"><li><button class=\"w-10 h-10 inline-flex items-center justify-center text-base font-medium text-white bg-primary-500 rounded-lg\" aria-current=\"page\" aria-label=\"ページ 1\">1</button></li></ul></nav>"
