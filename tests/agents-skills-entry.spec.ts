@@ -26,8 +26,8 @@ const REPO_ROOT = resolve(".");
 const ENTRY_DIR = ".agents/skills";
 const SOURCE_DIR = "skills";
 
-/** git の index に入っているパスと mode を引く（`<mode> <sha> <stage>\t<path>`） */
-function lsFiles(pathspec: string): { mode: string; path: string }[] {
+/** git の index に入っているパスと mode と blob を引く（`<mode> <sha> <stage>\t<path>`） */
+function lsFiles(pathspec: string): { mode: string; sha: string; path: string }[] {
   const stdout = execFileSync("git", ["ls-files", "-s", "--", pathspec], {
     cwd: REPO_ROOT,
     encoding: "utf8",
@@ -37,18 +37,35 @@ function lsFiles(pathspec: string): { mode: string; path: string }[] {
     .filter((line) => line.trim() !== "")
     .map((line) => {
       const [meta, path] = line.split("\t");
-      return { mode: meta.split(" ")[0], path };
+      const [mode, sha] = meta.split(" ");
+      return { mode, sha, path };
     });
 }
 
-/** SKILL.md の frontmatter から name を引く（YAML パーサを持ち込まない範囲の最小実装） */
+/** index 側の blob の中身。mode 120000 の blob はリンク先文字列そのもの */
+function blobContent(sha: string): string {
+  return execFileSync("git", ["cat-file", "blob", sha], { cwd: REPO_ROOT, encoding: "utf8" });
+}
+
+/**
+ * SKILL.md の frontmatter から name を引く。
+ * 引用符は対応が取れているときだけ剥がす。`name: "design-review`（閉じ忘れ）を
+ * 黙って `design-review` に直してしまうと、壊れた YAML が検査を素通りする
+ */
 function frontmatterName(skillMdPath: string): string | null {
   const body = readFileSync(skillMdPath, "utf8");
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(body);
   if (match == null) return null;
   const nameLine = match[1].split(/\r?\n/).find((line) => line.startsWith("name:"));
   if (nameLine == null) return null;
-  return nameLine.slice("name:".length).trim().replace(/^["']|["']$/g, "");
+  const raw = nameLine.slice("name:".length).trim();
+  for (const quote of ['"', "'"]) {
+    if (!raw.startsWith(quote)) continue;
+    // 開いたら必ず閉じる。閉じていなければ不正な値として扱い、剥がさない
+    if (raw.length >= 2 && raw.endsWith(quote)) return raw.slice(1, -1);
+    return raw;
+  }
+  return raw;
 }
 
 test.describe(".agents/skills の入口と skills/ の実体が一致する", () => {
@@ -65,9 +82,13 @@ test.describe(".agents/skills の入口と skills/ の実体が一致する", ()
       expect(lstatSync(absolute).isSymbolicLink(), `${entry.path} が symlink として存在しない`).toBe(
         true
       );
-      // 別のスキルへの張り替えを止める。解決できるだけでは中身の同一性を担保しない
-      expect(readlinkSync(absolute), `${entry.path} のリンク先が実体と対応しない`).toBe(
-        `../../${SOURCE_DIR}/${name}`
+      // 別のスキルへの張り替えを止める。解決できるだけでは中身の同一性を担保しない。
+      // index と作業ツリーの両方を見る（誤リンクを stage した後で作業ツリーだけ戻すと、
+      // 作業ツリーしか見ない検査は緑のまま誤った内容が commit される）
+      const expected = `../../${SOURCE_DIR}/${name}`;
+      expect(readlinkSync(absolute), `${entry.path} のリンク先が実体と対応しない`).toBe(expected);
+      expect(blobContent(entry.sha), `${entry.path} は index 側のリンク先が実体と対応しない`).toBe(
+        expected
       );
     }
   });
