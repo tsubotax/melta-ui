@@ -48,3 +48,18 @@
 - `<label>` 完全欠如（placeholder のみ）→ **必ず Critical**
 - `<fieldset>` がカード直下で `<legend>` がボーダーと干渉 → **必ず Medium**
 - 日付セレクトの均等幅（`grid-cols-3`）→ **必ず Low**
+
+---
+
+## 重大度の変換規則（固定ルールに無いルールを報告するとき）
+
+上の「重大度の固定ルール」が最優先。表にも固定ルールにも無いルール（`rules-index.md` から引いた 106 件のうち上に列挙されていないもの）は、`design/contracts/rules.json` の `severity` から機械的に変換する:
+
+| rules.json の severity | 既定の重大度 |
+|---|---|
+| `error` | High |
+| `warn` | Medium |
+
+- **Critical は既定では付けない**。固定ルール表に載っているもの、または「スクリーンリーダー・キーボード操作に直接影響する」と本文で説明できるものだけ Critical に昇格させる
+- 変換で決めた重大度は、固定ルール表の記載と競合したら **固定ルール表を採る**
+- `automationStatus` が `human-only` のルールは重大度を付けない（`## 評価不可` 節へ回す）

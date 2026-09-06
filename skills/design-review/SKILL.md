@@ -5,7 +5,7 @@ description: HTMLファイルをmelta UIデザインシステムに照らして�
 
 # デザインレビュー
 
-HTMLファイルを melta UI デザインシステム（CLAUDE.md + foundations/prohibited.md）に照らしてレビューし、違反を検出・分類・修正提案する。
+HTMLファイルを melta UI デザインシステム（`design/contracts/rules.json` を正とする）に照らしてレビューし、違反を検出・分類・修正提案する。
 
 ## 手順
 
@@ -19,13 +19,18 @@ HTMLファイルを melta UI デザインシステム（CLAUDE.md + foundations/
 
 ### Step 2: DSリファレンスを読む
 
-以下を読み込む:
-- `CLAUDE.md`（クイックリファレンス・禁止パターン要約）
-- `foundations/prohibited.md`（全禁止パターン — SSOT）
+- `design/contracts/rules.json`（**SSOT**。ID / severity / detector / pattern / alternative / automationStatus を持つ全禁止ルール）
+
+補助（任意）:
+- `foundations/prohibited.md` — 人間向けの prose 版。SSOT ではなく、pattern を持つルールの一部しか載っていないので、これだけで判定しない
 
 ### Step 3: チェックリストに沿って違反を検出する
 
-`references/checklist.md` を読み込み、以下のカテゴリ順にHTMLを走査する:
+`references/checklist.md`（**観点**。HTML のどこをどう見るかの手順）を読み込み、各項目の `[ID]` を Step 2 で読んだ `rules.json` から引く。severity / detector / alternative の値は rules.json が正。
+
+`references/rules-index.md` は **全文を読まなくてよい**。checklist に無いカテゴリを横断して探すときの索引（カテゴリ別の表 + human-only 節 + 機械検出済み節）として、必要な箇所だけ参照する。
+
+`checklist.md` のカテゴリ順にHTMLを走査する:
 
 1. カラー
 2. スペーシング・レイアウト
@@ -35,16 +40,22 @@ HTMLファイルを melta UI デザインシステム（CLAUDE.md + foundations/
 6. フォーム（fieldset/legend カード干渉、日付セレクト幅を含む）
 7. アクセシビリティ
 
+`checklist.md` に載っていないカテゴリ（modal / stepper / tag / list / table / skeleton / datepicker / baseline / ai-pattern / philosophy / button / divider）の違反を見つけた場合は、`rules-index.md` から ID を引いて報告する。
+
+**報告する違反には必ずルール ID を添える。** rules.json に存在しない ID を書かない（`tests/skill-rule-refs.spec.ts` が実在性を検査している）。対応するルールが無い指摘は違反ではなく「評価不可（ルール無し）」として扱う。
+
 ### Step 4: 偽陽性を排除し、重大度を判定する
 
 `references/severity-rules.md` を読み込み、以下を実行:
 
 1. **「推奨」と「必須」を区別** — 推奨事項は違反として報告しない
 2. **文脈判定で偽陽性を排除** — label/aria-current/text-xs の文脈確認
-3. **重大度を割り当て** — Critical / High / Medium / Low の4段階。固定ルールに従う
+3. **重大度を割り当て** — Critical / High / Medium / Low の4段階。固定ルールに従い、表に無いものは rules.json の `severity` から変換する
 
 ### Step 5: レポートを出力する
 
 `references/report-template.md` を読み込み、テンプレートに沿ってレポートを出力する。
+
+レポートには **`## 評価不可` 節を必ず含める**（human-only / 静的に観測できない / 対応ルール無しの3種）。評価不可の項目は違反件数に含めない。
 
 出力前に **サマリー整合チェック** を実施: 本文中の各重大度の件数と冒頭サマリーの件数が一致することを確認する。

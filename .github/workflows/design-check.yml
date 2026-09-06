@@ -85,6 +85,11 @@ jobs:
           npm run design:llms
           git diff --exit-code llms.txt llms-full.txt
 
+      - name: design-review rules-index Freshness (skill の生成層が rules.json と一致するか)
+        run: |
+          npm run design:skill-index
+          git diff --exit-code skills/design-review/references/rules-index.md
+
       # contract を更新したのに design:build を回し忘れると、MCP が配る
       # metadata/components.json だけ古い契約を返し続ける（実際に card 2.1.0 の
       # a11y 追加が 1 コミット分 stale なまま出荷されていた）

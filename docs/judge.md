@@ -300,7 +300,7 @@ npx tsx design/judge/run.ts \
 
 | PR | 中身 |
 |---|---|
-| PR2 skill 移行 | `skills/design-review` が `rules.json` を読み、ID を引用し、「評価不可」節を出す。参照 ID の実在テストを足す |
+| PR2 skill 移行 | **済み（2026-09-06、`feat/design-review-checklist-from-rules`）**: `skills/design-review` が `rules.json` を読み、ID を引用し、「評価不可」節を出す。`references/rules-index.md` を rules.json から生成（`npm run design:skill-index`）、参照 ID の実在・生成物の鮮度・網羅・観点の ID 併記を `tests/skill-rule-refs.spec.ts` で検査 |
 | PR3 実測 | 実 provider で陽性・陰性対照を複数 aspect × 複数 trial。遷移表・対象外一覧・invalid 件数を残す。README の公開文言は human gate |
 
 ---
