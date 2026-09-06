@@ -11,6 +11,43 @@
   hook が同経路で発火）。design-review skill の checklist にあった `[評価不可候補: ルール無し]` を
   1 件解消し、静的自動検証は 48 / 106 → 49 / 107（composition 7 → 8）になった
   （contracts 0.8.1。sidebar / breadcrumb / pagination の contract から参照）
+### `.cursor/` を「値を持たないポインタ」へ（並行正典の解体）
+
+`.cursor/rules/` の 3 本は tokens / component contract の値を手書きで複製した第二の正典で、
+最終更新 2026-07-15 のまま drift 検査の外にあった（`melta-ui.mdc` の原則「セマンティックな
+背景クラスを使う」と `components.mdc` の全レシピが矛盾したまま半年並んでいた）。値を配るのは
+contracts / llms.txt / MCP の仕事なので、Cursor 向けには所在ポインタ 1 本と MCP 設定だけを残す。
+
+#### Added
+
+- **`.cursor/mcp.json`** — Cursor は Claude Code の `.mcp.json` を読まないため、`mcpServers` を
+  同一内容で置く。clone した Cursor ユーザーに同じサーバーの設定が同梱される（有効化は Cursor
+  側の操作に従う。公式 docs はプロジェクト設定の検出後に承認を挟むかを明記していない）
+- **`tests/cursor-entry.spec.ts`** — ①追跡されている `.mdc` はポインタ 1 本だけ ②frontmatter を
+  YAML としてパースし（`yaml` を devDependency に追加）、Cursor が解釈する 3 キーのみ・重複なし・
+  `alwaysApply` は boolean の `true`・`description` は非空の文字列 ③frontmatter と本文に
+  値が無い ④参照するリポ内パスが git 管理下に実在する ⑤MCP ツールの列挙が `src/server.ts` と
+  集合として完全一致 ⑥`.cursor/mcp.json` と `.mcp.json` の `mcpServers` が deep-equal。
+  ③の禁止語彙は**実行時に SSOT から導出する**（`tokens.json` の `tailwind` / `cssVar` / 色の
+  `value` / 色スケール名 + contract `htmlSample` の class + `rules.json` の `pattern` 系。
+  禁止側にしか無い `text-black` のような語はルールから拾い、色名には `bg-` / `text-` 等の
+  ユーティリティ接頭辞を明示展開する）。手書きの語彙表を置くとそれ自体が第三の正典になるため。SSOT に無い値（`16px` / `rgb(...)` / 未知パレット / キーワード色）は
+  汎用リテラルで、見た目が同じ非 ASCII ハイフンによる回避は NFKC 正規化 + 畳み込みで塞ぐ
+
+#### Changed
+
+- **`.cursor/rules/melta-ui.mdc` を所在ポインタへ書き換え** — frontmatter は `description` +
+  `alwaysApply: true`（`globs` は廃止）。本文は `AGENTS.md` / `DESIGN.md` / `design/contracts/` /
+  `.agents/skills/` の所在、値が競合したときの優先順位、`check_html` の位置づけ（lint-clean
+  draft でありブランド承認ではない）だけを持つ
+- **README.md / README.en.md** の前提条件表と clone 経路（経路 B）に `.cursor/mcp.json` を明記
+- **AGENTS.md** に「Cursor 固有の入口は `.cursor/`、仕様・値は置かない」を追記
+
+#### Removed
+
+- **`.cursor/rules/color-system.mdc` / `.cursor/rules/components.mdc`** — tokens / component
+  contract の値の手書き複製。同じ内容は `design/contracts/` と `llms.txt`、MCP（`get_token` /
+  `get_component`）が配っており、複製側だけが検査の外だった
 
 ## [1.6.0] - 2026-08-06
 

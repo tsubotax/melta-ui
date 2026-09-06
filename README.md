@@ -56,7 +56,7 @@ AI にガイドラインを読ませることはできる。守るかどうか�
 | 項目 | 値 |
 |---|---|
 | Node | 22 以上（CI は 22 で検証） |
-| MCP クライアント | stdio MCP に対応したもの（Claude Code で検証。Cursor / Codex は同じ stdio コマンドで登録） |
+| MCP クライアント | stdio MCP に対応したもの（Claude Code で検証。Cursor は同梱の `.cursor/mcp.json` をプロジェクト設定として読む（有効化は Cursor 側の操作に従う）。Codex は同じ stdio コマンドで登録） |
 | スタイリング | **Tailwind CSS の class ベース前提**。静的 lint は class 属性 / HTML 属性 / DOM 構造を読む |
 | 生成物の表示 | プロトタイプは Tailwind CDN + `DESIGN.md` の `tailwind.config`、プロダクションは `foundations/theme.md` の v4 `@theme` |
 | JSX / Vue | class 属性と HTML 属性の lint は効く。**composition lint（ネスト構造・a11y DOM）は HTML のみ**。JSX の変数経由 class・spread は静的には追えない |
@@ -123,7 +123,7 @@ printf '<div class="text-black shadow-2xl">x</div>' > /tmp/melta-bad.html
 npm run design:lint-generated -- /tmp/melta-bad.html
 ```
 
-`npm install` で有効になるもの: `.mcp.json`（Claude Code へ MCP 自動接続）/ `.claude/settings.json` の PostToolUse hook / lint CLI。
+`npm install` で有効になるもの: `.mcp.json`（Claude Code へ MCP 自動接続）/ `.cursor/mcp.json`（Cursor 向けに同じ MCP サーバーの設定を同梱。有効化は Cursor 側の操作に従う。作業指示は `AGENTS.md` を読ませ、`.cursor/rules/melta-ui.mdc` は所在ポインタだけを置く）/ `.claude/settings.json` の PostToolUse hook / lint CLI。
 
 **成功判定 1** — 違反ファイルに lint CLI をかけると exit 1 で落ちる:
 
