@@ -408,11 +408,18 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
     // destination の後ろにタイトル（`](path "説明")`）が付く形も拾う。
     // 参照形式（`[作業指示][guide]` + 別行の `[guide]: path`）は定義行に destination が
     // 書かれるので、そちらも同じ経路へ流す（インラインだけ見ると定義側の死リンクが残る）
-    const referenceDefinitions = [...body.matchAll(/^\s*\[[^\]]+\]:\s*(\S+)/gm)].map((m) => m[1]);
+    const referenceDefinitions = [...body.matchAll(/^\s*\[[^\]]+\]:\s*(<[^>]*>|\S+)/gm)].map(
+      (m) => m[1]
+    );
     const linkCandidates = [
-      ...[...body.matchAll(/\]\(\s*([^\s)]+)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g)].map((m) => m[1]),
+      ...[...body.matchAll(/\]\(\s*(<[^>]*>|[^\s)]+)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g)].map(
+        (m) => m[1]
+      ),
       ...referenceDefinitions,
     ]
+      // CommonMark の山括弧つき destination（`[guide]: <AGENTS.md>`）。囲みを外してから
+      // 照合しないと、`<AGENTS.md>` という名前のファイルを探して不存在で落ちる（過剰ブロック）
+      .map((t) => (t.startsWith("<") && t.endsWith(">") ? t.slice(1, -1) : t))
       .filter((t) => !/^(https?:|mailto:)/i.test(t))
       .map((t) => t.split("#")[0].replace(/^\.\//, ""))
       .filter((t) => t !== ""); // 同一ファイル内アンカー（`#section`）はファイル参照ではない
