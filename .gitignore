@@ -18,14 +18,18 @@ node_modules/
 dist/
 verification/
 site-public/
-# .agents/skills/ には impeccable 由来のローカル 18 本が入るので既定は除外し、
-# Melta 自前のスキル（skills/ への symlink）だけを配布する。
+# .agents/ はどの階層でも除外する（`.agents/*` だけだとルート相対になり、
+# examples 配下などにネストした .agents/ が追跡対象に変わってしまう）。
+# そのうえでリポジトリ直下の .agents/skills/ だけを開き、Melta 自前のスキル
+# （skills/ への symlink）に絞って配布する。impeccable 由来のローカル 18 本は除外のまま。
 # ディレクトリを一旦辿れるようにしてから中身を絞る（上の .claude/ と同じイディオム）
-.agents/*
-!.agents/skills/
-.agents/skills/*
-!.agents/skills/design-review
-!.agents/skills/ban-pattern
+**/.agents/
+!/.agents/
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/design-review
+!/.agents/skills/ban-pattern
 skills-lock.json
 
 # チームレビュー一時ファイル
