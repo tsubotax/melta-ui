@@ -168,7 +168,11 @@ test.describe("design-review skill のルール参照", () => {
       }
       // `[ID]` へ統一する（バッククォート引用は実在照合も下限件数もすり抜ける）。
       // ID でない大文字_大文字語（CSS_VARIABLE 等）まで拒否すると過剰ブロックになるので、
-      // 実在 ID か、実在 ID と同じ族の接頭辞を持つ語（= 綴り違いの ID）だけを対象にする
+      // 実在 ID か、実在 ID と同じ族の接頭辞を持つ語（= 綴り違いの ID）だけを対象にする。
+      // 規約: 手書き文書で ID でない同族語（FORM_DATA / TABLE_LAYOUT 等）を書くときは
+      // バッククォートも角括弧も付けずプレーンテキストで書く。この検査は族の接頭辞で
+      // 綴り違いと非 ID 語を区別できない。コード表記が本当に要る語が出たら、その語だけ
+      // 理由つきの個別例外をここに足す（無言で緩めない）
       for (const match of content.matchAll(BACKTICKED_RULE_ID)) {
         const token = match[1];
         if (ids.has(token)) wrongNotation.push(`${file}: \`${token}\``);
