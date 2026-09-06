@@ -218,6 +218,17 @@ test.describe("composition-lint P1-5: impossible-static 分類", () => {
       expect(rule?.automationStatus, id).toBe("auto");
     }
   });
+
+  test("A11Y_NAV_ARIA_LABEL_REQUIRED も composition + dom-attr-required + auto", () => {
+    // checklist.md の [評価不可候補: ルール無し] を解消したルール。detector / kind /
+    // automationStatus のどれかが変わると「auto と宣言しているのに検出しない」に戻るので固定する。
+    const rule = getAllRules().find((r) => r.id === "A11Y_NAV_ARIA_LABEL_REQUIRED");
+    expect(rule?.detector).toBe("composition");
+    expect(rule?.compositionCheck?.kind).toBe("dom-attr-required");
+    expect(rule?.automationStatus).toBe("auto");
+    // when 述語なし = すべての nav / role=navigation が候補（qualifies が全件 true）
+    expect(rule?.compositionCheck?.when).toBeUndefined();
+  });
 });
 
 test.describe("composition B2: A11Y_DISABLED_REQUIRES_ARIA（DADS 取り込み・disabled 併記規範）", () => {
@@ -281,5 +292,49 @@ test.describe("composition B3: BTN_MIN_TAP_TARGET 自動検出化（dom-class-re
   test("min-h-11 でも要件を満たす（requireAnyClass の別解）", () => {
     const v = lintComposition('<button class="h-8 min-h-11 px-3">保存</button>');
     expect(v.map((x) => x.ruleId)).not.toContain("BTN_MIN_TAP_TARGET");
+  });
+});
+
+test.describe("composition: A11Y_NAV_ARIA_LABEL_REQUIRED（nav のアクセシブルネーム必須）", () => {
+  test("aria-label 無しの <nav> は error 検知", () => {
+    const v = lintComposition('<nav class="flex-1 px-3 py-4"><a href="#">ダッシュボード</a></nav>');
+    const hit = v.find((x) => x.ruleId === "A11Y_NAV_ARIA_LABEL_REQUIRED");
+    expect(hit).toBeTruthy();
+    expect(hit!.severity).toBe("error");
+  });
+
+  test("aria-label があれば clean", () => {
+    const v = lintComposition(
+      '<nav aria-label="メインナビゲーション" class="flex-1 px-3 py-4"><a href="#">ダッシュボード</a></nav>'
+    );
+    expect(v.map((x) => x.ruleId)).not.toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test("aria-labelledby（見出し参照）でも clean", () => {
+    const v = lintComposition(
+      '<h2 id="nav-heading">サイトナビゲーション</h2><nav aria-labelledby="nav-heading"><a href="#">ホーム</a></nav>'
+    );
+    expect(v.map((x) => x.ruleId)).not.toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test('role="navigation" の div も検知対象（selector の第 2 項）', () => {
+    const v = lintComposition('<div role="navigation"><a href="#">ホーム</a></div>');
+    const hit = v.find((x) => x.ruleId === "A11Y_NAV_ARIA_LABEL_REQUIRED");
+    expect(hit).toBeTruthy();
+    expect(hit!.severity).toBe("error");
+  });
+
+  test("aria-label 付きの nav が 2 つ並ぶ（sidebar + breadcrumb）は clean", () => {
+    // ランドマークが複数ある正規の画面を誤検知しないこと（このルールが守りたい形そのもの）
+    const v = lintComposition(
+      '<nav aria-label="メインナビゲーション"><a href="#">ダッシュボード</a></nav>' +
+        '<nav aria-label="パンくずリスト"><ol><li><a href="#">ホーム</a></li></ol></nav>'
+    );
+    expect(v.map((x) => x.ruleId)).not.toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test("aria-label が空文字なら検知（存在するだけでは名前にならない）", () => {
+    const v = lintComposition('<nav aria-label=""><a href="#">ホーム</a></nav>');
+    expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
   });
 });
