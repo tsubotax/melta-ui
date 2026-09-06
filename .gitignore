@@ -30,6 +30,7 @@ site-public/
 /.agents/skills/*
 !/.agents/skills/design-review
 !/.agents/skills/ban-pattern
+!/.agents/skills/build-screen
 skills-lock.json
 
 # チームレビュー一時ファイル

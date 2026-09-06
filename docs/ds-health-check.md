@@ -175,7 +175,7 @@ Lv.4 まで来たら、**「DS が AI に本当に使われているか」を観
 | CI 統合 | `.github/workflows/design-check.yml`（上記の検証群 + llms.txt freshness + `npm run build` を 1 ワークフローに集約） |
 | MCP サーバー | `src/server.ts` — 6 tool（`get_token` / `get_component` / `check_rule` / `check_html` / `get_rules` / `search`） |
 | Hook | PostToolUse で `.html/.tsx/.jsx/.vue` の Write/Edit 直後に禁止パターン自動検出 |
-| Skills | `skills/design-review`（DS 準拠レビュー）/ `skills/ban-pattern`（AIっぽいパターンを禁止ルールとして登録） |
+| Skills | `skills/design-review`（DS 準拠レビュー）/ `skills/ban-pattern`（AIっぽいパターンを禁止ルールとして登録）/ `skills/build-screen`（契約から画面 1 枚を生成し自己検証） |
 | LLM 向け配信 | `llms.txt` / `llms-full.txt` — contracts から生成、CI で鮮度検査 |
 | Benchmark（観察可能性） | `npm run benchmark` — provider 抽象化（Anthropic / fixture / OpenAI placeholder）、1.0/2.0 比較、tool 呼び出しと参照リソースを記録、red-team プロンプト 5 本 |
 

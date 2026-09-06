@@ -24,6 +24,18 @@ export function isStaticallyDetectable(r: RuleEntry): boolean {
 }
 
 /**
+ * 生成物 lint（`lintSource` + composition = CI / hook / MCP `check_html` / `design:lint-generated`）が
+ * **実際に検査する**ルールの判定述語。isStaticallyDetectable との差は `requiresContext`。
+ * 文脈依存の class ルール（`py-0.5` はボタンのみ NG 等）は context-free な生成物 lint では
+ * 誤検出になるため除外される（src/utils/lint-core.ts）。したがって「検出機構を持つ」ことと
+ * 「生成物が検査された」ことは別で、後者を主張するときはこちらを使う。
+ * html-attr / composition は spec があれば requiresContext に関わらず走る（実装に合わせる）。
+ */
+export function isCheckedByGeneratedLint(r: RuleEntry): boolean {
+  return (isAutoDetectable(r) && r.requiresContext !== true) || hasRunnableSpec(r);
+}
+
+/**
  * 「ドキュメント参照でのみ守られる」ルールの判定述語（2026-07 棚卸しで isManualOnly から改名・拡張）。
  * 静的検出にもテストにも乗らないルール = AI/人間がドキュメントを読むことだけが防御線。
  * impossible-static も静的に検出されない以上ここに含める（旧 isManualOnly は除外していたが、
