@@ -45,6 +45,10 @@
     {
       "id": "SPACE_NO_MISSING_ARIA_CURRENT",
       "severity": "error"
+    },
+    {
+      "id": "A11Y_NAV_ARIA_LABEL_REQUIRED",
+      "severity": "error"
     }
   ],
   "htmlSample": "<nav aria-label=\"パンくずリスト\"><ol class=\"flex items-center gap-2 text-sm\"><li><a href=\"#\" class=\"text-slate-500 hover:text-slate-700\">ホーム</a></li><li class=\"text-slate-500\">/</li><li><span class=\"text-slate-900 font-medium\" aria-current=\"page\">詳細</span></li></ol></nav>"

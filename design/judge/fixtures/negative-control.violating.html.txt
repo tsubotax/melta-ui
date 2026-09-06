@@ -8,7 +8,7 @@
   <div class="flex min-h-screen">
     <aside class="w-64 p-4 bg-slate-900 text-white">
       <p class="font-bold">Melta 管理画面</p>
-      <nav class="mt-4 space-y-2">
+      <nav aria-label="メインナビゲーション" class="mt-4 space-y-2">
         <a href="#" class="block">ダッシュボード</a>
         <a href="#" class="block">案件一覧</a>
       </nav>

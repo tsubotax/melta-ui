@@ -1234,6 +1234,25 @@
       "automationStatus": "llm-judge-candidate"
     },
     {
+      "id": "A11Y_NAV_ARIA_LABEL_REQUIRED",
+      "category": "accessibility",
+      "severity": "error",
+      "description": "<nav>（および role=\"navigation\"）にアクセシブルネームが無いと、スクリーンリーダーのランドマーク一覧で複数のナビゲーションを区別できない。nav が 1 つしか無い画面でも、後から増えたときに無名ランドマークが並ぶため常に付与する",
+      "detector": "composition",
+      "pattern": null,
+      "alternative": "<nav aria-label=\"メインナビゲーション\"> のように aria-label を付与する（見出し要素を指す aria-labelledby でもよい）",
+      "contractLint": "skip",
+      "compositionCheck": {
+        "kind": "dom-attr-required",
+        "selector": "nav, [role=\"navigation\"]",
+        "requireAnyAttr": [
+          "aria-label",
+          "aria-labelledby"
+        ]
+      },
+      "automationStatus": "auto"
+    },
+    {
       "id": "BASELINE_NO_ANCHOR_POSITIONING",
       "category": "baseline",
       "severity": "warn",

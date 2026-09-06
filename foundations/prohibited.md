@@ -197,3 +197,4 @@
 | 装飾的アニメーションの多用 | 動きに敏感なユーザーへの配慮不足 | 状態変化のフィードバックのみ <!-- A11Y_NO_DECORATIVE_ANIMATION --> |
 | 200%拡大時のテキスト切り詰め | コンテンツにアクセスできなくなる | レスポンシブに対応 <!-- A11Y_NO_TEXT_TRUNCATION_200 --> |
 | 実効タップ標的が 44pt 未満の操作要素 | モバイルで押せない / 誤タップする（WCAG 2.2 SC 2.5.5 の 44px 水準。インラインテキストリンクは例外） | 視覚寸法は変えず当たり判定だけ広げる。web は `after:h-11`（or `min-h-11`）、app は hitSlop 10 か `minHeight`（`height` 固定は fontScale でクリップする） <!-- A11Y_MIN_TAP_TARGET_44 --> |
+| アクセシブルネームの無い `<nav>` / `role="navigation"` | スクリーンリーダーのランドマーク一覧で複数のナビゲーションを区別できない | `aria-label="メインナビゲーション"`（見出しを指す `aria-labelledby` でも可）を付与 <!-- A11Y_NAV_ARIA_LABEL_REQUIRED --> |

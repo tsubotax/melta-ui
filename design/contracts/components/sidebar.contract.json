@@ -52,7 +52,8 @@
     { "id": "SPACE_NO_ROUNDED_XL_NAV", "severity": "error" },
     { "id": "SPACE_NO_LARGE_NAV_ICON", "severity": "error" },
     { "id": "SPACE_NO_MISSING_ARIA_CURRENT", "severity": "error" },
-    { "id": "SPACE_NO_DRAWER_NO_FOCUS_TRAP", "severity": "error" }
+    { "id": "SPACE_NO_DRAWER_NO_FOCUS_TRAP", "severity": "error" },
+    { "id": "A11Y_NAV_ARIA_LABEL_REQUIRED", "severity": "error" }
   ],
   "htmlSample": {
     "standard": "<div class=\"w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col h-screen\"><div class=\"p-4 border-b border-slate-200\"><span class=\"text-lg font-bold text-slate-900\">App</span></div><nav aria-label=\"メインナビゲーション\" class=\"flex-1 px-3 py-4\"><a href=\"#\" class=\"flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg\" aria-current=\"page\">ダッシュボード</a><a href=\"#\" class=\"flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-body hover:bg-gray-50 rounded-lg transition-colors\">設定</a></nav><div class=\"mt-auto p-4 border-t border-slate-200\"><span class=\"text-sm text-slate-500\">v1.0</span></div></div>"
