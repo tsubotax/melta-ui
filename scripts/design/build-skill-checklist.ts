@@ -54,13 +54,37 @@ export function loadRules(root: string = REPO_ROOT): RulesJson {
  * Markdown 表のセルとして安全な文字列にする。
  * GFM ではコードスパンの内側でも `|` は表の区切りとして解釈されるため、
  * バッククォートで囲む場合も含めて必ずエスケープする（例: duration-[5-9]00|duration-1000）。
+ * 改行は CRLF / 単独 CR / LF の 3 形すべてを空白に潰す。
  */
-function cell(text: string): string {
-  return text.replace(/\r?\n/g, " ").replace(/\|/g, "\\|").trim();
+function normalize(text: string): string {
+  return text.replace(/\r\n|\r|\n/g, " ").replace(/\|/g, "\\|").trim();
 }
 
+/**
+ * 表のプレーンセル（説明・ID・severity 等）。
+ * GFM は `<legend>` のような山括弧を生 HTML として解釈し、描画時にタグごと消す。
+ * `&lt;` にはせずバックスラッシュエスケープを使う（この md の一次読者は raw を読む LLM なので
+ * 原文の可読性を保つ）。
+ */
+function cell(text: string): string {
+  return normalize(text).replace(/</g, "\\<").replace(/>/g, "\\>");
+}
+
+/**
+ * コードスパンのセル（pattern / alternative）。
+ * 内容にバッククォートが含まれると 1 本区切りでは途中で閉じるため、
+ * CommonMark に従い「内容中の最長バッククォート連続 + 1 本」を区切りにする。
+ * 内容がバッククォートで始まる / 終わるときは内側に空白を 1 つ入れて閉じ位置を確定させる
+ * （両側に入れないと CommonMark の空白ストリップが働かない）。
+ * コードスパン内ではバックスラッシュエスケープが効かないので `<` `>` は生のまま置く。
+ */
 function code(text: string): string {
-  return `\`${cell(text)}\``;
+  const content = normalize(text);
+  const runs = content.match(/`+/g) ?? [];
+  const longest = runs.reduce((max, run) => Math.max(max, run.length), 0);
+  const fence = "`".repeat(longest + 1);
+  const pad = content.startsWith("`") || content.endsWith("`") ? " " : "";
+  return `${fence}${pad}${content}${pad}${fence}`;
 }
 
 /** カテゴリ順: vocabulary.ruleCategories → そこに無いカテゴリは rules.json 初出順で末尾に追加 */
@@ -94,7 +118,7 @@ export function renderRulesIndex(data: RulesJson): string {
   );
   lines.push("");
   lines.push(
-    "`automationStatus` 列の `—` は未宣言。未宣言のルールは静的検出機構（pattern / htmlAttrCheck / compositionCheck）を必ず持ち、lint が見る（`tests/coverage-stats.spec.ts` が 0 件を維持）。"
+    "`automationStatus` 列の `—` は未宣言。未宣言のルールは、detector が参照する pattern 系フィールド（`pattern` / `prefixPatterns` / `matchPatterns`）か `htmlAttrCheck` / `compositionCheck` のいずれかを必ず持つ（`tests/coverage-stats.spec.ts` が未分類 0 件を維持する）。これは検出経路の存在であって、各レビュー対象を検査済みという保証ではない。"
   );
   lines.push("");
 

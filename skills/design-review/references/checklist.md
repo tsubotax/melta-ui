@@ -25,7 +25,7 @@
 - `rounded-none` on cards → `rounded-xl` [SPACE_NO_ROUNDED_NONE_CARDS]
 - `shadow-lg` / `shadow-2xl`（hover含む）→ `shadow-sm` 〜 `shadow-md` [SPACE_NO_SHADOW_LG] [SPACE_NO_SHADOW_2XL]
 - `p-0` 〜 `p-4` on cards（p-5未満）→ `p-5` 以上 [SPACE_NO_P0_CARDS]
-- `py-0.5` on buttons → `py-1.5` 以上 [SPACE_NO_PY_05_BTN]
+- `py-0.5` on buttons → `h-8` 以上（S: h-8 / M: h-10 / L: h-12。padding だけ変えても高さ要件を満たさない）[SPACE_NO_PY_05_BTN]
 - `gap-0` between sections → `gap-6` 以上 [SPACE_NO_GAP0_SECTIONS]
 - サイドバー幅 `w-60` 等の非標準値 → `w-64` or `w-16` [SPACE_NO_NONSTANDARD_SIDEBAR_WIDTH]
 - ナビアイテムの `rounded-xl` → `rounded-lg` [SPACE_NO_ROUNDED_XL_NAV]
@@ -59,7 +59,7 @@
 ## 3-7. アクセシビリティ
 
 - `<nav>` に `aria-label` なし → **navの数にかかわらず必ず付与する**（1つしかない場合でも `aria-label="メインナビゲーション"` 等を付与。将来的にnavが増えた場合の後方互換性を確保するため）[評価不可候補: ルール無し]
-- Active ナビアイテムに `aria-current="page"` なし → 必ず付与 [SPACE_NO_MISSING_ARIA_CURRENT]
+- Active ナビアイテムに `aria-current="page"` なし → 必ず付与。Active がどれか検体から判定できない場合は違反にせず、評価不可（not-observable-static）へ回す [SPACE_NO_MISSING_ARIA_CURRENT]
 - `<th>` に `scope` なし → `scope="col"` or `scope="row"` を付与 [TABLE_TH_SCOPE_REQUIRED]
 - アイコンボタンに `aria-label` なし → 操作内容を `aria-label` で明示 [BTN_ICON_ONLY_ARIA_REQUIRED]
 

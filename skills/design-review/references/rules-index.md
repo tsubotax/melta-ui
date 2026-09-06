@@ -4,7 +4,7 @@
 > 正本は `design/contracts/rules.json`（全 106 ルール）。
 > 観点の索引（人間が curation した検出手順）は `checklist.md`。網羅はこのファイルが持つ。
 
-`automationStatus` 列の `—` は未宣言。未宣言のルールは静的検出機構（pattern / htmlAttrCheck / compositionCheck）を必ず持ち、lint が見る（`tests/coverage-stats.spec.ts` が 0 件を維持）。
+`automationStatus` 列の `—` は未宣言。未宣言のルールは、detector が参照する pattern 系フィールド（`pattern` / `prefixPatterns` / `matchPatterns`）か `htmlAttrCheck` / `compositionCheck` のいずれかを必ず持つ（`tests/coverage-stats.spec.ts` が未分類 0 件を維持する）。これは検出経路の存在であって、各レビュー対象を検査済みという保証ではない。
 
 ## accessibility（8）
 
@@ -97,7 +97,7 @@
 | FORM_FIELDSET_LEGEND_REQUIRED | error | manual | `グループ時は <fieldset> / <legend> を使用` | グループの目的が伝わらない | llm-judge-candidate |
 | FORM_NO_AUTO_HIDE_ERROR | error | manual | `修正されるまで表示` | ユーザーが読む前に消える | human-only |
 | FORM_NO_COLOR_ONLY_ERROR | error | manual | `ボーダー色 + エラーアイコン + テキスト` | 色覚多様性への非対応 | llm-judge-candidate |
-| FORM_NO_CARD_FIELDSET_LEGEND | error | manual | `カードレベルは <div> + <h2>。<fieldset>/<legend> はカード内部のフォームグループに限定` | <legend> のブラウザデフォルト描画がカードの border と干渉する | llm-judge-candidate |
+| FORM_NO_CARD_FIELDSET_LEGEND | error | manual | `カードレベルは <div> + <h2>。<fieldset>/<legend> はカード内部のフォームグループに限定` | \<legend\> のブラウザデフォルト描画がカードの border と干渉する | llm-judge-candidate |
 | FORM_NO_DATE_EQUAL_WIDTH | warn | manual | `flex レイアウトで年 w-28、月・日 w-20 に固定` | 月・日セレクトが不必要に広くなり選択しにくい | llm-judge-candidate |
 | FORM_NO_CHECK_ONLY_CONFIRM | error | manual | `確認ボタンを必ず配置` | 意図しない確定が起きる | human-only |
 | FORM_NO_AUTO_FOCUS_MOVE | error | manual | `ユーザー操作に任せる` | ユーザーを混乱させる | human-only |
@@ -134,7 +134,7 @@
 
 | ID | severity | detector | pattern → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
-| PHILOSOPHY_NO_STYLE_BLOCK | warn | html-attr | `Tailwind ユーティリティ / デザイントークンで表現する。どうしても必要なら @layer で正規化` | 生 CSS の <style> ブロックは Tailwind トークン体系を迂回する escape hatch。CDN 運用では意図的回避でしか発生しない | — |
+| PHILOSOPHY_NO_STYLE_BLOCK | warn | html-attr | `Tailwind ユーティリティ / デザイントークンで表現する。どうしても必要なら @layer で正規化` | 生 CSS の \<style\> ブロックは Tailwind トークン体系を迂回する escape hatch。CDN 運用では意図的回避でしか発生しない | — |
 | PHILOSOPHY_NO_EXCESSIVE_ANIMATION | error | manual | `150〜300ms の状態変化フィードバックに限定` | 操作の邪魔になり、認知コストを増加させる | llm-judge-candidate |
 
 ## skeleton（4）
