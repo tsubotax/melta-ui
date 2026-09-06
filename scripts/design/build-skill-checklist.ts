@@ -37,6 +37,10 @@ export interface Rule {
   description: string;
   detector: string;
   pattern?: string;
+  /** detector が pattern の代わりに見る前方一致リスト（tailwind-class-prefix 等） */
+  prefixPatterns?: string[];
+  /** detector が pattern の代わりに見る部分一致リスト（tailwind-class-segment 等） */
+  matchPatterns?: string[];
   alternative?: string;
   automationStatus?: string;
 }
@@ -51,13 +55,15 @@ export function loadRules(root: string = REPO_ROOT): RulesJson {
 }
 
 /**
- * Markdown 表のセルとして安全な文字列にする。
+ * 表のセル共通の前処理。
+ * 改行は CRLF / 単独 CR / LF の 3 形すべてを空白に潰す。
  * GFM ではコードスパンの内側でも `|` は表の区切りとして解釈されるため、
  * バッククォートで囲む場合も含めて必ずエスケープする（例: duration-[5-9]00|duration-1000）。
- * 改行は CRLF / 単独 CR / LF の 3 形すべてを空白に潰す。
+ * **trim はしない**: pattern は matcher が完全一致で照合する値なので、索引が両端の空白を
+ * 落とすと SSOT の誤表現になる。trim が要るのはプレーンセル側だけ。
  */
 function normalize(text: string): string {
-  return text.replace(/\r\n|\r|\n/g, " ").replace(/\|/g, "\\|").trim();
+  return text.replace(/\r\n|\r|\n/g, " ").replace(/\|/g, "\\|");
 }
 
 /**
@@ -65,9 +71,14 @@ function normalize(text: string): string {
  * GFM は `<legend>` のような山括弧を生 HTML として解釈し、描画時にタグごと消す。
  * `&lt;` にはせずバックスラッシュエスケープを使う（この md の一次読者は raw を読む LLM なので
  * 原文の可読性を保つ）。
+ * 既存のバックスラッシュを先に二重化する（`\*` がそのまま出ると描画で `*` に化ける）。
+ * 順序が肝: 自前のエスケープを足す前に元の `\` を潰す。
  */
 function cell(text: string): string {
-  return normalize(text).replace(/</g, "\\<").replace(/>/g, "\\>");
+  return normalize(text.replace(/\\/g, "\\\\"))
+    .replace(/</g, "\\<")
+    .replace(/>/g, "\\>")
+    .trim();
 }
 
 /**
@@ -76,6 +87,8 @@ function cell(text: string): string {
  * CommonMark に従い「内容中の最長バッククォート連続 + 1 本」を区切りにする。
  * 内容がバッククォートで始まる / 終わるときは内側に空白を 1 つ入れて閉じ位置を確定させる
  * （両側に入れないと CommonMark の空白ストリップが働かない）。
+ * 内容が空白で始まり空白で終わるときも同じ理由でパディングが要る。CommonMark は
+ * 「両端が空白なら 1 文字ずつ削る」ので、足しておかないと値の空白が消える。
  * コードスパン内ではバックスラッシュエスケープが効かないので `<` `>` は生のまま置く。
  */
 function code(text: string): string {
@@ -83,8 +96,27 @@ function code(text: string): string {
   const runs = content.match(/`+/g) ?? [];
   const longest = runs.reduce((max, run) => Math.max(max, run.length), 0);
   const fence = "`".repeat(longest + 1);
-  const pad = content.startsWith("`") || content.endsWith("`") ? " " : "";
+  const touchesBacktick = content.startsWith("`") || content.endsWith("`");
+  const strippable = content.startsWith(" ") && content.endsWith(" ");
+  const pad = touchesBacktick || strippable ? " " : "";
   return `${fence}${pad}${content}${pad}${fence}`;
+}
+
+/**
+ * 表の「検出条件」列。detector が実際に見るフィールドを出す。
+ * pattern が null でも prefixPatterns / matchPatterns だけで検出するルールがある
+ * （AI_NO_DECORATIVE_PURPLE）。pattern だけを出すと索引が「条件なし」に見えてしまう。
+ */
+function detectionCondition(rule: Rule): string {
+  if (rule.pattern) return code(rule.pattern);
+  const parts: string[] = [];
+  if (rule.prefixPatterns?.length) {
+    parts.push(`prefix: ${rule.prefixPatterns.map(code).join(", ")}`);
+  }
+  if (rule.matchPatterns?.length) {
+    parts.push(`match: ${rule.matchPatterns.map(code).join(", ")}`);
+  }
+  return parts.join(" / ");
 }
 
 /** カテゴリ順: vocabulary.ruleCategories → そこに無いカテゴリは rules.json 初出順で末尾に追加 */
@@ -116,6 +148,9 @@ export function renderRulesIndex(data: RulesJson): string {
   lines.push(
     "> 観点の索引（人間が curation した検出手順）は `checklist.md`。網羅はこのファイルが持つ。"
   );
+  lines.push(
+    "> skill の必読ではない。人間と CI 向けの生成層であり、skill にとっては「checklist に無いカテゴリを横断で探すときの索引」。判定に使う値は SSOT の `design/contracts/rules.json` を見る。"
+  );
   lines.push("");
   lines.push(
     "`automationStatus` 列の `—` は未宣言。未宣言のルールは、detector が参照する pattern 系フィールド（`pattern` / `prefixPatterns` / `matchPatterns`）か `htmlAttrCheck` / `compositionCheck` のいずれかを必ず持つ（`tests/coverage-stats.spec.ts` が未分類 0 件を維持する）。これは検出経路の存在であって、各レビュー対象を検査済みという保証ではない。"
@@ -127,11 +162,12 @@ export function renderRulesIndex(data: RulesJson): string {
     if (inCategory.length === 0) continue;
     lines.push(`## ${category}（${inCategory.length}）`);
     lines.push("");
-    lines.push("| ID | severity | detector | pattern → alternative | 説明 | automationStatus |");
+    lines.push("| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |");
     lines.push("|---|---|---|---|---|---|");
     for (const rule of inCategory) {
       const fix = rule.alternative ? code(rule.alternative) : "—";
-      const transition = rule.pattern ? `${code(rule.pattern)} → ${fix}` : fix;
+      const condition = detectionCondition(rule);
+      const transition = condition ? `${condition} → ${fix}` : fix;
       lines.push(
         `| ${cell(rule.id)} | ${cell(rule.severity)} | ${cell(rule.detector)} | ${transition} | ${cell(rule.description)} | ${cell(rule.automationStatus ?? "—")} |`
       );

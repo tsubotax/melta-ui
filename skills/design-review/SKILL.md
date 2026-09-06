@@ -26,10 +26,9 @@ HTMLファイルを melta UI デザインシステム（`design/contracts/rules.
 
 ### Step 3: チェックリストに沿って違反を検出する
 
-以下の2つを読み込む:
+`references/checklist.md`（**観点**。HTML のどこをどう見るかの手順）を読み込み、各項目の `[ID]` を Step 2 で読んだ `rules.json` から引く。severity / detector / alternative の値は rules.json が正。
 
-- `references/rules-index.md` — **網羅**。rules.json から生成したルール索引（カテゴリ別の表 + human-only 節 + 機械検出済み節）
-- `references/checklist.md` — **観点**。HTML のどこをどう見るかの手順。各項目に該当ルール ID が併記されている
+`references/rules-index.md` は **全文を読まなくてよい**。checklist に無いカテゴリを横断して探すときの索引（カテゴリ別の表 + human-only 節 + 機械検出済み節）として、必要な箇所だけ参照する。
 
 `checklist.md` のカテゴリ順にHTMLを走査する:
 

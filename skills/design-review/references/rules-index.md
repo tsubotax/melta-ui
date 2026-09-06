@@ -3,12 +3,13 @@
 > **生成物。手で編集しない。** `npm run design:skill-index` で再生成する。
 > 正本は `design/contracts/rules.json`（全 106 ルール）。
 > 観点の索引（人間が curation した検出手順）は `checklist.md`。網羅はこのファイルが持つ。
+> skill の必読ではない。人間と CI 向けの生成層であり、skill にとっては「checklist に無いカテゴリを横断で探すときの索引」。判定に使う値は SSOT の `design/contracts/rules.json` を見る。
 
 `automationStatus` 列の `—` は未宣言。未宣言のルールは、detector が参照する pattern 系フィールド（`pattern` / `prefixPatterns` / `matchPatterns`）か `htmlAttrCheck` / `compositionCheck` のいずれかを必ず持つ（`tests/coverage-stats.spec.ts` が未分類 0 件を維持する）。これは検出経路の存在であって、各レビュー対象を検査済みという保証ではない。
 
 ## accessibility（8）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | A11Y_NO_NESTED_INTERACTIVE | error | composition | `入れ子を解消する。クリック領域を分ける、外側を div 等の非インタラクティブ要素にする、または stretched-link パターンを使う` | インタラクティブ要素の入れ子（button/a/role=button の中に別のインタラクティブ要素）は HTML 仕様上不正で、キーボード操作・スクリーンリーダー・クリック判定が壊れる。合法な部品でも組み方で崩壊する典型 | — |
 | A11Y_NO_OUTLINE_NONE_WITHOUT_RING | error | manual | `focus:ring-2 focus:ring-primary-500/50` | フォーカスインジケーターが消える | llm-judge-candidate |
@@ -21,16 +22,16 @@
 
 ## ai-pattern（4）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | AI_NO_CARD_COLOR_BAR_TOP | error | tailwind-class | `border-t-4` → `border border-slate-200 のみでカードを構成` | AI生成UIの典型パターン。装飾過剰で汎用性が低い | — |
 | AI_NO_CARD_COLOR_BAR_LEFT | error | tailwind-class | `border-l-4` → `border border-*-200 rounded-lg で全周ボーダー` | Alert含め全コンポーネントで禁止 | — |
 | AI_NO_GRADIENT_BG | error | tailwind-class-prefix | `bg-gradient-` → `単色の bg-primary-500 / bg-white / bg-slate-50 を使う` | 装飾的なグラデーション背景はAI生成UIの典型tell。安っぽく見える | — |
-| AI_NO_DECORATIVE_PURPLE | error | tailwind-class-segment | `bg-primary-* / text-primary-* （brand color）を使う` | purple/violet/fuchsia 系の装飾カラーはAI生成UIの典型tell。brand colorを使う | — |
+| AI_NO_DECORATIVE_PURPLE | error | tailwind-class-segment | match: `purple`, `violet`, `fuchsia` → `bg-primary-* / text-primary-* （brand color）を使う` | purple/violet/fuchsia 系の装飾カラーはAI生成UIの典型tell。brand colorを使う | — |
 
 ## baseline（5）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | BASELINE_NO_ANCHOR_POSITIONING | warn | tailwind-class-prefix | `[anchor-name:` → `absolute + top/left トークン系ユーティリティによる従来配置（DESIGN.md の配置パターン準拠）` | CSS Anchor Positioning は Baseline Limited（2026-07 時点, webstatus.dev）。fallback なしでは非対応ブラウザで配置が崩壊する。Baseline Widely available 未達機能は fallback 併記 + コメント明示宣言がない限り使わない | — |
 | BASELINE_NO_INVOKER_COMMANDS | warn | html-attr | `明示的な JS イベントリスナー、または dialog は showModal() 呼び出しで開閉する` | Invoker Commands（commandfor / command 属性）は Baseline Limited（2026-07 時点）。非対応ブラウザではボタンが完全に無反応になる | — |
@@ -40,7 +41,7 @@
 
 ## button（4）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | BTN_NO_SAME_STYLE_PARALLEL | warn | manual | `階層の異なるボタンを組み合わせる` | 重要度の区別がつかない（Neutralのみ例外） | llm-judge-candidate |
 | BTN_NO_LIGHTED_SOLO | warn | manual | `Neutralとペアで使用` | トグル状態の対比がないと意味不明 | llm-judge-candidate |
@@ -49,7 +50,7 @@
 
 ## color（16）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | COLOR_NO_TEXT_BLACK | error | tailwind-class | `text-black` → `text-slate-900` | 純黒はコントラストが強すぎて長時間の利用で目が疲れる | — |
 | COLOR_NO_ARBITRARY_TEXT_HEX | warn | tailwind-class-prefix | `text-[#` → `text-slate-900 / text-primary-600 などカラートークンを使う` | text-[#...] / text-[rgb(...)] / text-[hsl(...)] / text-[black] 等で色を直書きすると tokens.json のパレット外になりセマンティックカラー原則を回避できてしまう（最頻の検知すり抜け）。フォントサイズの text-[1rem] 等は対象外 | — |
@@ -70,7 +71,7 @@
 
 ## datepicker（6）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | DATEPICKER_NO_NATIVE_INPUT | warn | html-attr | `カスタム Date Picker を使用` | ブラウザ間で表示が不統一 | — |
 | DATEPICKER_NO_SHADOW_LG | error | manual | `shadow-md` | 影が強すぎてノイズになる（datepicker コンテキスト。汎用は SPACE_NO_SHADOW_LG で検出） | llm-judge-candidate |
@@ -81,7 +82,7 @@
 
 ## divider（3）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | DIVIDER_NO_DIV_BORDER_B | error | manual | `<hr> or role="separator"` | セマンティクス違反。支援技術が区切りを認識できない | llm-judge-candidate |
 | DIVIDER_NO_GRAY_100 | error | tailwind-class | `border-gray-100` → `border-slate-200` | 薄すぎて境界が見えない | — |
@@ -89,7 +90,7 @@
 
 ## form（11）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | FORM_SELECT_APPEARANCE_NONE | error | manual | `appearance-none + pr-10 + カスタムSVGシェブロン` | ネイティブ矢印はブラウザ間で位置・余白が不安定 | llm-judge-candidate |
 | FORM_NO_LABEL_OMIT | error | manual | `<label> を for 属性で関連付け` | スクリーンリーダーが目的を読み上げられない | llm-judge-candidate |
@@ -105,7 +106,7 @@
 
 ## list（4）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | LIST_NO_FIXED_HEIGHT_MISMATCH | error | manual | `可変高さにする` | テキストが切れる or 余白が不均等 | llm-judge-candidate |
 | LIST_NO_COLOR_ONLY_SELECTION | error | manual | `ボーダー太さ + 背景スタイルを併用` | 色覚多様性への非対応 | llm-judge-candidate |
@@ -114,7 +115,7 @@
 
 ## modal（6）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | MODAL_FOCUS_TRAP_REQUIRED | error | manual | `Tab/Shift+Tabがモーダル内を循環` | キーボードユーザーがモーダル外に出てしまう | covered-by-test |
 | MODAL_ESC_CLOSE_REQUIRED | error | manual | `Escキーで閉じる` | ユーザーが脱出できない | covered-by-test |
@@ -125,21 +126,21 @@
 
 ## motion（2）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | MOTION_NO_LONG_DURATION | error | tailwind-class-prefix | `duration-[5-9]00\|duration-1000` → `duration-300 以下` | 操作が鈍く感じる（Progress フィルバーは例外） | — |
 | MOTION_REDUCED_MOTION_REQUIRED | error | manual | `メディアクエリで対応` | prefers-reduced-motion 無視はアクセシビリティ違反 | llm-judge-candidate |
 
 ## philosophy（2）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | PHILOSOPHY_NO_STYLE_BLOCK | warn | html-attr | `Tailwind ユーティリティ / デザイントークンで表現する。どうしても必要なら @layer で正規化` | 生 CSS の \<style\> ブロックは Tailwind トークン体系を迂回する escape hatch。CDN 運用では意図的回避でしか発生しない | — |
 | PHILOSOPHY_NO_EXCESSIVE_ANIMATION | error | manual | `150〜300ms の状態変化フィードバックに限定` | 操作の邪魔になり、認知コストを増加させる | llm-judge-candidate |
 
 ## skeleton（4）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | SKELETON_BG_SLATE_200_ONLY | error | manual | `bg-slate-200 固定` | DS統一から外れる | llm-judge-candidate |
 | SKELETON_NO_SPINNER_ONLY | warn | manual | `スケルトン or プログレスバーを併用` | 進捗が伝わらず不安を与える | llm-judge-candidate |
@@ -148,7 +149,7 @@
 
 ## spacing（15）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | SPACE_NO_ARBITRARY_SHADOW | warn | tailwind-class-prefix | `shadow-[` → `shadow-sm / shadow-md など elevation トークンを使う` | shadow-[...] で影を直書きすると elevation トークンを回避でき、過剰な影で安っぽく見える | — |
 | SPACE_NO_ROUNDED_NONE_CARDS | error | tailwind-class | `rounded-none` → `rounded-xl（12px）` | UIの統一感を損なう | — |
@@ -168,7 +169,7 @@
 
 ## stepper（4）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | STEPPER_NO_COLOR_ONLY_STATE | error | manual | `アイコン + ボーダー + 背景色を併用` | 色覚多様性への非対応 | llm-judge-candidate |
 | STEPPER_ARIA_CURRENT_REQUIRED | error | html-attr | `Active ステップに aria-current="step" を付与` | スクリーンリーダーが現在ステップを識別できない | impossible-static |
@@ -177,14 +178,14 @@
 
 ## table（2）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | TABLE_NO_LAYOUT_TABLE | error | manual | `flex / grid を使う` | セマンティクス違反 | llm-judge-candidate |
 | TABLE_TH_SCOPE_REQUIRED | error | html-attr | `scope="col" を付与` | ヘッダーとデータの関係が不明確 | — |
 
 ## tag（5）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | TAG_REMOVABLE_X_REQUIRED | error | manual | `×ボタンを必ず表示` | キーボードのみでは削除操作を発見できない | llm-judge-candidate |
 | TAG_X_MIN_TAP_TARGET | error | manual | `p-0.5 + SVG w-3 h-3（実質24px以上）` | モバイルで誤タップが頻発する。横断方針は A11Y_MIN_TAP_TARGET_44 が正。本ルールはその web（tag の × ボタン）実装形 | llm-judge-candidate |
@@ -194,7 +195,7 @@
 
 ## typography（5）
 
-| ID | severity | detector | pattern → alternative | 説明 | automationStatus |
+| ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
 | TYPO_NO_ARBITRARY_FONT | warn | tailwind-class-prefix | `font-[` → `font-normal / font-medium / font-semibold などタイポグラフィトークンを使う` | font-[...] で font-weight / font-family を直書きすると typography トークンを回避できる（font-[300] など細すぎる weight の混入経路） | — |
 | TYPO_NO_TRACKING_TIGHT | error | tailwind-class | `tracking-tight` → `tracking-normal 以上（本文2%、見出し1%）` | 日本語の可読性が低下する | — |
