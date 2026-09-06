@@ -59,7 +59,7 @@
 
 ## 3-7. アクセシビリティ
 
-- `<nav>`（`role="navigation"` も対象）に `aria-label` も `aria-labelledby` もなし → **navの数にかかわらず必ず付与する**（1つしかない場合でも `aria-label="メインナビゲーション"` 等を付与。見出し要素を指す `aria-labelledby` でも可。空文字・空白のみの値は名前にならないので不可。将来的にnavが増えた場合の後方互換性を確保するため）[A11Y_NAV_ARIA_LABEL_REQUIRED]
+- `<nav>`（`role="navigation"` も対象）に `aria-label` も `aria-labelledby` もなし → **navの数にかかわらず必ず付与する**（1つしかない場合でも `aria-label="メインナビゲーション"` 等を付与。見出し要素を指す `aria-labelledby` でも可。空文字・空白のみの値は名前にならないので不可。将来的にnavが増えた場合の後方互換性を確保するため。`aria-labelledby` を使う場合、参照先 id が同一文書に存在するかは目視で確認する — lint は参照先を解決しない）[A11Y_NAV_ARIA_LABEL_REQUIRED]
 - Active ナビアイテムに `aria-current="page"` なし → 必ず付与。Active がどれか検体から判定できない場合は違反にせず、評価不可（not-observable-static）へ回す [SPACE_NO_MISSING_ARIA_CURRENT]
 - `<th>` に `scope` なし → `scope="col"` or `scope="row"` を付与 [TABLE_TH_SCOPE_REQUIRED]
 - アイコンボタンに `aria-label` なし → 操作内容を `aria-label` で明示 [BTN_ICON_ONLY_ARIA_REQUIRED]

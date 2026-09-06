@@ -1240,11 +1240,11 @@
       "description": "<nav>（および role=\"navigation\"）にアクセシブルネームが無いと、スクリーンリーダーのランドマーク一覧で複数のナビゲーションを区別できない。nav が 1 つしか無い画面でも、後から増えたときに無名ランドマークが並ぶため常に付与する",
       "detector": "composition",
       "pattern": null,
-      "alternative": "<nav aria-label=\"メインナビゲーション\"> のように aria-label を付与する（見出し要素を指す aria-labelledby でもよい）。空文字・空白のみの値はアクセシブルネームにならないので不可",
+      "alternative": "<nav aria-label=\"メインナビゲーション\"> のように aria-label を付与する（見出し要素を指す aria-labelledby でもよい）。空文字・空白のみの値はアクセシブルネームにならないので不可。aria-labelledby の参照先の存在は静的検査しない（fragment 検査では参照先が文書外にあるのが常態のため。design-review の目視で確認する）",
       "contractLint": "skip",
       "compositionCheck": {
         "kind": "dom-attr-required",
-        "selector": "nav, [role=\"navigation\"]",
+        "selector": "nav, [role~=\"navigation\" i]",
         "requireAnyAttr": [
           "aria-label",
           "aria-labelledby"

@@ -1564,6 +1564,17 @@ test.describe("judge core", () => {
       );
     }
 
+    // 2 枚は違反箇所以外が同一であることが要件（fixtures/README.md）。上の lint 期待は
+    // 「nav が div に置き換わった」改変でも通ってしまうので、構造そのものを固定する。
+    const navOpenTags = (rel: string) =>
+      readFixture(rel)
+        .split("\n")
+        .filter((l) => /<nav[\s>]/.test(l));
+    for (const rel of [FILE_FIXTURE_REL, CONFORMING_FIXTURE_REL]) {
+      expect(navOpenTags(rel), `${rel} の <nav> 開始タグが 1 つでない`).toHaveLength(1);
+    }
+    expect(navOpenTags(FILE_FIXTURE_REL)[0]).toBe(navOpenTags(CONFORMING_FIXTURE_REL)[0]);
+
     // fixture を .html で置くと CI の Lint Generated UI が違反版で落ちる
     expect(FILE_FIXTURE_REL.endsWith(".html.txt")).toBe(true);
     expect(CONFORMING_FIXTURE_REL.endsWith(".html.txt")).toBe(true);

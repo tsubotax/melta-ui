@@ -358,9 +358,58 @@ test.describe("composition: A11Y_NAV_ARIA_LABEL_REQUIRED（nav のアクセシ�
   });
 
   test("nav と role=navigation を兼ねた 1 要素でも違反はちょうど 1 件", () => {
-    // selector が `nav, [role="navigation"]` の複合なので、両方に該当する要素が
+    // selector が `nav, [role~="navigation" i]` の複合なので、両方に該当する要素が
     // 二重マッチして違反 2 件にならないことを固定する（querySelectorAll の仕様依存）。
     const v = lintComposition('<nav role="navigation"><a href="#">ホーム</a></nav>');
     expect(v.filter((x) => x.ruleId === "A11Y_NAV_ARIA_LABEL_REQUIRED")).toHaveLength(1);
+  });
+
+  // role 属性は空白区切りのトークン列（fallback roles）を許すので、完全一致の
+  // [role="navigation"] だと下の 3 形が漏れる。selector は ~=（空白区切りの単語一致）+
+  // i（大小無視）で受ける。
+  test('role="navigation menubar"（複数トークン）も検知', () => {
+    const v = lintComposition('<div role="navigation menubar"><a href="#">ホーム</a></div>');
+    expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test('role=" navigation "（前後の空白）も検知', () => {
+    const v = lintComposition('<div role=" navigation "><a href="#">ホーム</a></div>');
+    expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test('role="menubar navigation"（先頭が別 role）も検知する — 意図した過剰一致', () => {
+    // 支援技術は先頭の有効 role（menubar）を採り、navigation は fallback なので
+    // 「厳密には navigation ランドマークではない」。それでも拾う側に倒す:
+    // 無名の menubar 自体が望ましくなく、ラベルを付けて困ることが無いため。
+    // 取りこぼしより過剰一致を選んだ判断なので、期待値として固定する。
+    const v = lintComposition('<div role="menubar navigation"><a href="#">ホーム</a></div>');
+    expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test('role="NAVIGATION"（大文字）も検知（selector の i フラグ）', () => {
+    const v = lintComposition('<div role="NAVIGATION"><a href="#">ホーム</a></div>');
+    expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test('role="navigationbar"（別 role の部分文字列）は対象外', () => {
+    // ~= は単語一致なので部分文字列では拾わない。i フラグ導入で緩みすぎていないことの対照
+    const v = lintComposition('<div role="navigationbar"><a href="#">ホーム</a></div>');
+    expect(v.map((x) => x.ruleId)).not.toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test('role="navigation" + aria-label="" も検知（属性の存在だけでは通さない）', () => {
+    // selector に :not([aria-label]) を混ぜる変異だと、属性が空でも候補から外れて
+    // 素通りする。値の中身を見ているのは requireAnyAttr 側だという分担を固定する。
+    const v = lintComposition('<div role="navigation" aria-label=""><a href="#">ホーム</a></div>');
+    expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test("aria-labelledby の参照先が文書内に無くても通す（検出境界）", () => {
+    // IDREF の解決は engine に無い。check_html は fragment を検査するので参照先が
+    // 文書外にあるのが常態で、解決させると誤検知源になる。参照先の実在は
+    // design-review の目視で見る（checklist.md に明記）。
+    // 将来 IDREF 解決を実装したら、この期待値を「検知される」へ反転させること。
+    const v = lintComposition('<nav aria-labelledby="missing"><a href="#">ホーム</a></nav>');
+    expect(v.map((x) => x.ruleId)).not.toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
   });
 });
