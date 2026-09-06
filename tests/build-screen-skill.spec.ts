@@ -19,6 +19,8 @@
  *      メインコンテキストに残さないので、Step 5 の転記が伝聞になる
  *   4. 「やらないこと」節の項目が 1 つ落ちる。節の見出しは残るので、存在検査だけでは通る
  *   5. Step 2 の質問が増える。「往復を 1 回に潰す」という skill の存在理由だけが静かに失われる
+ *   6. Step 5 の分岐（coverage 未取得 / lint 未通過 / 検査未完了）や「ブランド未承認」が消え、
+ *      報告から留保だけが落ちる。生成物は残るので、読み手には完成品として届く
  *
  * 参照の抽出は構造で絞る（バッククォート引用のうち、拡張子を持つ / スラッシュで終わる =
  * パス、`npm run X` = script、小文字スネークケース = MCP ツール、大文字スネーク = ルール ID）。
@@ -30,6 +32,9 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { test, expect } from "@playwright/test";
+import { isCheckedByGeneratedLint } from "../scripts/design/coverage-stats.js";
+import { getAllRules } from "../src/utils/loader.js";
+import type { RuleEntry } from "../src/utils/types.js";
 
 const SKILL_PATH = "skills/build-screen/SKILL.md";
 const AGENTS_PATH = "AGENTS.md";
@@ -65,6 +70,21 @@ const FORBIDDEN_ITEMS: Array<[string, RegExp]> = [
   ["既存 HTML のレビューに使わない", /既存 HTML のレビューに使わない/],
 ];
 
+/**
+ * Step 5 が読み手に約束している文言。skill の価値は「何を検査していないか」を毎回書くことなので、
+ * ここが落ちると生成物だけが残って留保が消える（= lint 結果が完成承認に見える）
+ */
+const REPORT_CONTRACT: Array<[string, string]> = [
+  ["CLI 経路の coverage を未取得と書く", "未取得"],
+  ["error 残りは lint 未通過と書く", "lint 未通過"],
+  ["検査が実行できなかったときは検査未完了と書く", "検査未完了"],
+  ["error 0 は lint-clean draft と書く", "lint-clean draft"],
+  ["どの分岐でもブランド未承認と書く", "ブランド未承認"],
+];
+
+/** coverage を捏造する言い回し。実際には検査していない範囲を「済み」と言わせない */
+const FABRICATED_COVERAGE = ["全件自動検査済み", "全ルール検査済み", "全ルールを自動検査", "完全準拠"];
+
 /** 抽出の下限。表記を変えて抽出 0 件（= 何も検査しないまま緑）にする逃げ道を塞ぐ */
 const MIN_PATH_REFS = 5;
 const MIN_SCRIPT_REFS = 1;
@@ -87,6 +107,11 @@ function readRules(): Map<string, Rule> {
   return new Map(json.rules.map((r) => [r.id, r]));
 }
 
+/** loader 経由の RuleEntry。検出可否の述語は typed なフィールドを見るのでこちらを使う */
+function loadedRules(): Map<string, RuleEntry> {
+  return new Map(getAllRules().map((r) => [r.id, r]));
+}
+
 /** バッククォートの中身（改行を含まないもの）をすべて拾う */
 function backticked(content: string): string[] {
   return [...content.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]);
@@ -105,6 +130,9 @@ const FILE_EXT = /\.(md|json|ts|js|mjs|cjs|html|css|txt|ya?ml)$/;
 function looksLikeRepoPath(token: string): boolean {
   if (/\s/.test(token)) return false;
   if (token.startsWith("http") || token.includes("://")) return false;
+  // 拡張子そのものの引用（Step 2 の `.html` / `.tsx` 等）はパスではない。
+  // これを弾かないと「拡張子を揃えろ」と書くだけで存在検査が落ちる
+  if (/^\.[A-Za-z0-9]+$/.test(token)) return false;
   return token.endsWith("/") || FILE_EXT.test(token);
 }
 
@@ -259,21 +287,19 @@ test.describe("build-screen skill の手順書", () => {
       return hits[0];
     };
 
-    // 「Step 4 が拾える」側: detector が manual では拾えず、静的判定不能 / 人間確認待ちも拾えない
+    // 「Step 4 が拾える」側: 判定は生成物 lint の実際の条件（isCheckedByGeneratedLint）で行う。
+    // detector != manual では足りない — requiresContext のルール（SPACE_NO_P0_CARDS 等）は
+    // 検出機構を持つのに context-free な生成物 lint からは除外される（src/utils/lint-core.ts）
+    const loaded = loadedRules();
     const autoIds = citedRuleIds(lineFor(STEP3_AUTO_ANCHOR));
     expect(autoIds.length, "自動検出の例にルール ID が無い").toBeGreaterThan(0);
     const notActuallyAuto = autoIds.filter((id) => {
-      const rule = rules.get(id);
-      return (
-        rule == null ||
-        rule.detector === "manual" ||
-        rule.automationStatus === "impossible-static" ||
-        rule.automationStatus === "human-only"
-      );
+      const rule = loaded.get(id);
+      return rule == null || !isCheckedByGeneratedLint(rule);
     });
     expect(
       notActuallyAuto,
-      "「Step 4 が拾える」例に、実際には Step 4 で拾えないルールが挙がっている"
+      "「Step 4 が拾える」例に、生成物 lint が実際には検査しないルールが挙がっている"
     ).toEqual([]);
 
     // 「Step 4 で絶対に捕まらない」側: detector manual かつ severity error であることが主張の中身
@@ -281,11 +307,19 @@ test.describe("build-screen skill の手順書", () => {
     expect(manualIds.length, "manual の例にルール ID が無い").toBeGreaterThan(0);
     const notManualError = manualIds.filter((id) => {
       const rule = rules.get(id);
-      return rule == null || rule.detector !== "manual" || rule.severity !== "error";
+      const loadedRule = loaded.get(id);
+      return (
+        rule == null ||
+        loadedRule == null ||
+        rule.detector !== "manual" ||
+        rule.severity !== "error" ||
+        // 「捕まらない」の実体も述語で確かめる（detector 名だけの主張にしない）
+        isCheckedByGeneratedLint(loadedRule)
+      );
     });
     expect(
       notManualError,
-      "「error なのに Step 4 で捕まらない」例が、manual かつ error のルールになっていない"
+      "「error なのに Step 4 で捕まらない」例が、manual かつ error かつ生成物 lint 対象外になっていない"
     ).toEqual([]);
   });
 
@@ -335,6 +369,21 @@ test.describe("build-screen skill の手順書", () => {
       forkLines.some((l) => l.includes("しない")),
       "context: fork の行が禁止として書かれていない"
     ).toBe(true);
+  });
+
+  test("Step 5 が報告の 3 分岐と coverage の留保を約束している", () => {
+    const body = section(read(SKILL_PATH), "## Step 5");
+    expect(body, "SKILL.md に「## Step 5」節が無い").not.toBeNull();
+
+    // 約束している文言が 1 つでも落ちると、報告から留保が消えて lint 結果が完成承認に見える
+    const missing = REPORT_CONTRACT.filter(([, phrase]) => !body!.includes(phrase)).map(
+      ([label]) => label
+    );
+    expect(missing, "Step 5 の報告契約から落ちている文言").toEqual([]);
+
+    // 反対側: 検査していない範囲を「済み」と言わせない（coverage の捏造を手順書側で塞ぐ）
+    const fabricated = FABRICATED_COVERAGE.filter((phrase) => body!.includes(phrase));
+    expect(fabricated, "Step 5 に coverage を捏造する文言がある").toEqual([]);
   });
 
   test("Step 2 は質問数の上限 3 を宣言し、質問バンクがちょうど Q1〜Q3 である", () => {

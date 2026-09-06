@@ -31,6 +31,8 @@ melta の契約から画面 1 枚を生成し、生成物を自分で lint し�
 
 出力先が未指定なら提案する。`examples/` は CI の Full Scan 対象なので、DS 公式サンプルにする意図が無い限り避ける。
 
+**拡張子は `.html` に揃える**（Step 4 の CLI 経路が検査できるのは `.html` / `.tsx` / `.jsx` / `.vue` だけ。`.htm` などを渡すと検査自体が実行されない）。
+
 ダークモードは聞かない。`AGENTS.md` の「テーマ・ダークモード」表の設定に従う。
 
 Claude Code では AskUserQuestion で聞く。他のクライアントでは箇条書きで聞いて**回答を待つ**（推測で進めない）。
@@ -48,6 +50,7 @@ Claude Code では AskUserQuestion で聞く。他のクライアントでは箇
    - **CLI 経路**（MCP が無い環境）: `npm run design:lint-generated -- <生成ファイルのパス>`。error があれば exit 1。返るのは**違反一覧と件数と PASSED / FAILED だけで、`passed` フィールドも coverage も返らない**
 2. severity `error` を全部直して再検査する。`warn` は残してよいが Step 5 に列挙する
 3. 3 回目の検査でも error が残るなら、**残った violations を報告に載せて止まる**。ルールを黙って緩めない・生成物を検査対象から外さない
+4. **検査そのものが実行できなかったとき**（CLI が exit 2 = 対象拡張子でない / パスが解決できない / ruleset を読めない、ツールのエラー、MCP が応答しない）は、**修正ループに入らない**。生成物は無検査のままなので、エラー出力をそのまま持って Step 5 へ行く。「たぶん通る」で埋めない
 
 ## Step 5: 報告（この順・この書式）
 
@@ -56,6 +59,7 @@ Claude Code では AskUserQuestion で聞く。他のクライアントでは箇
    - MCP 経路: `passed` の値と violations
    - CLI 経路: コマンドの exit code と出力の違反一覧（返っていないので `passed` という語は使わない）
    - error 0 なら「error 0」と書ける。error が残ったまま Step 4 の上限に達したなら、件数と残った violations を全部載せる
+   - **検査が実行できなかったとき**は、件数を書かずに**エラー出力をそのまま転記する**（exit code と標準エラー出力）。違反 0 件と書かない
    - `warn` が残っていれば、どちらの経路でも全件列挙する
 3. **coverage**
    - MCP 経路: `coverage.automated` / `coverage.notAutomated` をそのまま転記する（要約しない）
@@ -71,11 +75,15 @@ Claude Code では AskUserQuestion で聞く。他のクライアントでは箇
    - `impossible-static` — 静的 HTML からは判定できない（属性は書けるが、その中身が正しいかは外部の情報が要る）
    - `llm-judge-candidate` — 自動検査は無いが design-review skill が審査できる
    - `covered-by-test` — 既存テストがルールを担保しているが、**この生成物**の実動作は別に確認が要る
+   - `未分類` — `automationStatus` の宣言が無いルール（rules.json に 44 件ある。例: `[SPACE_NO_P0_CARDS]`）。分類が未了なだけで、検査されているかは別に確認する
    - `ルール無し` — 対応するルールが `design/contracts/rules.json` に無い。この行に ID は書かない
+   - この 3 分岐（`automationStatus` の値 / 無ければ `未分類` / ルール自体が無ければ `ルール無し`）で**どのルールにも reason を割り当てられる**。空欄にしない
+   - `automationStatus` が `auto` のルールは Step 4 が検査するので、この節には載せない
    - **実在しない ID を書かない**
-5. 最後に 1 行。**error が 0 だったかで分岐する**
+5. 最後に 1 行。**3 分岐**。どれにも共通して「ブランド未承認」を書く
    - error 0: 「lint-clean draft・ブランド未承認。最終判断は人間」
-   - error 残り: 「**lint 未通過**・未承認。残った violations は上の 2 に列挙した」
+   - error 残り: 「**lint 未通過**・ブランド未承認。残った violations は上の 2 に列挙した」
+   - 検査未完了: 「**検査未完了**・ブランド未承認。理由は上の 2 に転記した」
 
 ## やらないこと
 
