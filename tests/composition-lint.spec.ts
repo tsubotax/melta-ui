@@ -138,6 +138,13 @@ test.describe("composition-lint P1-5: icon-only button の aria-label（BTN_ICON
     expect(ruleIds(html)).not.toContain("BTN_ICON_ONLY_ARIA_REQUIRED");
   });
 
+  test("aria-label が空白のみなら検知（dom-attr-required 全ルール共通の締め）", () => {
+    // hasAnyAttr が v !== "" だけを見ていた頃は素通りしていた。空白は支援技術が
+    // 詰めるので空文字と同義。この期待が落ちたら engine 側の trim が外れている
+    const html = '<button aria-label="  "><svg><path d="M3 3"/></svg></button>';
+    expect(ruleIds(html)).toContain("BTN_ICON_ONLY_ARIA_REQUIRED");
+  });
+
   test("テキストを持つ button（icon+text）は icon-only でないので素通り", () => {
     const html = '<button><svg><path d="M3 3"/></svg>保存</button>';
     expect(ruleIds(html)).not.toContain("BTN_ICON_ONLY_ARIA_REQUIRED");
@@ -336,5 +343,24 @@ test.describe("composition: A11Y_NAV_ARIA_LABEL_REQUIRED（nav のアクセシ�
   test("aria-label が空文字なら検知（存在するだけでは名前にならない）", () => {
     const v = lintComposition('<nav aria-label=""><a href="#">ホーム</a></nav>');
     expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test("aria-label が空白のみでも検知（空文字と同じくアクセシブルネームにならない）", () => {
+    const v = lintComposition('<nav aria-label="   "><a href="#">ホーム</a></nav>');
+    expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test("祖先の aria-label は継承しない（scope は self）", () => {
+    // scope 既定 = self。将来 compositionCheck に scope: "ancestor-or-self" を足すと
+    // 外枠のラベルで nav が素通りするようになるので、ここで固定する。
+    const v = lintComposition('<div aria-label="外枠"><nav><a href="#">ホーム</a></nav></div>');
+    expect(v.map((x) => x.ruleId)).toContain("A11Y_NAV_ARIA_LABEL_REQUIRED");
+  });
+
+  test("nav と role=navigation を兼ねた 1 要素でも違反はちょうど 1 件", () => {
+    // selector が `nav, [role="navigation"]` の複合なので、両方に該当する要素が
+    // 二重マッチして違反 2 件にならないことを固定する（querySelectorAll の仕様依存）。
+    const v = lintComposition('<nav role="navigation"><a href="#">ホーム</a></nav>');
+    expect(v.filter((x) => x.ruleId === "A11Y_NAV_ARIA_LABEL_REQUIRED")).toHaveLength(1);
   });
 });
