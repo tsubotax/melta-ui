@@ -18,7 +18,14 @@ node_modules/
 dist/
 verification/
 site-public/
-.agents/
+# .agents/skills/ には impeccable 由来のローカル 18 本が入るので既定は除外し、
+# Melta 自前のスキル（skills/ への symlink）だけを配布する。
+# ディレクトリを一旦辿れるようにしてから中身を絞る（上の .claude/ と同じイディオム）
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/design-review
+!.agents/skills/ban-pattern
 skills-lock.json
 
 # チームレビュー一時ファイル

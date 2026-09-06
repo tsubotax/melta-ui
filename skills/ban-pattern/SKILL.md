@@ -1,11 +1,7 @@
 ---
 name: ban-pattern
 description: "Register AI-generated-looking UI patterns as prohibited rules in the design system. Use when user says \"AIっぽい\", \"AI臭い\", \"これ禁止\", \"このパターンやめたい\", \"ban this pattern\", \"add to prohibited\", or points out a generic/cookie-cutter UI element."
-user-invokable: true
-args:
-  - name: pattern
-    description: 禁止したいパターンの説明（例：「カード上部のカラーバー」「左端のグラデーション」）
-    required: false
+user-invocable: true
 ---
 
 AI生成UIに頻出する「それっぽい」装飾パターンを特定し、DS全体の禁止ルールとして登録する。
