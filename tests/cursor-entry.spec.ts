@@ -51,6 +51,34 @@ const SUPPORTED_FRONTMATTER_KEYS = new Set(["description", "globs", "alwaysApply
  * 指すので、ルート相対では実在しない。これ以外の語はルート相対パスとして実在を要求する
  */
 const BARE_NAME_EXCEPTION = new Set(["SKILL.md"]);
+/**
+ * 色を取りうる Tailwind ユーティリティの接頭辞。色スケール名（`primary-950`）に前置して
+ * `bg-primary-950` 等を denylist へ明示展開するために使う
+ */
+const UTILITY_PREFIXES = [
+  "bg-",
+  "text-",
+  "border-",
+  "ring-",
+  "fill-",
+  "stroke-",
+  "divide-",
+  "outline-",
+  "placeholder-",
+  "decoration-",
+  "accent-",
+  "caret-",
+  "from-",
+  "to-",
+  "via-",
+  "shadow-",
+];
+
+/** 禁止語 1 語の由来と照合の仕方（prefix = 前方一致、exact = 語として完全一致） */
+interface DenyEntry {
+  route: string;
+  kind: "exact" | "prefix";
+}
 
 /** git の index に入っているパス一覧 */
 function lsFiles(pathspec: string): string[] {
@@ -118,6 +146,19 @@ function parseFrontmatterLines(frontmatter: string): {
       );
       continue;
     }
+    // 引用符の対応を検証する。`description: "melta` は閉じ忘れで、YAML としては次行以降を
+    // 巻き込むか parse error になる。行パーサは「有効なスカラー」と読んでしまうので明示的に弾く
+    const quote = value[0];
+    if (quote === '"' || quote === "'") {
+      const closed = new RegExp(`^${quote}.*${quote}(\\s+#.*)?$`).test(value);
+      if (!closed) {
+        violations.push(`引用符が閉じていない「${line.trim()}」`);
+        continue;
+      }
+    } else if (/["']/.test(stripInlineComment(value))) {
+      violations.push(`引用符が値の途中にある「${line.trim()}」（囲むなら全体を囲む）`);
+      continue;
+    }
     lines.push({ key: m[2], value });
   }
   return { lines, violations };
@@ -161,14 +202,16 @@ function isColorValue(value: unknown): value is string {
  * `-` か `#` を含む語だけを採用する。`body`（color.body の tailwind）のような普通の単語まで
  * 禁止すると日本語の散文が誤検知で落ちるため
  */
-function deriveDenylist(): Map<string, string> {
-  const denylist = new Map<string, string>();
-  const add = (word: unknown, route: string) => {
+function deriveDenylist(): Map<string, DenyEntry> {
+  const denylist = new Map<string, DenyEntry>();
+  const add = (word: unknown, route: string, kind: DenyEntry["kind"] = "exact") => {
     if (typeof word !== "string") return;
     const w = word.trim();
     if (w === "" || !(w.includes("-") || w.includes("#"))) return;
-    if (!denylist.has(w)) denylist.set(w, route);
+    if (!denylist.has(w)) denylist.set(w, { route, kind });
   };
+  /** 色スケール名・色の tailwind 名。ユーティリティ接頭辞を明示展開する材料 */
+  const colorNames = new Set<string>();
 
   const tokens = JSON.parse(readFileSync(resolve(REPO_ROOT, TOKENS_JSON), "utf8"));
   const walk = (node: unknown, path: string[]): void => {
@@ -182,9 +225,12 @@ function deriveDenylist(): Map<string, string> {
     add(obj.cssVar, "tokens.json（cssVar）");
     if (isColorValue(obj.value)) {
       add(obj.value, "tokens.json（色の値）");
+      if (typeof obj.tailwind === "string") colorNames.add(obj.tailwind.trim());
       // 色スケールの葉の名前。`color.primary.500` → `primary-500`
       if (path.length >= 2) {
-        add(`${path[path.length - 2]}-${path[path.length - 1]}`, "tokens.json（色スケール名）");
+        const scaleName = `${path[path.length - 2]}-${path[path.length - 1]}`;
+        add(scaleName, "tokens.json（色スケール名）");
+        colorNames.add(scaleName);
       }
     }
     for (const [key, child] of Object.entries(obj)) {
@@ -192,6 +238,18 @@ function deriveDenylist(): Map<string, string> {
     }
   };
   walk(tokens, []);
+
+  // 色スケール名 × ユーティリティ接頭辞の明示展開。
+  // 語境界を緩めて `bg-primary-950` の中の `primary-950` に当てにいくと、代わりに
+  // `source-text-body` の中の `text-body` まで拾ってしまう（過剰ブロック）。
+  // 境界は厳格なままにして、捕まえたい形のほうを列挙する
+  for (const name of colorNames) {
+    // すでに接頭辞つきの名前（`bg-gray-50` / `text-body`）に重ねると `bg-bg-gray-50` になる
+    if (UTILITY_PREFIXES.some((prefix) => name.startsWith(prefix))) continue;
+    for (const prefix of UTILITY_PREFIXES) {
+      add(`${prefix}${name}`, "tokens.json（色スケール × ユーティリティ接頭辞）");
+    }
+  }
   const fromTokens = denylist.size;
 
   for (const file of readdirSync(resolve(REPO_ROOT, CONTRACTS_DIR))) {
@@ -215,9 +273,15 @@ function deriveDenylist(): Map<string, string> {
 
   const rules = JSON.parse(readFileSync(resolve(REPO_ROOT, RULES_JSON), "utf8"));
   for (const rule of rules.rules ?? []) {
-    add(rule.pattern, "rules.json（pattern）");
-    for (const key of ["prefixPatterns", "matchPatterns"] as const) {
-      if (Array.isArray(rule[key])) for (const p of rule[key]) add(p, "rules.json（pattern）");
+    // 前方一致で禁止しているルールは、こちらも前方一致で見る。末尾境界を課すと
+    // `font-[` が `font-[350]` に当たらない（`[` の次が `3` で境界が成立しない）
+    const isPrefixRule = rule.detector === "tailwind-class-prefix";
+    add(rule.pattern, "rules.json（pattern）", isPrefixRule ? "prefix" : "exact");
+    if (Array.isArray(rule.prefixPatterns)) {
+      for (const p of rule.prefixPatterns) add(p, "rules.json（prefixPatterns）", "prefix");
+    }
+    if (Array.isArray(rule.matchPatterns)) {
+      for (const p of rule.matchPatterns) add(p, "rules.json（matchPatterns）", "exact");
     }
   }
   const fromRules = denylist.size - fromTokens - fromContracts;
@@ -241,16 +305,17 @@ function deriveDenylist(): Map<string, string> {
 /**
  * 禁止語 1 語ぶんの照合パターン。
  *
- * 先頭側は `(?<!\w)` にとどめる。`(?<![\w-])` にすると `bg-primary-950` の中の
- * `primary-950` が「直前がハイフン」を理由に外れ、色クラスがまるごと素通りする。
- * 末尾側は `(?![\w-])` を保つ（`text-body` が `text-body-x` に、`primary-500` が
- * `primary-5000` に当たらないように）。
- * ただし語自体が `-` で終わる prefix pattern（`bg-blue-` 等）は、続きが来るのが前提なので
- * 末尾の境界を課さない
+ * 語境界は前後とも `[\w-]` で見る。`source-text-body` の中の `text-body` や
+ * `text-black-list` の中の `text-black` を拾わないため（過剰ブロック側の事故を避ける）。
+ * `bg-primary-950` のような接頭辞つきの形は、境界を緩めるのではなく denylist 側の
+ * 明示展開（UTILITY_PREFIXES）で捕まえる。
+ *
+ * kind が prefix の語（rules.json が前方一致で禁止しているもの）だけは末尾の境界を課さない。
+ * `bg-blue-` の次は `500`、`font-[` の次は `350` が来るのが前提で、境界は成立しない
  */
-function denyPattern(word: string): RegExp {
-  const tail = word.endsWith("-") ? "" : "(?![\\w-])";
-  return new RegExp(`(?<!\\w)${escapeRegExp(word)}${tail}`);
+function denyPattern(word: string, kind: DenyEntry["kind"]): RegExp {
+  const tail = kind === "prefix" ? "" : "(?![\\w-])";
+  return new RegExp(`(?<![\\w-])${escapeRegExp(word)}${tail}`);
 }
 
 /** 正規表現メタ文字のエスケープ（class 名は `[` `/` `.` `(` を含む） */
@@ -312,8 +377,8 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
     const hits: string[] = [];
 
     // --- SSOT 由来の語彙 ---
-    for (const [word, route] of deriveDenylist()) {
-      if (denyPattern(word).test(text)) hits.push(`${word}（${route}）`);
+    for (const [word, entry] of deriveDenylist()) {
+      if (denyPattern(word, entry.kind).test(text)) hits.push(`${word}（${entry.route}）`);
     }
 
     // --- 汎用リテラル（SSOT に無い値も止める） ---
@@ -330,13 +395,15 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
       },
       {
         // SSOT に無いパレット・キーワード色も止める。`from` / `to` は `to-do` のような
-        // 普通の語に当たるので入れない（過剰ブロック側の事故になる）
+        // 普通の語に当たるので入れない（過剰ブロック側の事故になる）。
+        // 語境界は denylist と同じ `[\w-]`。`\b` だと `text-black-list` の中の
+        // `text-black` に当たってしまう（ハイフンが単語境界として成立するため）
         name: "汎用リテラル（Tailwind 色ユーティリティ）",
-        re: /\b(bg|text|border|ring|fill|stroke|divide|outline|placeholder|decoration|accent|caret)-(white|black|transparent|current|inherit|[a-z]+-\d{2,3})\b/g,
+        re: /(?<![\w-])(bg|text|border|ring|fill|stroke|divide|outline|placeholder|decoration|accent|caret)-(white|black|transparent|current|inherit|[a-z]+-\d{2,3})(?![\w-])/g,
       },
       {
         name: "汎用リテラル（Tailwind ユーティリティ）",
-        re: /\b(h|w|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|rounded|text|leading|tracking|shadow|border)-(\d+(\.\d+)?|xs|sm|md|lg|xl|\dxl|full|none)\b/g,
+        re: /(?<![\w-])(h|w|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|rounded|text|leading|tracking|shadow|border)-(\d+(\.\d+)?|xs|sm|md|lg|xl|\dxl|full|none)(?![\w-])/g,
       },
     ];
     for (const literal of literals) {
@@ -367,8 +434,9 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
 
     // Markdown リンクはローカル参照をすべて対象にする。文字種で絞ると
     // `[作業指示](MISSING.md#読み込みモード)` のような日本語 fragment 付きの死リンクが
-    // 候補から外れて素通りする。fragment（`#` 以降）を落としてからファイル部分を照合する
-    const linkCandidates = [...body.matchAll(/\]\(([^)\s]+)\)/g)]
+    // 候補から外れて素通りする。fragment（`#` 以降）を落としてからファイル部分を照合する。
+    // destination の後ろにタイトル（`](path "説明")`）が付く形も拾う
+    const linkCandidates = [...body.matchAll(/\]\(\s*([^\s)]+)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g)]
       .map((m) => m[1])
       .filter((t) => !/^(https?:|mailto:)/i.test(t))
       .map((t) => t.split("#")[0].replace(/^\.\//, ""))

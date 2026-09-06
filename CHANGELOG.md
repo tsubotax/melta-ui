@@ -29,8 +29,8 @@ contracts / llms.txt / MCP の仕事なので、Cursor 向けには所在ポイ�
   集合として完全一致 ⑥`.cursor/mcp.json` と `.mcp.json` の `mcpServers` が deep-equal。
   ③の禁止語彙は**実行時に SSOT から導出する**（`tokens.json` の `tailwind` / `cssVar` / 色の
   `value` / 色スケール名 + contract `htmlSample` の class + `rules.json` の `pattern` 系。
-  禁止側にしか無い `text-black` のような語はルールから拾う）。手書きの語彙表を置くとそれ自体が
-  第三の正典になるため。SSOT に無い値（`16px` / `rgb(...)` / 未知パレット / キーワード色）は
+  禁止側にしか無い `text-black` のような語はルールから拾い、色名には `bg-` / `text-` 等の
+  ユーティリティ接頭辞を明示展開する）。手書きの語彙表を置くとそれ自体が第三の正典になるため。SSOT に無い値（`16px` / `rgb(...)` / 未知パレット / キーワード色）は
   汎用リテラルで、見た目が同じ非 ASCII ハイフンによる回避は NFKC 正規化 + 畳み込みで塞ぐ
 
 #### Changed
