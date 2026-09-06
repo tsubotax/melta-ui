@@ -15,8 +15,8 @@
 
 #### Added
 
-- **`skills/build-screen`（+ `.agents/skills/build-screen` symlink）** — `AGENTS.md` の「タスクベース読み込みガイド」で契約を引き当て → 最大 3 問の意図確認 → 生成 → `check_html`（無ければ `npm run design:lint-generated`）で error 0 まで最大 3 回のループ → coverage と評価不可（`automationStatus` 別）を報告、までを 1 本の手順にした Workflow Skill。参照の実体は MCP と contracts に置き、表や仕様は複製しない（drift させないため）
-- **`tests/build-screen-skill.spec.ts`（5 本）** — frontmatter の形（Claude Code 拡張キーを持たない）/ SKILL.md が参照するリポ内パス・npm script・MCP ツール名の実在 / 参照先の AGENTS.md 見出しの実在 / 「やらないこと」節の存在 / Step 2 の質問数上限。手順書が指す先が消えても無言で成立しないようにする
+- **`skills/build-screen`（+ `.agents/skills/build-screen` symlink）** — `AGENTS.md` の「タスクベース読み込みガイド」で契約を引き当て → 最大 3 問の意図確認 → 生成 → Step 4 自己検証（MCP 経路 = `check_html` / CLI 経路 = `npm run design:lint-generated`。検査は最大 3 回）→ Step 5 報告（経路ごとに書式が違う。CLI 経路は `passed` も coverage も返らないので「未取得」と明記する。評価不可は `automationStatus` 別に ID 付きで）、までを 1 本の手順にした Workflow Skill。参照の実体は MCP と contracts に置き、表や仕様は複製しない（drift させないため）
+- **`tests/build-screen-skill.spec.ts`（6 本）** — frontmatter の形（引用符つき / 大文字混じりでも Claude Code 拡張キーを拒否、description はブロックスカラー禁止）/ SKILL.md が参照するリポ内パス・npm script・MCP ツール名・ルール ID の実在 / Step 3 の「Step 4 が拾う例 / 拾わない例」が rules.json の detector と一致 / AGENTS.md の見出しと引き当て表の実在 / 「やらないこと」5 項目の個別存在 / Step 2 の質問集合がちょうど Q1〜Q3。手順書が指す先が消えても、記法を変えて抽出を空振りさせても、無言で成立しないようにする
 
 ### `.cursor/` を「値を持たないポインタ」へ（並行正典の解体）
 

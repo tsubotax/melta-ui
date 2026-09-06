@@ -7,20 +7,24 @@
  * build）は Markdown 本文中の参照先を見ないため、次の 5 つが無言で成立してしまう。
  *
  *   1. 参照先のファイル・npm script・MCP ツール・ルール ID が消える / 改名される。SKILL.md は
- *      「これを読め」と言い続け、実行時に初めて空振りする（skill は静かに壊れる）
- *   2. 参照している `AGENTS.md` の見出しが変わる。Step 1 の入口（表の引き当て）が切れるが、
- *      AGENTS.md 側は見出しを変えただけなので、どのゲートも赤くならない
+ *      「これを読め」と言い続け、実行時に初めて空振りする（skill は静かに壊れる）。
+ *      ルール ID は実在するだけでは足りない。Step 3 は「Step 4 が拾う例」と「Step 4 では
+ *      絶対に捕まらない例（detector manual）」を対にして挙げており、例が逆側のルールに
+ *      差し替わると、手順書は読めるのに指示が嘘になる
+ *   2. 参照している `AGENTS.md` の見出しが変わる、または見出しだけ残って表が消える。
+ *      Step 1 の入口（表の引き当て）が切れるが、AGENTS.md 側はどのゲートも赤くならない
  *   3. frontmatter に Claude Code 拡張キー（context / agent / background / allowed-tools /
  *      arguments）が混ざる。Claude Code では動くが、symlink で配る Cursor / Codex 側には
  *      無い挙動なので配布先で意味が変わる。特に `context: fork` は生成物と検証結果を
  *      メインコンテキストに残さないので、Step 5 の転記が伝聞になる
- *   4. 「やらないこと」節が消える。守るべき境界（fork しない・実行時取得しない・
- *      passed を完成承認と言わない）が手順書から落ちても、手順自体は読めてしまう
+ *   4. 「やらないこと」節の項目が 1 つ落ちる。節の見出しは残るので、存在検査だけでは通る
  *   5. Step 2 の質問が増える。「往復を 1 回に潰す」という skill の存在理由だけが静かに失われる
  *
  * 参照の抽出は構造で絞る（バッククォート引用のうち、拡張子を持つ / スラッシュで終わる =
- * パス、`npm run X` = script、小文字スネークケース = MCP ツール）。文書全体の総当たりは
- * 過剰ブロックになり、逆に抽出 0 件でも緑になる逃げ道を作るので、各抽出に下限件数を課す。
+ * パス、`npm run X` = script、小文字スネークケース = MCP ツール、大文字スネーク = ルール ID）。
+ * 文書全体の総当たりは過剰ブロックになり、逆に抽出 0 件でも緑になる逃げ道を作るので、
+ * 各抽出に下限件数を課す。記法（角括弧 / バッククォート / 箇条書き記号）を変えるだけで
+ * 抽出が空になる書き方も塞ぐ。
  */
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -30,15 +34,36 @@ import { test, expect } from "@playwright/test";
 const SKILL_PATH = "skills/build-screen/SKILL.md";
 const AGENTS_PATH = "AGENTS.md";
 const SERVER_PATH = "src/server.ts";
+const RULES_PATH = "design/contracts/rules.json";
 
 /** Claude Code 独自の frontmatter 拡張。Agent Skills 標準の name / description に絞る */
 const CLAUDE_CODE_ONLY_KEYS = ["context", "agent", "background", "allowed-tools", "arguments"];
 
 /** SKILL.md が Step 1 / Step 2 で名指ししている AGENTS.md の見出し（`## <見出し>`） */
 const REFERENCED_AGENTS_HEADINGS = ["タスクベース読み込みガイド", "テーマ・ダークモード"];
+/** Step 1 が引き当てに使う表。見出しだけ残して表が消えると入口が切れる */
+const TASK_GUIDE_HEADING = "タスクベース読み込みガイド";
+const TASK_GUIDE_HEADER_CELL = "| タスク |";
 
 /** SKILL.md が手順の中で必ず名指しする MCP ツール。片側だけ消えても落ちるよう両方向で見る */
 const REQUIRED_MCP_TOOLS = ["get_component", "search", "check_html"];
+
+/**
+ * Step 3 の 2 つの例の意味を縛る。手順書は「Step 4 が拾う / 拾わない」を対で主張しており、
+ * 例が逆側に差し替わると指示そのものが嘘になる（初版は auto の例に impossible-static の
+ * ルールを挙げていた）。行の識別は本文の言い回しをアンカーにする
+ */
+const STEP3_AUTO_ANCHOR = "Step 4 が拾える";
+const STEP3_MANUAL_ANCHOR = "Step 4 で絶対に捕まらない";
+
+/** 「やらないこと」節の 5 項目。1 つ消えても落ちるよう個別に見る */
+const FORBIDDEN_ITEMS: Array<[string, RegExp]> = [
+  ["context: fork を禁じる", /context: fork/],
+  ["実行時のリモート取得を禁じる", /実行時に原文を取りに行かない/],
+  ["passed を完成承認と言わない", /完成承認と言わない/],
+  ["コンポーネント単体に使わない", /コンポーネント単体の生成に使わない/],
+  ["既存 HTML のレビューに使わない", /既存 HTML のレビューに使わない/],
+];
 
 /** 抽出の下限。表記を変えて抽出 0 件（= 何も検査しないまま緑）にする逃げ道を塞ぐ */
 const MIN_PATH_REFS = 5;
@@ -46,13 +71,33 @@ const MIN_SCRIPT_REFS = 1;
 const MIN_TOOL_REFS = 2;
 const MIN_RULE_ID_REFS = 2;
 
+interface Rule {
+  id: string;
+  detector: string;
+  severity: string;
+  automationStatus?: string;
+}
+
 function read(path: string): string {
   return readFileSync(resolve(path), "utf-8");
+}
+
+function readRules(): Map<string, Rule> {
+  const json = JSON.parse(read(RULES_PATH)) as { rules: Rule[] };
+  return new Map(json.rules.map((r) => [r.id, r]));
 }
 
 /** バッククォートの中身（改行を含まないもの）をすべて拾う */
 function backticked(content: string): string[] {
   return [...content.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]);
+}
+
+/** 大文字スネークのルール ID。角括弧引用とバッククォート引用の両方を拾う */
+const RULE_ID_BODY = "[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+";
+function citedRuleIds(content: string): string[] {
+  return [...content.matchAll(new RegExp(`\\[(${RULE_ID_BODY})\\]|\`(${RULE_ID_BODY})\``, "g"))].map(
+    (m) => m[1] ?? m[2]
+  );
 }
 
 /** リポ内パスとして扱う引用: 既知の拡張子で終わるか、スラッシュで終わるもの（空白を含まない） */
@@ -77,19 +122,36 @@ function pathExists(token: string): boolean {
   return readdirSync(dir).some((f) => rx.test(f));
 }
 
-/** frontmatter を「トップレベルのキー: 値」として読む（値は 1 行想定・既存 skill と同形式） */
-function frontmatter(content: string): { keys: string[]; values: Record<string, string> } | null {
+/**
+ * frontmatter を「トップレベルのキー: 値」として読む。
+ * キーは引用符を剥がして小文字化する（`'context': fork` や `Context: fork` で
+ * 拡張キーの検査をすり抜けられないようにする）。値は 1 行分のみ返し、
+ * ブロックスカラー（`|` / `>`）は「単一行の値ではない」ものとして印を付ける。
+ * このブランチには YAML パーサ依存が無いので、行単位で必要十分な範囲だけ見る
+ */
+interface Frontmatter {
+  keys: string[];
+  values: Record<string, string>;
+  blockScalarKeys: string[];
+}
+function frontmatter(content: string): Frontmatter | null {
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content);
   if (match == null) return null;
   const keys: string[] = [];
   const values: Record<string, string> = {};
+  const blockScalarKeys: string[] = [];
   for (const line of match[1].split(/\r?\n/)) {
-    const kv = /^([A-Za-z][A-Za-z0-9_-]*):\s?(.*)$/.exec(line);
-    if (kv == null) continue; // 継続行・空行
-    keys.push(kv[1]);
-    values[kv[1]] = kv[2].trim();
+    // 引用符つきキー（'context' / "context"）も同じキーとして正規化する
+    const kv = /^(["']?)([A-Za-z][A-Za-z0-9_-]*)\1\s*:\s?(.*)$/.exec(line);
+    if (kv == null) continue; // 継続行・空行・インデントされた入れ子
+    const key = kv[2].toLowerCase();
+    const value = kv[3].trim();
+    keys.push(key);
+    values[key] = value;
+    // `description: |` / `>` は次行以降に本体が続く。1 行目の長さを測っても意味がない
+    if (/^[|>][-+]?\d*\s*$/.test(value)) blockScalarKeys.push(key);
   }
-  return { keys, values };
+  return { keys, values, blockScalarKeys };
 }
 
 /** `## ` 見出しで始まる節の本文（次の `## ` の手前まで）。見出し行も含めて返す */
@@ -109,13 +171,19 @@ test.describe("build-screen skill の手順書", () => {
 
     expect(fm!.values["name"], "frontmatter の name が build-screen でない").toBe("build-screen");
 
+    // description はブロックスカラーにしない。1 行の値でないと長さ上限を機械で保証できない
+    expect(
+      fm!.blockScalarKeys,
+      "frontmatter にブロックスカラー（`|` / `>`）の値がある（1 行で書く）"
+    ).toEqual([]);
     const description = fm!.values["description"] ?? "";
     // 1536 は Agent Skills の description 上限。空も上限超過も配布先で読み飛ばされる
     expect(description.length, "description が空").toBeGreaterThan(0);
     expect(description.length, "description が 1536 文字を超えている").toBeLessThanOrEqual(1536);
 
     // Claude Code 拡張キーは symlink 配布先（Cursor / Codex）に存在しない。
-    // 特に context: fork は生成物をメインコンテキストに残さないので、この skill では致命的
+    // 特に context: fork は生成物をメインコンテキストに残さないので、この skill では致命的。
+    // キーは正規化済みなので `'context'` も `Context` も同じものとして拒否される
     const found = fm!.keys.filter((k) => CLAUDE_CODE_ONLY_KEYS.includes(k));
     expect(found, "frontmatter に Claude Code 拡張キーが混ざっている").toEqual([]);
   });
@@ -126,9 +194,10 @@ test.describe("build-screen skill の手順書", () => {
 
     // 1. リポ内パス
     const paths = quotes.filter(looksLikeRepoPath);
-    expect(paths.length, "パス引用の抽出が下限を割った（記法を変えて空振りさせていないか）").toBeGreaterThanOrEqual(
-      MIN_PATH_REFS
-    );
+    expect(
+      paths.length,
+      "パス引用の抽出が下限を割った（記法を変えて空振りさせていないか）"
+    ).toBeGreaterThanOrEqual(MIN_PATH_REFS);
     const missingPaths = [...new Set(paths)].filter((p) => !pathExists(p));
     expect(missingPaths, "SKILL.md が実在しないパスを参照している").toEqual([]);
 
@@ -143,17 +212,19 @@ test.describe("build-screen skill の手順書", () => {
     const missingScripts = [...new Set(scripts)].filter((s) => !declared.includes(s));
     expect(missingScripts, "SKILL.md が package.json に無い npm script を参照している").toEqual([]);
     // MCP が無い環境のフォールバック経路。ここが切れると Cursor / Codex で Step 4 が回らない
-    expect(scripts, "MCP 無し環境のフォールバック（design:lint-generated）への参照が無い").toContain(
-      "design:lint-generated"
-    );
+    expect(
+      scripts,
+      "MCP 無し環境のフォールバック（design:lint-generated）への参照が無い"
+    ).toContain("design:lint-generated");
 
     // 3. MCP ツール名（小文字スネークケースの引用は MCP ツールの主張として扱う）
     const serverTools = [...read(SERVER_PATH).matchAll(/name: "([a-z][a-z0-9_]*)"/g)].map(
       (m) => m[1]
     );
-    expect(serverTools.length, `${SERVER_PATH} から MCP ツール名を抽出できていない`).toBeGreaterThanOrEqual(
-      REQUIRED_MCP_TOOLS.length
-    );
+    expect(
+      serverTools.length,
+      `${SERVER_PATH} から MCP ツール名を抽出できていない`
+    ).toBeGreaterThanOrEqual(REQUIRED_MCP_TOOLS.length);
     const toolLike = quotes.filter((q) => /^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$/.test(q));
     expect(toolLike.length, "MCP ツール引用の抽出が下限を割った").toBeGreaterThanOrEqual(
       MIN_TOOL_REFS
@@ -166,24 +237,62 @@ test.describe("build-screen skill の手順書", () => {
       expect(quotes, `SKILL.md が ${tool} を名指ししていない`).toContain(tool);
     }
 
-    // 4. ルール ID（`[ID]` 形式の引用）。design-review と同じく、手順書に嘘の ID を書けなくする。
-    // 引用の構造（角括弧）で絞る — 説明文中の大文字語まで見ると過剰ブロックになる
-    const ruleIds = new Set(
-      (
-        JSON.parse(read("design/contracts/rules.json")) as { rules: Array<{ id: string }> }
-      ).rules.map((r) => r.id)
-    );
-    const cited = [...skill.matchAll(/\[([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)\]/g)].map((m) => m[1]);
+    // 4. ルール ID。design-review と同じく、手順書に嘘の ID を書けなくする。
+    // 角括弧引用とバッククォート引用の両方を対象にする（記法を変えて逃げられないように）
+    const rules = readRules();
+    const cited = citedRuleIds(skill);
     expect(cited.length, "ルール ID 引用の抽出が下限を割った").toBeGreaterThanOrEqual(
       MIN_RULE_ID_REFS
     );
-    const unknownRules = [...new Set(cited)].filter((id) => !ruleIds.has(id));
+    const unknownRules = [...new Set(cited)].filter((id) => !rules.has(id));
     expect(unknownRules, "SKILL.md が rules.json に無いルール ID を引用している").toEqual([]);
   });
 
-  test("SKILL.md が名指しする AGENTS.md の見出しが実在する", () => {
+  test("Step 3 の「自動検出される例 / されない例」が rules.json の実態と一致する", () => {
+    const step3 = section(read(SKILL_PATH), "## Step 3");
+    expect(step3, "SKILL.md に「## Step 3」節が無い").not.toBeNull();
+    const rules = readRules();
+
+    const lineFor = (anchor: string): string => {
+      const hits = step3!.split("\n").filter((l) => l.includes(anchor));
+      expect(hits.length, `Step 3 に「${anchor}」の行が 1 つに定まらない`).toBe(1);
+      return hits[0];
+    };
+
+    // 「Step 4 が拾える」側: detector が manual では拾えず、静的判定不能 / 人間確認待ちも拾えない
+    const autoIds = citedRuleIds(lineFor(STEP3_AUTO_ANCHOR));
+    expect(autoIds.length, "自動検出の例にルール ID が無い").toBeGreaterThan(0);
+    const notActuallyAuto = autoIds.filter((id) => {
+      const rule = rules.get(id);
+      return (
+        rule == null ||
+        rule.detector === "manual" ||
+        rule.automationStatus === "impossible-static" ||
+        rule.automationStatus === "human-only"
+      );
+    });
+    expect(
+      notActuallyAuto,
+      "「Step 4 が拾える」例に、実際には Step 4 で拾えないルールが挙がっている"
+    ).toEqual([]);
+
+    // 「Step 4 で絶対に捕まらない」側: detector manual かつ severity error であることが主張の中身
+    const manualIds = citedRuleIds(lineFor(STEP3_MANUAL_ANCHOR));
+    expect(manualIds.length, "manual の例にルール ID が無い").toBeGreaterThan(0);
+    const notManualError = manualIds.filter((id) => {
+      const rule = rules.get(id);
+      return rule == null || rule.detector !== "manual" || rule.severity !== "error";
+    });
+    expect(
+      notManualError,
+      "「error なのに Step 4 で捕まらない」例が、manual かつ error のルールになっていない"
+    ).toEqual([]);
+  });
+
+  test("SKILL.md が名指しする AGENTS.md の見出しと、引き当て表が実在する", () => {
     const skill = read(SKILL_PATH);
-    const agentsLines = read(AGENTS_PATH).split("\n");
+    const agents = read(AGENTS_PATH);
+    const agentsLines = agents.split("\n");
 
     for (const heading of REFERENCED_AGENTS_HEADINGS) {
       // 見出しを変えると skill の入口（Step 1 の表の引き当て）が無言で切れる
@@ -191,22 +300,44 @@ test.describe("build-screen skill の手順書", () => {
       expect(hits.length, `${AGENTS_PATH} に「## ${heading}」が 1 つに定まらない`).toBe(1);
       expect(skill.includes(heading), `SKILL.md が「${heading}」を参照していない`).toBe(true);
     }
+
+    // 見出しだけ残して中身の表が消えても Step 1 は回らない。表の実体まで見る
+    const guide = section(agents, `## ${TASK_GUIDE_HEADING}`);
+    expect(guide, `${AGENTS_PATH} に「## ${TASK_GUIDE_HEADING}」節が無い`).not.toBeNull();
+    const guideLines = guide!.split("\n");
+    const headerAt = guideLines.findIndex((l) => l.includes(TASK_GUIDE_HEADER_CELL));
+    expect(
+      headerAt,
+      `「${TASK_GUIDE_HEADING}」節に \`${TASK_GUIDE_HEADER_CELL}\` を含む表ヘッダーが無い`
+    ).toBeGreaterThanOrEqual(0);
+    const dataRows = guideLines
+      .slice(headerAt + 1)
+      .filter((l) => l.startsWith("|") && !/^\|[\s:-]+\|/.test(l));
+    expect(
+      dataRows.length,
+      `「${TASK_GUIDE_HEADING}」の表にデータ行が 1 行も無い`
+    ).toBeGreaterThan(0);
   });
 
-  test("「やらないこと」節があり、context: fork を禁じている", () => {
+  test("「やらないこと」節に 5 項目がすべて残っている", () => {
     const body = section(read(SKILL_PATH), "## やらないこと");
     expect(body, "SKILL.md に「## やらないこと」節が無い").not.toBeNull();
+    const lines = body!.split("\n");
 
-    const forkLines = body!.split("\n").filter((l) => l.includes("context: fork"));
-    expect(forkLines.length, "「やらないこと」節に context: fork の記述が無い").toBeGreaterThan(0);
+    const missing = FORBIDDEN_ITEMS.filter(([, pattern]) => !lines.some((l) => pattern.test(l))).map(
+      ([label]) => label
+    );
+    expect(missing, "「やらないこと」節から落ちている項目").toEqual([]);
+
     // 「fork にしない」であって「fork する」ではないことまで見る
+    const forkLines = lines.filter((l) => l.includes("context: fork"));
     expect(
       forkLines.some((l) => l.includes("しない")),
       "context: fork の行が禁止として書かれていない"
     ).toBe(true);
   });
 
-  test("Step 2 は質問数の上限 3 を宣言し、質問バンクが 3 問を超えない", () => {
+  test("Step 2 は質問数の上限 3 を宣言し、質問バンクがちょうど Q1〜Q3 である", () => {
     const body = section(read(SKILL_PATH), "## Step 2");
     expect(body, "SKILL.md に「## Step 2」節が無い").not.toBeNull();
 
@@ -216,10 +347,16 @@ test.describe("build-screen skill の手順書", () => {
       "Step 2 に質問数の上限（最大 3 問）の宣言が無い"
     ).toBe(true);
 
-    const numbers = [...body!.matchAll(/^- Q(\d+)[:：]/gm)].map((m) => Number(m[1]));
+    // 記法に依らず拾う。`- ` 限定にすると `* Q4:` を足すだけで検査を空振りさせられる
+    const numbers = [...body!.matchAll(/^\s*(?:[-*+]|\d+[.)])\s*\**Q(\d+)\**\s*[:：]/gm)].map((m) =>
+      Number(m[1])
+    );
     expect(numbers.length, "Step 2 に質問バンク（`- Q1:` 形式）が無い").toBeGreaterThan(0);
-    expect(numbers.length, "質問バンクが 3 問を超えている（往復 1 回の前提が崩れる）").toBeLessThanOrEqual(3);
-    expect(Math.max(...numbers), "Q4 以降が定義されている").toBeLessThanOrEqual(3);
     expect(new Set(numbers).size, "質問番号が重複している").toBe(numbers.length);
+    // 集合で縛る。件数だけだと Q1/Q2/Q4 のような抜けを見逃す
+    expect(
+      [...numbers].sort((a, b) => a - b),
+      "質問バンクが Q1〜Q3 ちょうどでない（往復 1 回の前提が崩れる）"
+    ).toEqual([1, 2, 3]);
   });
 });

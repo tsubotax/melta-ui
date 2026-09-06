@@ -38,29 +38,44 @@ Claude Code では AskUserQuestion で聞く。他のクライアントでは箇
 ## Step 3: 生成
 
 - `DESIGN.md` の原則 + Step 1 で引き当てた契約の exact value で HTML を 1 枚書く。Tailwind class は契約の値を使う（近い値を目分量で選ばない）
-- `design/contracts/rules.json` の a11y ルール（`<nav aria-label>` / `aria-current` / `<th scope>` 等）は Step 4 で拾えるが、**最初から守って書く**。修正ループは検算であって、生成の手抜き分を回収する装置ではない
+- **Step 4 が拾えるルールも最初から守って書く**（例: [TABLE_TH_SCOPE_REQUIRED] / [A11Y_NO_TABINDEX_POSITIVE] / [BTN_ICON_ONLY_ARIA_REQUIRED]）。修正ループは検算であって、生成の手抜き分を回収する装置ではない
 - **severity が `error` でも detector が `manual` のルールは Step 4 で絶対に捕まらない**（例: 実効タップ標的 44px の下限 [A11Y_MIN_TAP_TARGET_44]）。生成時に守るのが唯一の機会なので、使うコンポーネントのカテゴリのルールを `design/contracts/rules.json` で先に見る
 
-## Step 4: 自己検証（ループ上限 3 回）
+## Step 4: 自己検証（検査は最大 3 回 = 初回 + 修正後の再検査 2 回）
 
-1. MCP が使えるなら `check_html` に生成物を渡す。無ければ `npm run design:lint-generated -- <生成ファイルのパス>`（error で exit 1）
+1. 生成物を検査する。経路は 2 つあり、**返ってくる情報が違う**。どちらを使ったかを覚えておく（Step 5 の書き方が変わる）
+   - **MCP 経路**: `check_html` に生成物を渡す。`passed` / `violations` / `coverage.automated` / `coverage.notAutomated` が返る
+   - **CLI 経路**（MCP が無い環境）: `npm run design:lint-generated -- <生成ファイルのパス>`。error があれば exit 1。返るのは**違反一覧と件数と PASSED / FAILED だけで、`passed` フィールドも coverage も返らない**
 2. severity `error` を全部直して再検査する。`warn` は残してよいが Step 5 に列挙する
-3. 3 回回して error が 0 にならなければ、**残った violations を報告に載せて止まる**。ルールを黙って緩めない・生成物を検査対象から外さない
+3. 3 回目の検査でも error が残るなら、**残った violations を報告に載せて止まる**。ルールを黙って緩めない・生成物を検査対象から外さない
 
 ## Step 5: 報告（この順・この書式）
 
 1. **使った契約と読んだファイル** — Step 1 で控えたもの。Step 2 で仮置きした前提があればここに書く
-2. **lint 結果** — 最終検査の `passed` と violations。error 0 の証明として出す。`warn` が残っていれば全件列挙する
-3. **coverage** — `check_html` の `coverage.automated` / `coverage.notAutomated` をそのまま転記する（要約しない）
-4. **評価不可** — この画面に関係するのに自動検査で判定できないルールを `design/contracts/rules.json` から ID で引いて列挙する。design-review の `## 評価不可` 節と同じ 3 列で書く
+2. **lint 結果** — 最終検査の結果を、**使った経路が実際に返した形のまま**書く。要約も補完もしない
+   - MCP 経路: `passed` の値と violations
+   - CLI 経路: コマンドの exit code と出力の違反一覧（返っていないので `passed` という語は使わない）
+   - error 0 なら「error 0」と書ける。error が残ったまま Step 4 の上限に達したなら、件数と残った violations を全部載せる
+   - `warn` が残っていれば、どちらの経路でも全件列挙する
+3. **coverage**
+   - MCP 経路: `coverage.automated` / `coverage.notAutomated` をそのまま転記する（要約しない）
+   - CLI 経路: **「未取得（CLI 経路では返らない。`check_html` が使える環境で再検査すると取れる）」と書く**。件数を推測して埋めない
+4. **評価不可** — この画面に関係するのに自動検査で判定できないルールを `design/contracts/rules.json` から ID で引いて列挙する。列は design-review の `## 評価不可` 節と同じ 3 列。ただし **`reason` の語彙は design-review（human-only / not-observable-static / ルール無し）とは違い、rules.json の `automationStatus` の値を使う**
 
    | aspect | reason | proposal |
    |--------|--------|----------|
+   | サイドバーの現在ページ表示 `[SPACE_NO_MISSING_ARIA_CURRENT]` | impossible-static | 実際のルーティングと突き合わせる |
    | Drawer のフォーカストラップ `[SPACE_NO_DRAWER_NO_FOCUS_TRAP]` | human-only | 実機で Tab / Shift+Tab の循環を確認する |
 
-   - `reason` は `automationStatus` の値をそのまま使う（`human-only` / `impossible-static` / `llm-judge-candidate`）
-   - **実在しない ID を書かない**。該当ルールが無い観点は ID 無しで「ルール無し」として書く
-5. 最後に 1 行: 「lint-clean draft・ブランド未承認。最終判断は人間」
+   - `human-only` — 人が実機を操作しないと判定できない
+   - `impossible-static` — 静的 HTML からは判定できない（属性は書けるが、その中身が正しいかは外部の情報が要る）
+   - `llm-judge-candidate` — 自動検査は無いが design-review skill が審査できる
+   - `covered-by-test` — 既存テストがルールを担保しているが、**この生成物**の実動作は別に確認が要る
+   - `ルール無し` — 対応するルールが `design/contracts/rules.json` に無い。この行に ID は書かない
+   - **実在しない ID を書かない**
+5. 最後に 1 行。**error が 0 だったかで分岐する**
+   - error 0: 「lint-clean draft・ブランド未承認。最終判断は人間」
+   - error 残り: 「**lint 未通過**・未承認。残った violations は上の 2 に列挙した」
 
 ## やらないこと
 
