@@ -203,7 +203,7 @@ v1 で選定した 4 ページは検証に使えない（copy-button = 独自 st
 
 1. **監査モード**（ローカル opt-in）: A/A 決定性確認 → 5 リセット実測 → 崩れ棚卸しレポート
 2. **補修**: コンポーネントルートへの self-reset（`color` / `font-*` / `line-height` / `letter-spacing` / `border-style` 等）を ds-theme.css / recipes に追加。契約 tailwind に及ぶ場合は compat ゲート対象
-3. **CI 昇格**: green 化後に required 化
+3. **CI 昇格**: green 化後に required 化 — **2026-09-07 完了（#14 / #17）**。job 新設の 2026-07-19 から 2026-09-06 まで main の 32 run 連続で fail していた（落ちるのは 6 本中 `kiso.css` の 1 本だけ・毎回ちょうど 31548px・ローカル macOS では 6 passed）。原因は kiso.css の `:where(:root){ scrollbar-gutter: stable }` × Linux のクラシックスクロールバー（macOS はオーバーレイで幅 0）× `fullPage` 撮影の組み合わせで、スクロールバー自体が出なくても幅ぶんの余白が予約され本文幅が縮む → ページ全体が再レイアウトされていた。上記 2 の補修として Host-Reset Defense（`tools/generate-css.ts` の `hostResetDefense`）に 4 項目目の `html { scrollbar-gutter: auto; }` を追加（melta の規範 = ブラウザ既定。`:where()` は specificity 0 なので `html` が読み順に関係なく勝つ）→ CI Linux で 6 passed、`continue-on-error: true` を削除
 
 ---
 

@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **reset-vrt の `kiso.css` 差分（CI Linux 限定・毎回 31548px）を解消し、job を required へ昇格** —
+  `design-check.yml` の `reset-vrt` job は 2026-07-19 の新設から一度も green になっておらず、
+  `continue-on-error: true` で non-blocking だったため 2 か月気づかれなかった（main の 32 run 連続 fail。
+  落ちるのは 6 本中 `kiso.css` の 1 本だけで、ローカル macOS では 6 passed）。原因は kiso.css の
+  `:where(:root){ scrollbar-gutter: stable }` が Linux のクラシックスクロールバー環境で
+  スクロールバー幅ぶんの余白を予約し（`fullPage` 撮影でスクロールバー自体が出なくても予約は効く）、
+  本文幅が縮んでページ全体が再レイアウトされていたこと。Host-Reset Defense
+  （`tools/generate-css.ts` の `hostResetDefense`）に 4 項目目として
+  `html { scrollbar-gutter: auto; }`（melta の規範 = ブラウザ既定。`:where()` は specificity 0 なので
+  `html` が読み順に関係なく勝つ）を追加して塞ぎ、`continue-on-error` を削除した（#14 / #17）
+- **reset-vrt の失敗時に diff / baseline / with-reset の PNG が artifact に残るようにした** —
+  `testInfo.attach(name, { body })` はデフォルトの list reporter だと中間ファイルを作らないため、
+  `test-results/` を upload しても `error-context.md` しか入らず差分の位置が確認できなかった。
+  `testInfo.outputPath()` へ書き出してから `{ path }` で attach する形に変更（#14）
+
 ## [1.7.0] - 2026-09-06
 
 ### 同梱 contracts を 0.8.1 へ更新（ルール 107 本目 + engine の空白属性の締め）
