@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-06
+
+### 同梱 contracts を 0.8.1 へ更新（ルール 107 本目 + engine の空白属性の締め）
+
+npm の 1.6.0 は contracts 0.8.0 相当（106 ルール）を同梱したままで、MCP（`get_rules` /
+`check_html`）が `A11Y_NAV_ARIA_LABEL_REQUIRED` と dom-attr-required 系ルールの空白属性の
+扱いを配れていなかった。同時期に入ったスキル配布と `.cursor/` の整理はリポ側の変更で、
+npm パッケージ（`files`）には含まれない。
+
 ### Added
 
 - **`A11Y_NAV_ARIA_LABEL_REQUIRED`（ルール 107 本目）** — `<nav>` / `role="navigation"` に
@@ -11,6 +20,22 @@
   hook が同経路で発火）。design-review skill の checklist にあった `[評価不可候補: ルール無し]` を
   1 件解消し、静的自動検証は 48 / 106 → 49 / 107（composition 7 → 8）になった
   （contracts 0.8.1。sidebar / breadcrumb / pagination の contract から参照）
+- **`.agents/skills/` に design-review / ban-pattern / build-screen を symlink で配布**（Cursor /
+  Codex が `.agents/skills/<name>/SKILL.md` から発見する）+ 入口の妥当性検査
+  `tests/agents-skills-entry.spec.ts`（入口を別スキルへ張り替えても通る素通りを塞ぐ）
+- **design-review skill の checklist を `rules.json` から生成** — `npm run design:skill-index` が
+  `skills/design-review/references/rules-index.md` を決定論生成し（`design:build` チェーン +
+  CI freshness）、checklist の `[ID]` は実在するルールしか書けない構造に
+  （`tests/skill-rule-refs.spec.ts`）。error → High / warn → Medium、ルール無しは「評価不可」
+
+### Changed
+
+- **composition engine: dom-attr-required 全 5 ルールで空白のみの属性値を不在扱いに** —
+  `aria-label=" "` のように「書いてあるだけ」の属性が検査を素通りしていた穴を塞ぐ
+  （`BTN_ICON_ONLY_ARIA_REQUIRED` / `TAG_X_ARIA_LABEL_REQUIRED` / `SKELETON_ARIA_BUSY_REQUIRED` /
+  `A11Y_DISABLED_REQUIRES_ARIA` / `A11Y_NAV_ARIA_LABEL_REQUIRED`。lint / `check_html` /
+  PostToolUse hook の同経路で発火。支援技術は前後の空白を詰めた名前を使うため空文字と区別しない）
+
 ### Workflow Skill `build-screen` — 画面 1 枚の生成を契約引き当てから自己検証まで 1 手順に
 
 #### Added
