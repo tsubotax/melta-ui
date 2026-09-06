@@ -1,13 +1,13 @@
 # 禁止ルール索引（生成物）
 
 > **生成物。手で編集しない。** `npm run design:skill-index` で再生成する。
-> 正本は `design/contracts/rules.json`（全 106 ルール）。
+> 正本は `design/contracts/rules.json`（全 107 ルール）。
 > 観点の索引（人間が curation した検出手順）は `checklist.md`。網羅はこのファイルが持つ。
 > skill の必読ではない。人間と CI 向けの生成層であり、skill にとっては「checklist に無いカテゴリを横断で探すときの索引」。判定に使う値は SSOT の `design/contracts/rules.json` を見る。
 
 `automationStatus` 列の `—` は未宣言。未宣言のルールは、detector が参照する pattern 系フィールド（`pattern` / `prefixPatterns` / `matchPatterns`）か `htmlAttrCheck` / `compositionCheck` のいずれかを必ず持つ（`tests/coverage-stats.spec.ts` が未分類 0 件を維持する）。これは検出経路の存在であって、各レビュー対象を検査済みという保証ではない。
 
-## accessibility（8）
+## accessibility（9）
 
 | ID | severity | detector | 検出条件 → alternative | 説明 | automationStatus |
 |---|---|---|---|---|---|
@@ -19,6 +19,7 @@
 | A11Y_NO_TEXT_TRUNCATION_200 | error | manual | `レスポンシブに対応` | コンテンツにアクセスできなくなる | human-only |
 | A11Y_DISABLED_REQUIRES_ARIA | warn | composition | `disabled aria-disabled="true" class="opacity-50 cursor-not-allowed ..."（契約 stateSpecs.disabled の tailwind 準拠）` | disabled 属性単独では支援技術への状態通知が実装依存になる。契約（button stateSpecs.disabled）の規範どおり aria-disabled="true" を併記し、視覚状態クラス（opacity-50 cursor-not-allowed）とセットにする。タブ順維持が要る文脈（ツールバー/ページネーション）では aria-disabled 単独 + JS click ガードも可（DESIGN.md 注記参照） | — |
 | A11Y_MIN_TAP_TARGET_44 | error | manual | `視覚寸法は変えずタップ領域だけ拡張する。web: relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2（または min-h-11）/ app: hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} か minHeight: 44` | すべての操作要素は実効タップ標的 44pt（web は 44px）を下回らない — melta の横断方針（WCAG 2.2 SC 2.5.5 Target Size (Enhanced) = AAA の 44px 水準を採る。AA の SC 2.5.8 は 24px だが melta はそこで止めない。インラインテキストリンクは例外）。視覚寸法は契約どおり据え置き、当たり判定だけを広げる: web は h-8/h-10 のまま after: 擬似要素で 44px（または min-h-11）、app は視覚 24pt + hitSlop 10 の正典パターンか minHeight で下限を保証する（height 固定は fontScale でクリップするので使わない）。コンポーネント別の BTN_MIN_TAP_TARGET / TAG_X_MIN_TAP_TARGET は本方針の実装形であり、方針そのものの正本は本ルール | llm-judge-candidate |
+| A11Y_NAV_ARIA_LABEL_REQUIRED | error | composition | `<nav aria-label="メインナビゲーション"> のように aria-label を付与する（見出し要素を指す aria-labelledby でもよい）` | \<nav\>（および role="navigation"）にアクセシブルネームが無いと、スクリーンリーダーのランドマーク一覧で複数のナビゲーションを区別できない。nav が 1 つしか無い画面でも、後から増えたときに無名ランドマークが並ぶため常に付与する | auto |
 
 ## ai-pattern（4）
 
@@ -217,7 +218,7 @@
 - `A11Y_NO_TIME_LIMIT` — ユーザーが操作を完了できない可能性
 - `A11Y_NO_TEXT_TRUNCATION_200` — コンテンツにアクセスできなくなる
 
-## 機械検出済み（auto / covered-by-test・7）
+## 機械検出済み（auto / covered-by-test・8）
 
 lint（composition 検出）または Playwright テストが既に見ている。**skill は二重報告しない。** レビュー対象の HTML で明らかな違反を見つけた場合だけ、機械検出済みである旨を添えて報告する。
 
@@ -228,3 +229,4 @@ lint（composition 検出）または Playwright テストが既に見ている�
 - `MODAL_ROLE_DIALOG_REQUIRED`（covered-by-test） — スクリーンリーダーがモーダルを認識できない
 - `TAG_X_ARIA_LABEL_REQUIRED`（auto） — スクリーンリーダーがボタンの目的を読み上げられない
 - `SKELETON_ARIA_BUSY_REQUIRED`（auto） — スクリーンリーダーがローディング状態を認識できない
+- `A11Y_NAV_ARIA_LABEL_REQUIRED`（auto） — \<nav\>（および role="navigation"）にアクセシブルネームが無いと、スクリーンリーダーのランドマーク一覧で複数のナビゲーションを区別できない。nav が 1 つしか無い画面でも、後から増えたときに無名ランドマークが並ぶため常に付与する
