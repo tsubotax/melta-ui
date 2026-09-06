@@ -30,7 +30,7 @@
             </svg>
           </div>
         </div>
-        <button type="submit" class="h-10 px-4 rounded-lg outline-none focus:ring-2 focus:ring-primary-500/50 bg-primary-500 text-white">絞り込む</button>
+        <button type="submit" class="h-10 px-4 rounded-lg outline-none focus:ring-2 focus:ring-primary-500/50 bg-primary-500 text-white relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2">絞り込む</button>
       </form>
       <div class="mt-6 grid grid-cols-2 gap-4">
         <div>左カラムの説明文をここに置く</div>

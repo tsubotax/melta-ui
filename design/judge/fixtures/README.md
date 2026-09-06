@@ -5,9 +5,11 @@
 | ファイル | 中身 |
 |---|---|
 | `negative-control.violating.html.txt` | 代表 7 aspect すべてに違反する 1 枚 |
-| `negative-control.conforming.html.txt` | 同じ画面で 7 aspect すべてに適合する 1 枚。`lintSource` の error は 0 |
+| `negative-control.conforming.html.txt` | 同じ画面で 7 aspect すべてに適合する 1 枚。`lintSource` / composition ともに error は 0 |
 
-`lintSource` は class / html-attr までで composition 検査を含まない。composition 側は `BTN_MIN_TAP_TARGET` 1 件が既知の未対応として残っており、`tests/judge.spec.ts` がその 1 件ちょうどであることを固定している（増減したら落ちる）。
+`lintSource` は class / html-attr までで composition 検査を含まない。composition 側に残っていた `BTN_MIN_TAP_TARGET` 1 件（送信ボタンのタップ領域）は 2026-09-07（#15）で解消し、`tests/judge.spec.ts` は composition の error が 0 件ちょうどであることを固定している（増えたら落ちる）。
+
+記録済み run（`results/2026-09-05-codex5`）の `provenance.json` は変更前の適合 fixture の sha256 を持つ。これは**当時判定した内容の記録**なので据え置く（テストは temp dir の provenance しか照合しないため、fixture を変えても落ちない）。
 
 **`<title>` を業務画面の文言にしてある理由**: 実行者が読むのは HTML の原文（行番号つき）なので、`title` に「違反版」「陰性対照」と書くと**期待する答えの方向を教えてから答えさせる**ことになる。2 枚の `<title>` は同一で、見分けが付くのは違反箇所だけ。fixture 本文に条件を示す語を入れないこと。
 

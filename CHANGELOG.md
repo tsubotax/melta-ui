@@ -18,6 +18,12 @@
   `testInfo.attach(name, { body })` はデフォルトの list reporter だと中間ファイルを作らないため、
   `test-results/` を upload しても `error-context.md` しか入らず差分の位置が確認できなかった。
   `testInfo.outputPath()` へ書き出してから `{ path }` で attach する形に変更（#14）
+- **judge の適合 fixture がタップ領域拡張を持たず composition lint で error 1 件だった問題**
+  （`BTN_MIN_TAP_TARGET`）— `design/judge/fixtures/negative-control.conforming.html.txt` の送信
+  ボタンに `relative after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2`
+  を付与し（button recipe 準拠。`h-10` の見た目は変えずタップ領域だけ 44px へ）、`lintSource` /
+  composition ともに error 0 にした。「規範に適合した対照」の看板と lint 結果の矛盾を解消
+  （`tests/judge.spec.ts` の期待値は既知 1 件の固定から `[]` へ。増えたら落ちる。#15）
 
 ## [1.7.0] - 2026-09-06
 

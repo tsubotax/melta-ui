@@ -1549,13 +1549,12 @@ test.describe("judge core", () => {
     expect(errors.map((v) => `${v.ruleId}(${v.token})`)).toEqual([]);
 
     // lintSource は class / html-attr までで composition を含まない（lint-core.ts の
-    // 仕様コメント参照）。適合 fixture が composition 側で何を出すかは別に固定する。
-    // BTN_MIN_TAP_TARGET 1 件は既知の未対応（送信ボタンにタップ領域拡張が無い）。
-    // これを直したらこの期待値も更新する = 別 PR の論点であって、ここで黙らせない。
+    // 仕様コメント参照）。適合 fixture は composition 側も error 0（#15 で
+    // BTN_MIN_TAP_TARGET の既知 1 件を解消）。増えたらここで落ちる。
     const conformingComposition = lintComposition(readFixture(CONFORMING_FIXTURE_REL)).filter(
       (v) => v.severity === "error"
     );
-    expect(conformingComposition.map((v) => v.ruleId)).toEqual(["BTN_MIN_TAP_TARGET"]);
+    expect(conformingComposition.map((v) => v.ruleId)).toEqual([]);
 
     // 2 枚とも nav にアクセシブルネームがある（fixture に aria-label を足した回帰検知）
     for (const rel of [FILE_FIXTURE_REL, CONFORMING_FIXTURE_REL]) {
