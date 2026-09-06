@@ -127,10 +127,11 @@ jobs:
 
   reset-vrt:
     # リセットCSS差し替え VRT（DADS 取り込み V1）。
-    # CI Linux での決定性（A/A テスト）の安定を確認するまで non-blocking。
-    # 安定したら continue-on-error を外して required に昇格する（docs/lint-and-reset-vrt-adoption-plan.md V1）
+    # 2026-07-19 の新設から CI Linux でのみ kiso.css の scrollbar-gutter: stable により
+    # fail し続けていた（#14。continue-on-error で non-blocking だったため 2 か月気づかれず）。
+    # Host-Reset Defense で塞いだ 2026-09-07（#17）から required
+    # （docs/lint-and-reset-vrt-adoption-plan.md V1 の昇格条件をクローズ）
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
