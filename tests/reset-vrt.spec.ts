@@ -16,7 +16,7 @@
  * 実行: npm run test:reset-vrt（通常の npm test からは除外されている）
  */
 
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -107,6 +107,19 @@ function diff(a: PNG, b: PNG): { count: number; png: PNG | null } {
   return { count, png: out };
 }
 
+/**
+ * PNG を testInfo.outputPath() に書き出してから path で attach する。
+ *
+ * `attach(name, { body })` はデフォルトの list reporter だと中間ファイルを作らないため、
+ * CI で test-results/ を upload しても画像が 1 枚も残らない（error-context.md だけになる）。
+ * outputPath 経由なら test-results/<テスト dir>/ に実ファイルが残り、artifact から回収できる。
+ */
+async function attachPng(testInfo: TestInfo, name: string, png: PNG): Promise<void> {
+  const file = testInfo.outputPath(name);
+  writeFileSync(file, PNG.sync.write(png));
+  await testInfo.attach(name, { path: file, contentType: "image/png" });
+}
+
 test.describe("reset-swap VRT: ホストのリセットCSSに影響されない", () => {
   const body = buildBody();
 
@@ -123,7 +136,7 @@ test.describe("reset-swap VRT: ホストのリセットCSSに影響されない"
     const b = await shoot(page, "/tests/fixtures/reset-vrt-generated/baseline.html");
     const { count, png } = diff(a, b);
     if (count > 0 && png) {
-      await testInfo.attach("aa-diff.png", { body: PNG.sync.write(png), contentType: "image/png" });
+      await attachPng(testInfo, "aa-diff.png", png);
     }
     expect(count, "A/A が 0 でない = この環境ではピクセル比較自体が信頼できない").toBe(0);
   });
@@ -134,9 +147,9 @@ test.describe("reset-swap VRT: ホストのリセットCSSに影響されない"
       const withReset = await shoot(page, `/tests/fixtures/reset-vrt-generated/with-${reset}.html`);
       const { count, png } = diff(baseline, withReset);
       if (count > 0) {
-        await testInfo.attach("baseline.png", { body: PNG.sync.write(baseline), contentType: "image/png" });
-        await testInfo.attach("with-reset.png", { body: PNG.sync.write(withReset), contentType: "image/png" });
-        if (png) await testInfo.attach("diff.png", { body: PNG.sync.write(png), contentType: "image/png" });
+        await attachPng(testInfo, "baseline.png", baseline);
+        await attachPng(testInfo, "with-reset.png", withReset);
+        if (png) await attachPng(testInfo, "diff.png", png);
       }
       expect(count, `${reset} の前挿入で ${count}px の差分`).toBe(0);
     });
