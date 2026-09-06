@@ -1,51 +1,36 @@
 ---
-description: melta UI Design System rules for AI-assisted development
-globs: ["**/*.html", "**/*.tsx", "**/*.jsx", "**/*.vue", "**/*.svelte"]
+description: melta UI の入口ポインタ（作業指示・exact value・MCP・Skills の所在）
+alwaysApply: true
 ---
 
-# melta UI Design System
+# melta UI — 入口ポインタ
 
-## Design Principles
-1. **Layered** — Background → Surface → Text/Object (3 layers)
-2. **Contrast** — WCAG 2.1 compliant (4.5:1 minimum)
-3. **Semantic** — Use semantic color classes (`bg-surface-primary` not `bg-white`)
-4. **Minimal** — Max 3 colors per view (background, accent, text)
-5. **Grid** — Spacing in multiples of 4, prefer multiples of 8
+このファイルは**所在だけ**を示す。仕様・値はここに書かない。
 
-## Key Color Tokens
-- Primary: `primary-50` through `primary-950` (custom defined)
-- Body text: `text-body` (#3d4b5f) — NOT `text-gray-400`
-- Headings: `text-slate-900` — NOT `text-black`
-- Borders: `border-slate-200` — NOT `border-gray-100`
-- Page background: `bg-gray-50`
-- Cards: `bg-white rounded-xl border border-slate-200 p-6 shadow-sm`
+## 最初に読む
 
-## Typography
-- Font: Inter, Hiragino Sans, Hiragino Kaku Gothic ProN, Noto Sans JP, sans-serif
-- Body: `text-base` (18px, line-height 2.0)
-- Headings: `text-3xl font-bold text-slate-900` (32px)
-- Heading letter-spacing: 1%, Body: 2%
+- **作業指示の正本**: `AGENTS.md`（読み込みモード・作業ルール・npm scripts。UI タスクはここから）
+- **AI 向けデザイン入口**: `DESIGN.md`（原則 + Quick Reference）
+- **exact value**: `design/contracts/` — トークンは `design/contracts/tokens.json`、コンポーネント仕様は `design/contracts/components/`、禁止ルールは `design/contracts/rules.json`
+- **値が食い違ったとき**: `design/contracts/` > `DESIGN.md` の Quick Reference > 散文ドキュメント（`design/authority.md` の宣言に従う）
 
-## Spacing
-- Card padding: `p-6` (24px)
-- Card gap: `gap-6` (24px)
-- Page padding: `px-8 py-12`
-- Section gap: `mt-10` to `mt-14`
+## MCP
 
-## Prohibited Patterns
-- `text-black` → use `text-slate-900`
-- `bg-gray-300`+ → use `bg-gray-50` to `bg-gray-200`
-- `shadow-lg` / `shadow-2xl` → use `shadow-sm` to `shadow-md`
-- `rounded-none` on cards → use `rounded-xl`
-- `tracking-tight` → use default or wider
-- `bg-green-*` → use `bg-emerald-*`
-- `bg-yellow-*` → use `bg-amber-*`
-- `bg-indigo-*` / `bg-blue-*` → use `primary-*`
-- `font-light` → use `font-normal`+
-- `py-0.5` on buttons → use `h-8`+ (S: `h-8` / M: `h-10` / L: `h-12`)
+`.cursor/mcp.json` に `melta-ui` サーバーを登録済み（`npm install` 済みであることが前提）。
+`get_token` / `get_component` / `check_rule` / `check_html` / `get_rules` / `search` が使える。
 
-## Reference
-- Full tokens: `design/contracts/tokens.json`
-- Component specs: `metadata/components.json`
-- Prohibition rules: `foundations/prohibited.md`
-- Design philosophy: `foundations/design_philosophy.md`
+HTML / JSX / Vue を生成したら `check_html` で自己検証し、error を消してから提示する。
+`passed` は **lint-clean draft** であって、ブランド・レイアウトの承認ではない（そこは人間が見る）。
+
+## Skills
+
+`.agents/skills/` 配下に Agent Skills 標準のスキルを置いている。名前と用途は各 `SKILL.md` を読む
+（ここに一覧を書くと増減のたびに嘘になるので書かない）。
+
+## このファイルの制約
+
+**値（色コード / Tailwind class レシピ / サイズ）をここに書かない。** 書いた瞬間に contracts と並ぶ
+第二の正典になり、drift 検査の外側で静かにズレる。2026-03〜07 の `.cursor/rules` 3 本が実例で、
+「セマンティッククラスを使え」と書いた原則の隣に、それを破るレシピが半年並んでいた。
+
+`tests/cursor-entry.spec.ts` が機械で止める（値の混入 / mdc の増殖 / 参照先の消滅 / `.mcp.json` との乖離）。
