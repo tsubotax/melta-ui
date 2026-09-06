@@ -68,6 +68,7 @@ import type { JudgeAspect, JudgeVerdict } from "../design/judge/schema.js";
 import { loadAspectsFile, normalizeWhitespace, validateJudgeOutput } from "../design/judge/validate.js";
 import { lintSource } from "../src/utils/lint-core.js";
 import { lintComposition } from "../src/utils/composition-lint.js";
+import { parse as parseHtml } from "node-html-parser";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const rules: RuleEntry[] = (
@@ -1574,6 +1575,14 @@ test.describe("judge core", () => {
       expect(navOpenTags(rel), `${rel} の <nav> 開始タグが 1 つでない`).toHaveLength(1);
     }
     expect(navOpenTags(FILE_FIXTURE_REL)[0]).toBe(navOpenTags(CONFORMING_FIXTURE_REL)[0]);
+
+    // 行テキストだけだと、10 行目末に `<!--` / 14 行目末に `-->` を足して nav ごと
+    // コメントアウトする改変が素通りする（行の中身も件数も README の行照合も変わらず、
+    // コメント内は lint 対象外なので nav 違反も出ない）。DOM 上の実要素数も固定する。
+    for (const rel of [FILE_FIXTURE_REL, CONFORMING_FIXTURE_REL]) {
+      const navs = parseHtml(readFixture(rel)).querySelectorAll("nav");
+      expect(navs, `${rel} の DOM 上の <nav> 要素が 1 つでない`).toHaveLength(1);
+    }
 
     // fixture を .html で置くと CI の Lint Generated UI が違反版で落ちる
     expect(FILE_FIXTURE_REL.endsWith(".html.txt")).toBe(true);
