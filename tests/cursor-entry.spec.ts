@@ -40,6 +40,7 @@ const POINTER_MDC = `${RULES_DIR}/melta-ui.mdc`;
 const CURSOR_MCP = ".cursor/mcp.json";
 const CLAUDE_MCP = ".mcp.json";
 const TOKENS_JSON = "design/contracts/tokens.json";
+const RULES_JSON = "design/contracts/rules.json";
 const CONTRACTS_DIR = "design/contracts/components";
 /** MCP ツール列挙の位置を機械に教えるアンカー（README の `<!-- sec: -->` と同じ流儀） */
 const TOOLS_MARKER = "<!-- mcp-tools -->";
@@ -83,17 +84,48 @@ function splitFrontmatter(md: string): { frontmatter: string; body: string } | n
 
 /**
  * frontmatter を行単位で読む（yaml 依存は足さない）。
+ *
+ * 許すのは**フラットな `key: value` 行だけ**。行パーサで YAML を相手にすると、
+ * `description: |` + 字下げした `alwaysApply: true` のように「YAML 上は description の
+ * 文字列なのに、行だけ見ると設定が並んでいるように読める」書き方を通してしまう。
+ * ネスト（字下げ）とブロックスカラー（`|` / `>`）は書式違反として弾き、3 キーは列 0 に置く。
+ *
  * 引用符つきのキー（`"unknown": true`）も拾う。値は素の文字列のまま返し、
  * `true` / `"true"` / `yes` の区別を呼び出し側に残す
  */
-function parseFrontmatterLines(frontmatter: string): FrontmatterLine[] {
+function parseFrontmatterLines(frontmatter: string): {
+  lines: FrontmatterLine[];
+  violations: string[];
+} {
   const lines: FrontmatterLine[] = [];
+  const violations: string[] = [];
   for (const line of frontmatter.split(/\r?\n/)) {
-    const m = /^\s*("?)([A-Za-z_][\w-]*)\1\s*:\s*(.*)$/.exec(line);
-    if (m == null) continue;
-    lines.push({ key: m[2], value: m[3].trim() });
+    if (line.trim() === "") continue;
+    if (line.trimStart().startsWith("#")) continue; // 行まるごとのコメントは許す
+    if (/^\s/.test(line)) {
+      violations.push(`字下げ行「${line.trim()}」（frontmatter はネストしない）`);
+      continue;
+    }
+    const m = /^("?)([A-Za-z_][\w-]*)\1\s*:\s*(.*)$/.exec(line);
+    if (m == null) {
+      violations.push(`key: value ではない行「${line.trim()}」`);
+      continue;
+    }
+    const value = m[3].trim();
+    if (/^[|>]/.test(value)) {
+      violations.push(
+        `ブロックスカラー「${line.trim()}」（次行以降が値に飲まれ、設定が効かなくなる）`
+      );
+      continue;
+    }
+    lines.push({ key: m[2], value });
   }
-  return lines;
+  return { lines, violations };
+}
+
+/** 値の末尾コメント（` # …`）を落とす。`alwaysApply: true # 常時適用` を過剰に弾かないため */
+function stripInlineComment(value: string): string {
+  return value.replace(/\s+#.*$/, "").trim();
 }
 
 /** バッククォートで囲まれた語をすべて取り出す（`` `AGENTS.md` `` → `AGENTS.md`） */
@@ -122,6 +154,9 @@ function isColorValue(value: unknown): value is string {
  * tokens.json: 全ノードを再帰走査して `tailwind` / `cssVar` / 色の `value` を拾い、
  *   色ノードのパスから `<スケール名>-<段>`（`primary-500` 等）も組み立てる。
  * contract: `htmlSample`（文字列 or variant ごとのオブジェクト）の `class="..."` を分解する。
+ * rules.json: `pattern` / `prefixPatterns[]` / `matchPatterns[]`。**禁止側にしか存在しない語**
+ *   （`text-black` / `shadow-lg` 等）はトークンにも contract にも出てこないので、ここを見ないと
+ *   「DS が禁止している値を書いたポインタ」が素通りする。
  *
  * `-` か `#` を含む語だけを採用する。`body`（color.body の tailwind）のような普通の単語まで
  * 禁止すると日本語の散文が誤検知で落ちるため
@@ -176,17 +211,46 @@ function deriveDenylist(): Map<string, string> {
     }
   }
 
+  const fromContracts = denylist.size - fromTokens;
+
+  const rules = JSON.parse(readFileSync(resolve(REPO_ROOT, RULES_JSON), "utf8"));
+  for (const rule of rules.rules ?? []) {
+    add(rule.pattern, "rules.json（pattern）");
+    for (const key of ["prefixPatterns", "matchPatterns"] as const) {
+      if (Array.isArray(rule[key])) for (const p of rule[key]) add(p, "rules.json（pattern）");
+    }
+  }
+  const fromRules = denylist.size - fromTokens - fromContracts;
+
   // SSOT の形が変わって何も導出できなかったのに「混入なし」と言わないための番人。
-  // 片側だけ 0 でも検査が空振りするので、両方の由来に件数を要求する
+  // 1 つでも 0 なら、その由来ぶんの検査が空振りしている
   expect(fromTokens, `${TOKENS_JSON} から禁止語彙を導出できない（構造が変わった?）`).toBeGreaterThan(
     0
   );
   expect(
-    denylist.size - fromTokens,
+    fromContracts,
     `${CONTRACTS_DIR} の htmlSample から禁止語彙を導出できない（構造が変わった?）`
   ).toBeGreaterThan(0);
+  expect(fromRules, `${RULES_JSON} の pattern から禁止語彙を導出できない（構造が変わった?）`).toBeGreaterThan(
+    0
+  );
 
   return denylist;
+}
+
+/**
+ * 禁止語 1 語ぶんの照合パターン。
+ *
+ * 先頭側は `(?<!\w)` にとどめる。`(?<![\w-])` にすると `bg-primary-950` の中の
+ * `primary-950` が「直前がハイフン」を理由に外れ、色クラスがまるごと素通りする。
+ * 末尾側は `(?![\w-])` を保つ（`text-body` が `text-body-x` に、`primary-500` が
+ * `primary-5000` に当たらないように）。
+ * ただし語自体が `-` で終わる prefix pattern（`bg-blue-` 等）は、続きが来るのが前提なので
+ * 末尾の境界を課さない
+ */
+function denyPattern(word: string): RegExp {
+  const tail = word.endsWith("-") ? "" : "(?![\\w-])";
+  return new RegExp(`(?<!\\w)${escapeRegExp(word)}${tail}`);
 }
 
 /** 正規表現メタ文字のエスケープ（class 名は `[` `/` `.` `(` を含む） */
@@ -203,7 +267,14 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
     ]);
 
     const { frontmatter } = readPointerMdc();
-    const lines = parseFrontmatterLines(frontmatter);
+    const { lines, violations } = parseFrontmatterLines(frontmatter);
+
+    // 書式違反（字下げ・ブロックスカラー・key: value 以外）。行パーサで読める形に限定しないと、
+    // `description: |` の下に字下げした `alwaysApply: true` が「設定あり」に見えてしまう
+    expect(
+      violations,
+      `${POINTER_MDC} の frontmatter が書式違反（フラットな key: value のみ・列 0 から書く）: ${violations.join(" / ")}`
+    ).toEqual([]);
 
     // Cursor が解釈するキーは description / globs / alwaysApply の 3 つだけ。
     // それ以外は黙って無視されるので、効いているつもりの設定が生まれる
@@ -226,10 +297,11 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
     expect(description?.value, `${POINTER_MDC} の frontmatter に description が無い`).toBeTruthy();
 
     // alwaysApply は真偽値の true でなければならない。`"true"` / `yes` / `True` は
-    // YAML では別物（文字列・別表記）で、常時適用になる保証がない
+    // YAML では別物（文字列・別表記）で、常時適用になる保証がない。
+    // 行末コメント（`true # 常時適用`）は YAML では値に含まれないので落としてから比較する
     const alwaysApply = lines.find((l) => l.key === "alwaysApply");
     expect(
-      alwaysApply?.value,
+      alwaysApply == null ? undefined : stripInlineComment(alwaysApply.value),
       `${POINTER_MDC} の frontmatter が alwaysApply: true でない（常時適用されない）`
     ).toBe("true");
   });
@@ -240,11 +312,8 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
     const hits: string[] = [];
 
     // --- SSOT 由来の語彙 ---
-    // 語境界は `[\w-]` で見る。`text-body` が `text-body-x` に、`primary-500` が
-    // `primary-5000` に誤ヒットしないように、前後にハイフンが続く場合は別語として扱う
     for (const [word, route] of deriveDenylist()) {
-      const re = new RegExp(`(?<![\\w-])${escapeRegExp(word)}(?![\\w-])`);
-      if (re.test(text)) hits.push(`${word}（${route}）`);
+      if (denyPattern(word).test(text)) hits.push(`${word}（${route}）`);
     }
 
     // --- 汎用リテラル（SSOT に無い値も止める） ---
@@ -258,6 +327,12 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
       {
         name: "汎用リテラル（単位付き寸法）",
         re: /(?<![\w.])\d+(\.\d+)?(px|rem|em|vh|vw|%)(?![a-zA-Z])/g,
+      },
+      {
+        // SSOT に無いパレット・キーワード色も止める。`from` / `to` は `to-do` のような
+        // 普通の語に当たるので入れない（過剰ブロック側の事故になる）
+        name: "汎用リテラル（Tailwind 色ユーティリティ）",
+        re: /\b(bg|text|border|ring|fill|stroke|divide|outline|placeholder|decoration|accent|caret)-(white|black|transparent|current|inherit|[a-z]+-\d{2,3})\b/g,
       },
       {
         name: "汎用リテラル（Tailwind ユーティリティ）",
@@ -285,13 +360,21 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
       for (let i = 1; i < segments.length; i++) trackedDirs.add(segments.slice(0, i).join("/"));
     }
 
-    // バッククォート参照に加えて Markdown リンク `](path)` も対象にする
-    const linkTargets = [...body.matchAll(/\]\(([^)\s]+)\)/g)]
-      .map((m) => m[1])
-      .filter((t) => !/^(https?:|mailto:|#)/.test(t));
-    const candidates = [...backtickTokens(body), ...linkTargets].filter(
+    // バッククォート参照は「パスらしい語」に絞る（散文や `check_html` を巻き込まないため）
+    const backtickCandidates = backtickTokens(body).filter(
       (t) => /^[A-Za-z0-9._/-]+$/.test(t) && (t.includes("/") || /\.[a-z]+$/.test(t))
     );
+
+    // Markdown リンクはローカル参照をすべて対象にする。文字種で絞ると
+    // `[作業指示](MISSING.md#読み込みモード)` のような日本語 fragment 付きの死リンクが
+    // 候補から外れて素通りする。fragment（`#` 以降）を落としてからファイル部分を照合する
+    const linkCandidates = [...body.matchAll(/\]\(([^)\s]+)\)/g)]
+      .map((m) => m[1])
+      .filter((t) => !/^(https?:|mailto:)/i.test(t))
+      .map((t) => t.split("#")[0].replace(/^\.\//, ""))
+      .filter((t) => t !== ""); // 同一ファイル内アンカー（`#section`）はファイル参照ではない
+
+    const candidates = [...backtickCandidates, ...linkCandidates];
     expect(candidates.length, `${POINTER_MDC} がリポ内パスを 1 つも参照していない`).toBeGreaterThan(
       0
     );
@@ -310,11 +393,14 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
   test("MCP ツールの列挙が src/server.ts と完全一致する", () => {
     const { body } = readPointerMdc();
 
-    const markerIndex = body.indexOf(TOOLS_MARKER);
+    // アンカーはちょうど 1 個。2 個目を足すと、検査は 1 個目だけを見て 2 個目の列挙
+    //（古いツール名・偽のツール名）を素通りさせる
+    const markerCount = body.split(TOOLS_MARKER).length - 1;
     expect(
-      markerIndex,
-      `${POINTER_MDC} に ${TOOLS_MARKER} アンカーが無い（ツール列挙の位置を機械に教える印）`
-    ).toBeGreaterThanOrEqual(0);
+      markerCount,
+      `${POINTER_MDC} の ${TOOLS_MARKER} アンカーはちょうど 1 個であること（実際: ${markerCount} 個）`
+    ).toBe(1);
+    const markerIndex = body.indexOf(TOOLS_MARKER);
     const listLine = body
       .slice(markerIndex + TOOLS_MARKER.length)
       .split(/\r?\n/)
