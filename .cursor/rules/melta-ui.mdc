@@ -16,8 +16,11 @@ alwaysApply: true
 
 ## MCP
 
-`.cursor/mcp.json` に `melta-ui` サーバーを登録済み（`npm install` 済みであることが前提）。
-`get_token` / `get_component` / `check_rule` / `check_html` / `get_rules` / `search` が使える。
+`.cursor/mcp.json` に `melta-ui` サーバーの設定を同梱（`npm install` 済みであることが前提。
+有効化は Cursor 側の操作に従う）。使えるツールは次のとおり（この行は `src/server.ts` と機械照合する）。
+
+<!-- mcp-tools -->
+`get_token` / `get_component` / `check_rule` / `check_html` / `get_rules` / `search`
 
 HTML / JSX / Vue を生成したら `check_html` で自己検証し、error を消してから提示する。
 `passed` は **lint-clean draft** であって、ブランド・レイアウトの承認ではない（そこは人間が見る）。

@@ -56,7 +56,7 @@ You can make an AI read your guidelines. Whether it *follows* them is up to the 
 | Item | Value |
 |---|---|
 | Node | 22 or later (CI verifies on 22) |
-| MCP client | Anything speaking stdio MCP (verified with Claude Code; Cursor picks up the bundled `.cursor/mcp.json`, Codex registers the same stdio command) |
+| MCP client | Anything speaking stdio MCP (verified with Claude Code; Cursor reads the bundled `.cursor/mcp.json` as its project config — enabling it follows Cursor's own flow. Codex registers the same stdio command) |
 | Styling | **Tailwind, class-based.** Static lint reads class attributes, HTML attributes and DOM structure |
 | Rendering the output | Prototype: Tailwind CDN + the `tailwind.config` in `DESIGN.md`. Production: the v4 `@theme` block in `foundations/theme.md` |
 | JSX / Vue | Class and HTML-attribute lint applies. **Composition lint (nesting, a11y DOM) is HTML-only.** Classes reaching JSX through a variable or spread are not statically traceable |
@@ -123,7 +123,7 @@ printf '<div class="text-black shadow-2xl">x</div>' > /tmp/melta-bad.html
 npm run design:lint-generated -- /tmp/melta-bad.html
 ```
 
-`npm install` activates: `.mcp.json` (auto-connects the MCP server in Claude Code), `.cursor/mcp.json` (the same server in Cursor — working instructions come from `AGENTS.md`, and `.cursor/rules/melta-ui.mdc` only points at where things live), the PostToolUse hook in `.claude/settings.json`, and the lint CLI.
+`npm install` activates: `.mcp.json` (auto-connects the MCP server in Claude Code), `.cursor/mcp.json` (the same MCP server bundled as Cursor's project config — enabling it follows Cursor's own flow; working instructions come from `AGENTS.md`, and `.cursor/rules/melta-ui.mdc` only points at where things live), the PostToolUse hook in `.claude/settings.json`, and the lint CLI.
 
 **Success check 1** — running the lint CLI on a violating file exits 1:
 

@@ -21,11 +21,16 @@ contracts / llms.txt / MCP の仕事なので、Cursor 向けには所在ポイ�
 #### Added
 
 - **`.cursor/mcp.json`** — Cursor は Claude Code の `.mcp.json` を読まないため、`mcpServers` を
-  同一内容で置く。clone した Cursor ユーザーは `npm install` 後に同じサーバーへ自動接続する
-- **`tests/cursor-entry.spec.ts`** — ①追跡されている `.mdc` はポインタ 1 本だけ ②`alwaysApply:
-  true` と Cursor が解釈する frontmatter キーのみ ③本文に hex カラー / Tailwind 色クラス /
-  サイズレシピが 1 つも無い ④参照するリポ内パスと MCP ツール名が実在する ⑤`.cursor/mcp.json`
-  と `.mcp.json` の `mcpServers` が deep-equal（片方だけ直すと落ちる）
+  同一内容で置く。clone した Cursor ユーザーに同じサーバーの設定が同梱される（有効化は Cursor
+  側の操作に従う。公式 docs はプロジェクト設定の検出後に承認を挟むかを明記していない）
+- **`tests/cursor-entry.spec.ts`** — ①追跡されている `.mdc` はポインタ 1 本だけ ②frontmatter は
+  Cursor が解釈する 3 キーのみ・重複なし・`alwaysApply` は真偽値の `true` ③frontmatter と本文に
+  値が無い ④参照するリポ内パスが git 管理下に実在する ⑤MCP ツールの列挙が `src/server.ts` と
+  集合として完全一致 ⑥`.cursor/mcp.json` と `.mcp.json` の `mcpServers` が deep-equal。
+  ③の禁止語彙は**実行時に SSOT から導出する**（`tokens.json` の `tailwind` / `cssVar` / 色の
+  `value` / 色スケール名 + contract `htmlSample` の class）。手書きの語彙表を置くとそれ自体が
+  第三の正典になるため。SSOT に無い値（`16px` / `rgb(...)` / 未知パレット）は汎用リテラルで、
+  見た目が同じ非 ASCII ハイフンによる回避は NFKC 正規化 + ハイフン畳み込みで塞ぐ
 
 #### Changed
 
