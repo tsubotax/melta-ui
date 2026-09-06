@@ -31,6 +31,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { parse as parseYaml } from "yaml";
 import { test, expect } from "@playwright/test";
 
 // playwright は testDir の親（リポジトリ直下）を cwd にして走る。既存 spec と同じ流儀
@@ -98,11 +99,6 @@ function normalizeText(text: string): string {
   return text.normalize("NFKC").replace(/[\u2010-\u2015\u2212]/g, "-");
 }
 
-interface FrontmatterLine {
-  key: string;
-  value: string;
-}
-
 /** frontmatter（先頭の `---` ブロック）と本文を分ける。frontmatter が無ければ null */
 function splitFrontmatter(md: string): { frontmatter: string; body: string } | null {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(md);
@@ -111,62 +107,63 @@ function splitFrontmatter(md: string): { frontmatter: string; body: string } | n
 }
 
 /**
- * frontmatter を行単位で読む（yaml 依存は足さない）。
+ * frontmatter を YAML として検証する。
  *
- * 許すのは**フラットな `key: value` 行だけ**。行パーサで YAML を相手にすると、
- * `description: |` + 字下げした `alwaysApply: true` のように「YAML 上は description の
- * 文字列なのに、行だけ見ると設定が並んでいるように読める」書き方を通してしまう。
- * ネスト（字下げ）とブロックスカラー（`|` / `>`）は書式違反として弾き、3 キーは列 0 に置く。
+ * 行単位の自作パーサでは、`description: melta: UI`（無効な YAML）を通し、
+ * `description: melta's entry`（有効な YAML）を弾く、という取りこぼしと過剰ブロックが
+ * 同時に起きる。書式の判定は YAML パーサに任せ、ここは**値の意味**だけを検査する。
  *
- * 引用符つきのキー（`"unknown": true`）も拾う。値は素の文字列のまま返し、
- * `true` / `"true"` / `yes` の区別を呼び出し側に残す
+ * `description: |` の下に字下げした `alwaysApply: true` は、YAML では description の
+ * 文字列に飲まれる。書式としては有効なので、トップレベルに alwaysApply が無いこと
+ * （= 常時適用されない）を理由に落ちる。キーの重複は yaml が既定でエラーにする
  */
-function parseFrontmatterLines(frontmatter: string): {
-  lines: FrontmatterLine[];
-  violations: string[];
+function validateFrontmatter(frontmatter: string): {
+  errors: string[];
+  data: Record<string, unknown> | null;
 } {
-  const lines: FrontmatterLine[] = [];
-  const violations: string[] = [];
-  for (const line of frontmatter.split(/\r?\n/)) {
-    if (line.trim() === "") continue;
-    if (line.trimStart().startsWith("#")) continue; // 行まるごとのコメントは許す
-    if (/^\s/.test(line)) {
-      violations.push(`字下げ行「${line.trim()}」（frontmatter はネストしない）`);
-      continue;
-    }
-    const m = /^("?)([A-Za-z_][\w-]*)\1\s*:\s*(.*)$/.exec(line);
-    if (m == null) {
-      violations.push(`key: value ではない行「${line.trim()}」`);
-      continue;
-    }
-    const value = m[3].trim();
-    if (/^[|>]/.test(value)) {
-      violations.push(
-        `ブロックスカラー「${line.trim()}」（次行以降が値に飲まれ、設定が効かなくなる）`
-      );
-      continue;
-    }
-    // 引用符の対応を検証する。`description: "melta` は閉じ忘れで、YAML としては次行以降を
-    // 巻き込むか parse error になる。行パーサは「有効なスカラー」と読んでしまうので明示的に弾く
-    const quote = value[0];
-    if (quote === '"' || quote === "'") {
-      const closed = new RegExp(`^${quote}.*${quote}(\\s+#.*)?$`).test(value);
-      if (!closed) {
-        violations.push(`引用符が閉じていない「${line.trim()}」`);
-        continue;
-      }
-    } else if (/["']/.test(stripInlineComment(value))) {
-      violations.push(`引用符が値の途中にある「${line.trim()}」（囲むなら全体を囲む）`);
-      continue;
-    }
-    lines.push({ key: m[2], value });
+  const errors: string[] = [];
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(frontmatter, { uniqueKeys: true });
+  } catch (error) {
+    // Cursor が読めない frontmatter は、ルールがまるごと無視される
+    errors.push(`YAML として読めない: ${(error as Error).message.split("\n")[0]}`);
+    return { errors, data: null };
   }
-  return { lines, violations };
-}
 
-/** 値の末尾コメント（` # …`）を落とす。`alwaysApply: true # 常時適用` を過剰に弾かないため */
-function stripInlineComment(value: string): string {
-  return value.replace(/\s+#.*$/, "").trim();
+  if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    errors.push("frontmatter が key: value のオブジェクトではない");
+    return { errors, data: null };
+  }
+  const data = parsed as Record<string, unknown>;
+
+  // Cursor が解釈するキーは description / globs / alwaysApply の 3 つだけ。
+  // それ以外は黙って無視されるので、効いているつもりの設定が生まれる
+  const unsupported = Object.keys(data).filter((k) => !SUPPORTED_FRONTMATTER_KEYS.has(k));
+  if (unsupported.length > 0) {
+    errors.push(`Cursor が解釈しないキーがある: ${unsupported.join(", ")}`);
+  }
+
+  // 真偽値の true だけを認める。文字列 `"true"` は別物で、常時適用になる保証がない
+  if (data.alwaysApply !== true) {
+    errors.push(
+      `alwaysApply が boolean の true でない（実際: ${JSON.stringify(data.alwaysApply) ?? "未設定"}）。常時適用されない`
+    );
+  }
+
+  if (typeof data.description !== "string" || data.description.trim() === "") {
+    errors.push("description が非空の文字列でない");
+  }
+
+  if ("globs" in data) {
+    const globs = data.globs;
+    const valid =
+      typeof globs === "string" ||
+      (Array.isArray(globs) && globs.every((g) => typeof g === "string"));
+    if (!valid) errors.push("globs は文字列または文字列の配列であること");
+  }
+
+  return { errors, data };
 }
 
 /** バッククォートで囲まれた語をすべて取り出す（`` `AGENTS.md` `` → `AGENTS.md`） */
@@ -332,43 +329,14 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
     ]);
 
     const { frontmatter } = readPointerMdc();
-    const { lines, violations } = parseFrontmatterLines(frontmatter);
+    const { errors } = validateFrontmatter(frontmatter);
 
-    // 書式違反（字下げ・ブロックスカラー・key: value 以外）。行パーサで読める形に限定しないと、
-    // `description: |` の下に字下げした `alwaysApply: true` が「設定あり」に見えてしまう
+    // 書式（YAML として有効か・キーの重複）はパーサが、意味（キー集合・型・値）は
+    // validateFrontmatter が見る。どちらが欠けても Cursor は黙って適用しなくなる
     expect(
-      violations,
-      `${POINTER_MDC} の frontmatter が書式違反（フラットな key: value のみ・列 0 から書く）: ${violations.join(" / ")}`
+      errors,
+      `${POINTER_MDC} の frontmatter が不正: ${errors.join(" / ")}`
     ).toEqual([]);
-
-    // Cursor が解釈するキーは description / globs / alwaysApply の 3 つだけ。
-    // それ以外は黙って無視されるので、効いているつもりの設定が生まれる
-    const unsupported = lines.map((l) => l.key).filter((k) => !SUPPORTED_FRONTMATTER_KEYS.has(k));
-    expect(
-      unsupported,
-      `${POINTER_MDC} の frontmatter に Cursor が解釈しないキーがある: ${unsupported.join(", ")}`
-    ).toEqual([]);
-
-    // 重複キーは後勝ち・前勝ちがパーサ依存になる。どちらが効いているか読めない状態を許さない
-    const seen = new Map<string, number>();
-    for (const l of lines) seen.set(l.key, (seen.get(l.key) ?? 0) + 1);
-    const duplicated = [...seen.entries()].filter(([, n]) => n > 1).map(([k]) => k);
-    expect(
-      duplicated,
-      `${POINTER_MDC} の frontmatter にキーの重複がある（どちらが効くかパーサ依存）: ${duplicated.join(", ")}`
-    ).toEqual([]);
-
-    const description = lines.find((l) => l.key === "description");
-    expect(description?.value, `${POINTER_MDC} の frontmatter に description が無い`).toBeTruthy();
-
-    // alwaysApply は真偽値の true でなければならない。`"true"` / `yes` / `True` は
-    // YAML では別物（文字列・別表記）で、常時適用になる保証がない。
-    // 行末コメント（`true # 常時適用`）は YAML では値に含まれないので落としてから比較する
-    const alwaysApply = lines.find((l) => l.key === "alwaysApply");
-    expect(
-      alwaysApply == null ? undefined : stripInlineComment(alwaysApply.value),
-      `${POINTER_MDC} の frontmatter が alwaysApply: true でない（常時適用されない）`
-    ).toBe("true");
   });
 
   test("frontmatter と本文に値（SSOT の語彙 / 色 / 寸法）が 1 つも無い", () => {
@@ -402,8 +370,10 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
         re: /(?<![\w-])(bg|text|border|ring|fill|stroke|divide|outline|placeholder|decoration|accent|caret)-(white|black|transparent|current|inherit|[a-z]+-\d{2,3})(?![\w-])/g,
       },
       {
+        // 先頭の `-?` は負のユーティリティ（`-mt-4` / `-translate-y-1/2`）。
+        // 契約の htmlSample には出るが、接頭辞に `-` が付くと denylist の語境界から外れる
         name: "汎用リテラル（Tailwind ユーティリティ）",
-        re: /(?<![\w-])(h|w|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|rounded|text|leading|tracking|shadow|border)-(\d+(\.\d+)?|xs|sm|md|lg|xl|\dxl|full|none)(?![\w-])/g,
+        re: /(?<![\w-])-?(h|w|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|rounded|text|leading|tracking|shadow|border|inset|top|left|right|bottom|z|space-x|space-y|translate-x|translate-y)-(\d+(\.\d+)?|xs|sm|md|lg|xl|\dxl|full|none|px)(?![\w-])/g,
       },
     ];
     for (const literal of literals) {
@@ -435,9 +405,14 @@ test.describe(".cursor/ の入口が値を持たないポインタである", ()
     // Markdown リンクはローカル参照をすべて対象にする。文字種で絞ると
     // `[作業指示](MISSING.md#読み込みモード)` のような日本語 fragment 付きの死リンクが
     // 候補から外れて素通りする。fragment（`#` 以降）を落としてからファイル部分を照合する。
-    // destination の後ろにタイトル（`](path "説明")`）が付く形も拾う
-    const linkCandidates = [...body.matchAll(/\]\(\s*([^\s)]+)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g)]
-      .map((m) => m[1])
+    // destination の後ろにタイトル（`](path "説明")`）が付く形も拾う。
+    // 参照形式（`[作業指示][guide]` + 別行の `[guide]: path`）は定義行に destination が
+    // 書かれるので、そちらも同じ経路へ流す（インラインだけ見ると定義側の死リンクが残る）
+    const referenceDefinitions = [...body.matchAll(/^\s*\[[^\]]+\]:\s*(\S+)/gm)].map((m) => m[1]);
+    const linkCandidates = [
+      ...[...body.matchAll(/\]\(\s*([^\s)]+)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g)].map((m) => m[1]),
+      ...referenceDefinitions,
+    ]
       .filter((t) => !/^(https?:|mailto:)/i.test(t))
       .map((t) => t.split("#")[0].replace(/^\.\//, ""))
       .filter((t) => t !== ""); // 同一ファイル内アンカー（`#section`）はファイル参照ではない

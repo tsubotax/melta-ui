@@ -23,8 +23,9 @@ contracts / llms.txt / MCP の仕事なので、Cursor 向けには所在ポイ�
 - **`.cursor/mcp.json`** — Cursor は Claude Code の `.mcp.json` を読まないため、`mcpServers` を
   同一内容で置く。clone した Cursor ユーザーに同じサーバーの設定が同梱される（有効化は Cursor
   側の操作に従う。公式 docs はプロジェクト設定の検出後に承認を挟むかを明記していない）
-- **`tests/cursor-entry.spec.ts`** — ①追跡されている `.mdc` はポインタ 1 本だけ ②frontmatter は
-  Cursor が解釈する 3 キーのみ・重複なし・`alwaysApply` は真偽値の `true` ③frontmatter と本文に
+- **`tests/cursor-entry.spec.ts`** — ①追跡されている `.mdc` はポインタ 1 本だけ ②frontmatter を
+  YAML としてパースし（`yaml` を devDependency に追加）、Cursor が解釈する 3 キーのみ・重複なし・
+  `alwaysApply` は boolean の `true`・`description` は非空の文字列 ③frontmatter と本文に
   値が無い ④参照するリポ内パスが git 管理下に実在する ⑤MCP ツールの列挙が `src/server.ts` と
   集合として完全一致 ⑥`.cursor/mcp.json` と `.mcp.json` の `mcpServers` が deep-equal。
   ③の禁止語彙は**実行時に SSOT から導出する**（`tokens.json` の `tailwind` / `cssVar` / 色の
