@@ -2,8 +2,8 @@
   "$schema": "../../../schemas/recipe.schema.json",
   "id": "header",
   "platform": "app",
-  "contractVersion": "0.2.0",
-  "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。containerStyle は横並び（leading? / title / trailing?）+ 下 border。title は melta の Text（variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"）を compose するため titleStyle は持たない（typography は text recipe が正）。titleWrapStyle の flex:1 で title が余白を占有し trailing を右端へ押す。 actionsはdefaultの外側余白・下線・titleWrapを保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しだけを視覚的に隠す。",
+  "contractVersion": "0.3.0",
+  "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。containerStyle は横並び（leading? / title / trailing?）+ 下 border。title は melta の Text（variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"）を compose するため titleStyle は持たない（typography は text recipe が正）。titleWrapStyle の flex:1 で title が余白を占有し trailing を右端へ押す。 actionsはdefaultの外側余白・下線・titleWrapを保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しだけを視覚的に隠す。 centered/navigationは等幅の左右slotと縮小可能なタイトル領域を持つ。最小高44でフォント拡大を許す。navigationのborderBottomWidth:1は密度1での値で、実機ではStyleSheet.hairlineWidthをresolverへ渡す。centeredの横余白は親が持つ。",
   "variants": {
     "default": {
       "containerStyle": {
@@ -59,6 +59,59 @@
         "width": 1,
         "height": 1,
         "overflow": "hidden"
+      }
+    },
+    "centered": {
+      "containerStyle": {
+        "flexDirection": "row",
+        "alignItems": "center",
+        "minHeight": 44
+      },
+      "titleWrapStyle": {
+        "flexShrink": 1,
+        "minWidth": 0
+      },
+      "leadingStyle": {
+        "flex": 1,
+        "minWidth": 44,
+        "flexDirection": "row",
+        "justifyContent": "flex-start"
+      },
+      "trailingStyle": {
+        "flex": 1,
+        "minWidth": 44,
+        "flexDirection": "row",
+        "justifyContent": "flex-end"
+      }
+    },
+    "navigation": {
+      "containerStyle": {
+        "flexDirection": "row",
+        "alignItems": "center",
+        "minHeight": 44,
+        "paddingHorizontal": {
+          "token": "spacing.4"
+        },
+        "borderBottomWidth": 1,
+        "borderBottomColor": {
+          "token": "color.semantic.light.border-default"
+        }
+      },
+      "titleWrapStyle": {
+        "flexShrink": 1,
+        "minWidth": 0
+      },
+      "leadingStyle": {
+        "flex": 1,
+        "minWidth": 44,
+        "flexDirection": "row",
+        "justifyContent": "flex-start"
+      },
+      "trailingStyle": {
+        "flex": 1,
+        "minWidth": 44,
+        "flexDirection": "row",
+        "justifyContent": "flex-end"
       }
     }
   },

@@ -1857,7 +1857,7 @@
       "id": "header",
       "name": "Header",
       "category": "layout",
-      "description": "画面ヘッダー。defaultは可視見出し、actionsは見出しを視覚的に隠した操作バー。どちらも意味のあるtitleを必須とし、leading/trailingの操作を個別に読み上げる。",
+      "description": "画面ヘッダー。defaultは左寄せ見出し、actionsは可視タイトルなしの操作バー、centered/navigationは中央タイトル。配置・寸法・文字組みはHeaderが所有し、画面の操作内容とnavigationは利用側が渡す。",
       "docPath": "components/header.md",
       "anatomy": [
         "container",
@@ -1875,6 +1875,16 @@
           "name": "actions",
           "class": "",
           "tailwind": ""
+        },
+        {
+          "name": "centered",
+          "class": "",
+          "tailwind": ""
+        },
+        {
+          "name": "navigation",
+          "class": "",
+          "tailwind": ""
         }
       ],
       "sizes": [],
@@ -1887,8 +1897,8 @@
           "$schema": "../../../schemas/recipe.schema.json",
           "id": "header",
           "platform": "app",
-          "contractVersion": "0.2.0",
-          "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。containerStyle は横並び（leading? / title / trailing?）+ 下 border。title は melta の Text（variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"）を compose するため titleStyle は持たない（typography は text recipe が正）。titleWrapStyle の flex:1 で title が余白を占有し trailing を右端へ押す。 actionsはdefaultの外側余白・下線・titleWrapを保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しだけを視覚的に隠す。",
+          "contractVersion": "0.3.0",
+          "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。containerStyle は横並び（leading? / title / trailing?）+ 下 border。title は melta の Text（variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"）を compose するため titleStyle は持たない（typography は text recipe が正）。titleWrapStyle の flex:1 で title が余白を占有し trailing を右端へ押す。 actionsはdefaultの外側余白・下線・titleWrapを保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しだけを視覚的に隠す。 centered/navigationは等幅の左右slotと縮小可能なタイトル領域を持つ。最小高44でフォント拡大を許す。navigationのborderBottomWidth:1は密度1での値で、実機ではStyleSheet.hairlineWidthをresolverへ渡す。centeredの横余白は親が持つ。",
           "variants": {
             "default": {
               "containerStyle": {
@@ -1945,6 +1955,59 @@
                 "height": 1,
                 "overflow": "hidden"
               }
+            },
+            "centered": {
+              "containerStyle": {
+                "flexDirection": "row",
+                "alignItems": "center",
+                "minHeight": 44
+              },
+              "titleWrapStyle": {
+                "flexShrink": 1,
+                "minWidth": 0
+              },
+              "leadingStyle": {
+                "flex": 1,
+                "minWidth": 44,
+                "flexDirection": "row",
+                "justifyContent": "flex-start"
+              },
+              "trailingStyle": {
+                "flex": 1,
+                "minWidth": 44,
+                "flexDirection": "row",
+                "justifyContent": "flex-end"
+              }
+            },
+            "navigation": {
+              "containerStyle": {
+                "flexDirection": "row",
+                "alignItems": "center",
+                "minHeight": 44,
+                "paddingHorizontal": {
+                  "token": "spacing.4"
+                },
+                "borderBottomWidth": 1,
+                "borderBottomColor": {
+                  "token": "color.semantic.light.border-default"
+                }
+              },
+              "titleWrapStyle": {
+                "flexShrink": 1,
+                "minWidth": 0
+              },
+              "leadingStyle": {
+                "flex": 1,
+                "minWidth": 44,
+                "flexDirection": "row",
+                "justifyContent": "flex-start"
+              },
+              "trailingStyle": {
+                "flex": 1,
+                "minWidth": 44,
+                "flexDirection": "row",
+                "justifyContent": "flex-end"
+              }
             }
           },
           "sizes": {},
@@ -1954,8 +2017,9 @@
       "accessibility": {
         "role": "banner",
         "required": [
-          "titleは空でない画面名。defaultでは可視heading、actionsでは視覚的に隠したheading（RN: accessibilityRole=\"header\"）として読み上げる",
-          "container全体を単一のaccessible要素にまとめない。leading/trailingの操作は独立してフォーカス・読み上げ・操作できる"
+          "titleは空でない画面名。default/centered/navigationでは可視heading、actionsでは視覚的に隠したheading（RN: accessibilityRole=\"header\"）として読み上げる。スクロールによるタイトル切替で見えない場合は、利用側wrapperで読み上げ対象からも外す",
+          "container全体を単一のaccessible要素にまとめない。leading/trailingの操作は独立してフォーカス・読み上げ・操作できる",
+          "centered/navigationの左右slotに入れる操作は44pt以上の標的を持たせる。固定高でフォント拡大を切らず、最小高で確保する"
         ],
         "focusRing": "N/A"
       },
