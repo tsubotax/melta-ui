@@ -3,7 +3,7 @@
   "id": "header",
   "platform": "app",
   "contractVersion": "0.3.0",
-  "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。containerStyle は横並び（leading? / title / trailing?）+ 下 border。title は melta の Text（variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"）を compose するため titleStyle は持たない（typography は text recipe が正）。titleWrapStyle の flex:1 で title が余白を占有し trailing を右端へ押す。 actionsはdefaultの外側余白・下線・titleWrapを保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しだけを視覚的に隠す。 centered/navigationは等幅の左右slotと縮小可能なタイトル領域を持つ。最小高44でフォント拡大を許す。navigationのborderBottomWidth:1は密度1での値で、実機ではStyleSheet.hairlineWidthをresolverへ渡す。centeredの横余白は親が持つ。",
+  "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。title は melta の Text を compose するため titleStyle は持たない（typography は text recipe が正）。default/actions は variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"。default の横並び・外側余白・下線・titleWrapStyle の flex:1 を actions も保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しを視覚的に隠す。centered/navigation は Text variant=\"lg\" を既定、長い動的タイトルは \"base\" とし、独立した見出しgroupに置く。等幅の左右slotと縮小可能なタイトル領域を持ち、最小高44でフォント拡大を許す。navigation の borderBottomWidth:1 は密度1での値で、実機ではStyleSheet.hairlineWidthをresolverへ渡す。centered は下線を持たず横余白は親が持つ。",
   "variants": {
     "default": {
       "containerStyle": {
