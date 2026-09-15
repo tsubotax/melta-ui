@@ -7,7 +7,12 @@
   "appStatus": "implemented",
   "intent": "ローディングプレースホルダー。aria-busy=\"true\"必須。",
   "docPath": "components/skeleton.md",
-  "anatomy": ["container", "circle?", "bar", "srOnlyText"],
+  "anatomy": [
+    "container",
+    "circle?",
+    "bar",
+    "srOnlyText"
+  ],
   "variants": {
     "text": {
       "description": "テキスト行のプレースホルダー",
@@ -73,5 +78,8 @@
       "severity": "error"
     }
   ],
-  "htmlSample": "<div aria-busy=\"true\" role=\"status\" aria-label=\"読み込み中\" class=\"bg-slate-200 rounded-md h-4 w-full skeleton-pulse\"></div>"
+  "htmlSample": "<div aria-busy=\"true\" role=\"status\" aria-label=\"読み込み中\" class=\"bg-slate-200 rounded-md h-4 w-full skeleton-pulse\"></div>",
+  "platformSemantics": {
+    "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。Skeleton の text/circle はカードの elevation を参照しない。"
+  }
 }

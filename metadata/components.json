@@ -1216,6 +1216,9 @@
         "hover",
         "focus-within"
       ],
+      "platformSemantics": {
+        "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。背景・枠・余白と primaryAction の操作契約は維持する。"
+      },
       "appStatus": "implemented",
       "recipes": {
         "app": {
@@ -1223,7 +1226,7 @@
           "id": "card",
           "platform": "app",
           "contractVersion": "2.1.0",
-          "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus 時は FocusRing overlay（borderWidth 2 / color.primary.500 / inset -3 / borderRadius = radius.lg + 3）。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。",
+          "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus 時は FocusRing overlay（borderWidth 2 / color.primary.500 / inset -3 / borderRadius = radius.lg + 3）。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。",
           "variants": {
             "basic": {
               "style": {
@@ -1319,7 +1322,19 @@
             }
           },
           "sizes": {},
-          "states": {}
+          "states": {},
+          "elevationOptions": {
+            "default": {
+              "description": "既存variant/stateのelevationを維持"
+            },
+            "none": {
+              "style": {
+                "elevation": {
+                  "token": "elevation.none"
+                }
+              }
+            }
+          }
         }
       },
       "accessibility": {
@@ -3354,6 +3369,9 @@
         "loading",
         "loaded"
       ],
+      "platformSemantics": {
+        "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。Skeleton の text/circle はカードの elevation を参照しない。"
+      },
       "appStatus": "implemented",
       "recipes": {
         "app": {
@@ -3361,7 +3379,7 @@
           "id": "skeleton",
           "platform": "app",
           "contractVersion": "2.0.0",
-          "description": "RN 実装（src/components/Skeleton.tsx）の具象レシピ（styleRefs 形式）。text は行バー（複数行時は行間 gap spacing.2、最終行のみ width 70%）。circle は 40x40 固定。card は Surface 土台（bg-surface / radius.lg / elevation.sm / padding spacing.6 + borderWidth 1 border-default）の上に border-default のバー（height 12 / radius.sm）とアバター円（40x40）を gap spacing.3 / spacing.2 で構成。バー寸法（14 / 12 / 40 / %幅）は token に対応が無く literal。states.loading は pulse アニメーション（opacity 1↔0.4 を motion.duration.slow で loop、reduce-motion ON 時は完全停止で opacity 1 固定 + busy 維持）。loaded は Skeleton 自体をアンマウント（style 差分なし）。",
+          "description": "RN 実装（src/components/Skeleton.tsx）の具象レシピ（styleRefs 形式）。text は行バー（複数行時は行間 gap spacing.2、最終行のみ width 70%）。circle は 40x40 固定。card は Surface 土台（bg-surface / radius.lg / elevation.sm / padding spacing.6 + borderWidth 1 border-default）の上に border-default のバー（height 12 / radius.sm）とアバター円（40x40）を gap spacing.3 / spacing.2 で構成。バー寸法（14 / 12 / 40 / %幅）は token に対応が無く literal。states.loading は pulse アニメーション（opacity 1↔0.4 を motion.duration.slow で loop、reduce-motion ON 時は完全停止で opacity 1 固定 + busy 維持）。loaded は Skeleton 自体をアンマウント（style 差分なし）。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。",
           "variants": {
             "text": {
               "style": {
@@ -3435,6 +3453,18 @@
             },
             "loaded": {
               "style": {}
+            }
+          },
+          "elevationOptions": {
+            "default": {
+              "description": "既存variant/stateのelevationを維持"
+            },
+            "none": {
+              "style": {
+                "elevation": {
+                  "token": "elevation.none"
+                }
+              }
             }
           }
         }

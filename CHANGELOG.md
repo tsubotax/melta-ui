@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- APP Card / Skeleton に影なし指定の契約とレシピを追加。既定の影は維持する。melta-contracts 0.9.1 の公開候補。
+
 ### Fixed
 
 - **reset-vrt の `kiso.css` 差分（CI Linux 限定・毎回 31548px）を解消し、job を required へ昇格** —
