@@ -3,52 +3,92 @@
   "id": "skeleton",
   "platform": "app",
   "contractVersion": "2.0.0",
-  "description": "RN 実装（src/components/Skeleton.tsx）の具象レシピ（styleRefs 形式）。text は行バー（複数行時は行間 gap spacing.2、最終行のみ width 70%）。circle は 40x40 固定。card は Surface 土台（bg-surface / radius.lg / elevation.sm / padding spacing.6 + borderWidth 1 border-default）の上に border-default のバー（height 12 / radius.sm）とアバター円（40x40）を gap spacing.3 / spacing.2 で構成。バー寸法（14 / 12 / 40 / %幅）は token に対応が無く literal。states.loading は pulse アニメーション（opacity 1↔0.4 を motion.duration.slow で loop、reduce-motion ON 時は完全停止で opacity 1 固定 + busy 維持）。loaded は Skeleton 自体をアンマウント（style 差分なし）。",
+  "description": "RN 実装（src/components/Skeleton.tsx）の具象レシピ（styleRefs 形式）。text は行バー（複数行時は行間 gap spacing.2、最終行のみ width 70%）。circle は 40x40 固定。card は Surface 土台（bg-surface / radius.lg / elevation.sm / padding spacing.6 + borderWidth 1 border-default）の上に border-default のバー（height 12 / radius.sm）とアバター円（40x40）を gap spacing.3 / spacing.2 で構成。バー寸法（14 / 12 / 40 / %幅）は token に対応が無く literal。states.loading は pulse アニメーション（opacity 1↔0.4 を motion.duration.slow で loop、reduce-motion ON 時は完全停止で opacity 1 固定 + busy 維持）。loaded は Skeleton 自体をアンマウント（style 差分なし）。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。",
   "variants": {
     "text": {
       "style": {
         "height": 14,
-        "borderRadius": { "token": "radius.sm" },
-        "backgroundColor": { "token": "color.semantic.light.border-default" },
-        "gap": { "token": "spacing.2" }
+        "borderRadius": {
+          "token": "radius.sm"
+        },
+        "backgroundColor": {
+          "token": "color.semantic.light.border-default"
+        },
+        "gap": {
+          "token": "spacing.2"
+        }
       }
     },
     "circle": {
       "style": {
         "width": 40,
         "height": 40,
-        "borderRadius": { "token": "radius.full" },
-        "backgroundColor": { "token": "color.semantic.light.border-default" }
+        "borderRadius": {
+          "token": "radius.full"
+        },
+        "backgroundColor": {
+          "token": "color.semantic.light.border-default"
+        }
       }
     },
     "card": {
       "style": {
-        "backgroundColor": { "token": "color.semantic.light.bg-surface" },
-        "borderRadius": { "token": "radius.lg" },
+        "backgroundColor": {
+          "token": "color.semantic.light.bg-surface"
+        },
+        "borderRadius": {
+          "token": "radius.lg"
+        },
         "borderWidth": 1,
-        "borderColor": { "token": "color.semantic.light.border-default" },
-        "padding": { "token": "spacing.6" },
-        "elevation": { "token": "elevation.sm" }
+        "borderColor": {
+          "token": "color.semantic.light.border-default"
+        },
+        "padding": {
+          "token": "spacing.6"
+        },
+        "elevation": {
+          "token": "elevation.sm"
+        }
       },
       "barStyle": {
         "height": 12,
-        "borderRadius": { "token": "radius.sm" },
-        "backgroundColor": { "token": "color.semantic.light.border-default" }
+        "borderRadius": {
+          "token": "radius.sm"
+        },
+        "backgroundColor": {
+          "token": "color.semantic.light.border-default"
+        }
       }
     }
   },
   "sizes": {},
   "states": {
     "loading": {
-      "style": { "opacity": 0.4 },
+      "style": {
+        "opacity": 0.4
+      },
       "animation": {
         "opacityFrom": 1,
         "opacityTo": 0.4,
-        "duration": { "token": "motion.duration.slow" }
+        "duration": {
+          "token": "motion.duration.slow"
+        }
       }
     },
     "loaded": {
       "style": {}
+    }
+  },
+  "elevationOptions": {
+    "default": {
+      "description": "既存variant/stateのelevationを維持"
+    },
+    "none": {
+      "style": {
+        "elevation": {
+          "token": "elevation.none"
+        }
+      }
     }
   }
 }
