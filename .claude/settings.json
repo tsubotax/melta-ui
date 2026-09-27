@@ -1,5 +1,5 @@
 {
-  "model": "claude-opus-5",
+  "model": "opus",
   "hooks": {
     "PostToolUse": [
       {
