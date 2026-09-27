@@ -35,7 +35,7 @@ WCAGコントラスト比:
 | 用途 | Light | Dark | 理由 |
 |------|-------|------|------|
 | CTAボタン背景 | primary-500 | primary-500 | 暗い背景での視認性確保 |
-| テキストリンク | primary-500 | primary-400 | slate-800上でのコントラスト比確保 |
+| テキストリンク | primary-500 | primary-400 | 暗いsurface上でのコントラスト比確保 |
 | Subtle背景 | primary-50 | primary-500/12% | 透過で暗い背景に馴染ませる |
 | フォーカスリング | primary-500/50 | primary-400/50 | 同上 |
 
@@ -140,24 +140,24 @@ html[data-theme="dark"] { @mixin dark-tokens; }
 
 /* dark-tokens mixin（実際のCSS実装では共通ブロックにまとめる） */
 /*
-  --bg-page:        #0f172a;    slate-900
-  --bg-page-alt:    #334155;    slate-700
-  --bg-surface:     #1e293b;    slate-800
-  --bg-surface-alt: #0f172a;    slate-900
-  --text-heading:   #f1f5f9;    slate-100
-  --text-default:   #cbd5e1;    slate-300
-  --text-muted:     #94a3b8;    slate-400
-  --border-default: #334155;    slate-700
-  --border-strong:  #475569;    slate-600
-  --input-bg:       #0f172a;    slate-900
-  --input-border:   #475569;    slate-600
+  --bg-page:        #161718;
+  --bg-page-alt:    #232525;
+  --bg-surface:     #1b1c1d;
+  --bg-surface-alt: #161718;
+  --text-heading:   #eeeeee;
+  --text-default:   #eeeeee;
+  --text-muted:     #a3a3a3;
+  --border-default: #373839;
+  --border-strong:  #777777;
+  --input-bg:       #161718;
+  --input-border:   #777777;
   --shadow-color:   0, 0, 0;
   --shadow-opacity: 0.3;
 */
 ```
 
 > `text-body` は Tailwind 4 のカスタムカラーとして `--color-body` で定義する。`text-body` クラスで自動的に適用される。
-> ダークモードでは `--color-body` を `:root` の `--text-default` にバインドし、`prefers-color-scheme: dark` または `data-theme="dark"` で `#cbd5e1`（slate-300）に切り替える。
+> ダークモードでは `--color-body` を `:root` の `--text-default` にバインドし、`prefers-color-scheme: dark` または `data-theme="dark"` で `#eeeeee`に切り替える。
 
 ---
 

@@ -5,6 +5,7 @@
   "name": "Header",
   "category": "layout",
   "appStatus": "implemented",
+  "appNote": "melta-app に実装済みなのは default / actions のみ。centered / navigation は契約だけが先行している。melta-app の型は melta-app 内に生成済みの契約型（header 0.2.0）から取るため、melta-app が新しい契約で型を再生成して公開するまでは型エラーになる。再生成後も実装が入るまでは default と同じ描画になる。使う前に melta-app 側の実装を待つこと",
   "intent": "画面ヘッダー。defaultは左寄せ見出し、actionsは可視タイトルなしの操作バー、centered/navigationは中央タイトル。配置・寸法・文字組みはHeaderが所有し、画面の操作内容とnavigationは利用側が渡す。",
   "docPath": "components/header.md",
   "appFirst": true,

@@ -69,18 +69,18 @@ html { scrollbar-gutter: auto; }
 }
 
 /* --- Dark Theme --- */
-html[data-theme="dark"] {
-  --bg-page: #0f172a;
-  --bg-page-alt: #334155;
-  --bg-surface: #1e293b;
-  --bg-surface-alt: #0f172a;
-  --text-heading: #f1f5f9;
-  --text-default: #cbd5e1;
-  --text-muted: #94a3b8;
-  --border-default: #334155;
-  --border-strong: #475569;
-  --input-bg: #0f172a;
-  --input-border: #475569;
+html[data-theme="dark"], .dark-preview {
+  --bg-page: #161718;
+  --bg-page-alt: #232525;
+  --bg-surface: #1b1c1d;
+  --bg-surface-alt: #161718;
+  --text-heading: #eeeeee;
+  --text-default: #eeeeee;
+  --text-muted: #a3a3a3;
+  --border-default: #373839;
+  --border-strong: #777777;
+  --input-bg: #161718;
+  --input-border: #777777;
   --text-accent: #6492ff;
   --text-on-accent: #ffffff;
   --sidebar-active-color: #95b6ff;

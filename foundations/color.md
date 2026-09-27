@@ -27,9 +27,9 @@ UIは3層で構成する。ダークモードでも同じレイヤー構造を�
 
 | レイヤー | 役割 | Light | Dark |
 |---------|------|-------|------|
-| Background | 最下層・画面の地色 | `bg-gray-50` 〜 `bg-gray-200` | `bg-slate-900` 〜 `bg-slate-700` |
-| Surface | Backgroundの上に乗る表層 | `bg-white`, `bg-gray-50` | `bg-slate-800`, `bg-slate-900` |
-| Text/Object | Surface上のテキスト・アイコン | `text-slate-900`, `text-body` | `text-slate-100`, `text-slate-300` |
+| Background | 最下層・画面の地色 | `bg-gray-50` 〜 `bg-gray-200` | `bg-[var(--bg-page)]` 〜 `bg-[var(--bg-page-alt)]` |
+| Surface | Backgroundの上に乗る表層 | `bg-white`, `bg-gray-50` | `bg-[var(--bg-surface)]`, `bg-[var(--bg-page)]` |
+| Text/Object | Surface上のテキスト・アイコン | `text-slate-900`, `text-body` | `text-[var(--text-heading)]`, `text-[var(--text-default)]` |
 
 > **ダークモードの原則**: Light では「暗い背景 → 明るい表層」で浮遊感を出すが、Dark では「暗い背景 → やや明るい表層」で同じ効果を再現する。明度差を保ちつつ、全体を暗い方向にシフトさせる。
 
@@ -41,17 +41,17 @@ UIは3層で構成する。ダークモードでも同じレイヤー構造を�
 
 | セマンティック名 | Light 値 | Light クラス | Dark 値 | Dark クラス |
 |----------------|---------|-------------|---------|------------|
-| bg-background-primary | #f9fafb | `bg-gray-50` | #0f172a | `bg-slate-900` |
-| bg-background-secondary | #f3f4f6 | `bg-gray-100` | #1e293b | `bg-slate-800` |
-| bg-background-tertiary | #e5e7eb | `bg-gray-200` | #334155 | `bg-slate-700` |
+| bg-background-primary | #f9fafb | `bg-gray-50` | #161718 | `bg-[var(--bg-page)]` |
+| bg-background-secondary | #f3f4f6 | `bg-gray-100` | #1b1c1d | `bg-[var(--bg-surface)]` |
+| bg-background-tertiary | #e5e7eb | `bg-gray-200` | #232525 | `bg-[var(--bg-page-alt)]` |
 
 ### Surface（表層・カード/ボタン等）
 
 | セマンティック名 | Light 値 | Light クラス | Dark 値 | Dark クラス |
 |----------------|---------|-------------|---------|------------|
-| bg-surface-primary | #ffffff | `bg-white` | #1e293b | `bg-slate-800` |
-| bg-surface-secondary | #f9fafb | `bg-gray-50` | #0f172a | `bg-slate-900` |
-| bg-surface-tertiary | #f3f4f6 | `bg-gray-100` | #334155 | `bg-slate-700` |
+| bg-surface-primary | #ffffff | `bg-white` | #1b1c1d | `bg-[var(--bg-surface)]` |
+| bg-surface-secondary | #f9fafb | `bg-gray-50` | #161718 | `bg-[var(--bg-page)]` |
+| bg-surface-tertiary | #f3f4f6 | `bg-gray-100` | #232525 | `bg-[var(--bg-page-alt)]` |
 | bg-surface-accent | — | `bg-primary-500` | — | `bg-primary-500` |
 | bg-surface-accent-subtle | #f0f5ff | `bg-primary-50` | — | `bg-primary-500/[.12]` |
 | bg-surface-success | #059669 | `bg-emerald-600` | — | （共通） |
@@ -69,15 +69,15 @@ UIは3層で構成する。ダークモードでも同じレイヤー構造を�
 
 | 階層 | セマンティック名 | Light 値 | Light クラス | Dark 値 | Dark クラス |
 |------|----------------|---------|-------------|---------|------------|
-| 1 | text-primary | #0f172a | `text-slate-900` | #f1f5f9 | `text-slate-100` |
-| 2 | text-body | #3d4b5f | `text-body` | #cbd5e1 | `text-slate-300` |
-| 3 | text-tertiary | #64748b | `text-slate-500` | #94a3b8 | `text-slate-400` |
+| 1 | text-primary | #0f172a | `text-slate-900` | #eeeeee | `text-[var(--text-heading)]` |
+| 2 | text-body | #3d4b5f | `text-body` | #eeeeee | `text-[var(--text-default)]` |
+| 3 | text-tertiary | #64748b | `text-slate-500` | #a3a3a3 | `text-[var(--text-muted)]` |
 
 | セマンティック名 | Light クラス | Dark クラス |
 |----------------|-------------|------------|
-| text-primary | `text-slate-900` | `text-slate-100` |
-| text-body | `text-body` | `text-slate-300` |
-| text-tertiary | `text-slate-500` | `text-slate-400` |
+| text-primary | `text-slate-900` | `text-[var(--text-heading)]` |
+| text-body | `text-body` | `text-[var(--text-default)]` |
+| text-tertiary | `text-slate-500` | `text-[var(--text-muted)]` |
 | text-inverse | `text-white` | `text-slate-900` |
 | text-accent | `text-primary-500` | `text-primary-400` |
 | text-success | `text-emerald-600` | `text-emerald-300` |
@@ -90,8 +90,8 @@ UIは3層で構成する。ダークモードでも同じレイヤー構造を�
 
 | セマンティック名 | Light 値 | Light クラス | Dark 値 | Dark クラス |
 |----------------|---------|-------------|---------|------------|
-| border-primary | #e2e8f0 | `border-slate-200` | #334155 | `border-slate-700` |
-| border-secondary | #cbd5e1 | `border-slate-300` | #475569 | `border-slate-600` |
+| border-primary | #e2e8f0 | `border-slate-200` | #373839 | `border-[var(--border-default)]` |
+| border-secondary | #cbd5e1 | `border-slate-300` | #777777 | `border-[var(--border-strong)]` |
 | border-accent | — | `border-primary-500` | — | `border-primary-500` |
 | border-focus | — | `border-primary-500` | — | `border-primary-400` |
 
@@ -105,8 +105,8 @@ UIは3層で構成する。ダークモードでも同じレイヤー構造を�
 
 | セマンティック名 | Light 値 | Light クラス | Dark 値 | Dark クラス |
 |----------------|---------|-------------|---------|------------|
-| input-bg | #ffffff | `bg-white` | #0f172a | `bg-slate-900` |
-| input-border | #cbd5e1 | `border-slate-300` | #475569 | `border-slate-600` |
+| input-bg | #ffffff | `bg-white` | #161718 | `bg-[var(--bg-page)]` |
+| input-border | #cbd5e1 | `border-slate-300` | #777777 | `border-[var(--border-strong)]` |
 
 ### Shadow
 
@@ -145,17 +145,17 @@ UIは3層で構成する。ダークモードでも同じレイヤー構造を�
 
 | 用途 | Tailwindクラス |
 |------|---------------|
-| 画面背景 | `bg-slate-900` |
-| カード背景 | `bg-slate-800` |
-| メインテキスト | `text-slate-100` |
-| 本文テキスト | `text-slate-300` |
-| 補助テキスト | `text-slate-400` |
+| 画面背景 | `bg-[var(--bg-page)]` |
+| カード背景 | `bg-[var(--bg-surface)]` |
+| メインテキスト | `text-[var(--text-heading)]` |
+| 本文テキスト | `text-[var(--text-default)]` |
+| 補助テキスト | `text-[var(--text-muted)]` |
 | アクセント（CTA） | `bg-primary-500 text-white` |
 | 成功 | `text-emerald-300`（テキスト） |
 | 警告 | `text-amber-300`（テキスト） |
 | エラー/危険 | `text-red-300`（テキスト） |
 | リンク | `text-primary-400 hover:text-primary-300` |
-| ボーダー | `border-slate-700` |
+| ボーダー | `border-[var(--border-default)]` |
 | フォーカス | `ring-2 ring-primary-400/50` |
 | Subtle背景 | `{color}-500/[.12]`（透過） |
 
@@ -210,7 +210,7 @@ Cool ←――――――――――――――――――――――――
 | 成功 | `bg-emerald-50` | `-700`（バッジ）/ `-600`（白背景） | `bg-emerald-500/[.12]` | `-300`（バッジ）/ `-400`（暗背景） |
 | 警告 | `bg-amber-50` | `-700` / `-600` | `bg-amber-500/[.12]` | `-300` / `-400` |
 | エラー | `bg-red-50` | `-700` / `-500` | `bg-red-500/[.12]` | `-300` / `-400` |
-| ニュートラル | `bg-slate-100` | `text-slate-700` | `bg-slate-700` | `text-slate-300` |
+| ニュートラル | `bg-slate-100` | `text-slate-700` | `bg-[var(--bg-page-alt)]` | `text-[var(--text-default)]` |
 | アクセント | `bg-primary-50` | `text-primary-700` | `bg-primary-500/[.12]` | `text-primary-300` |
 
 > **変換ルール**: Light `-50` 背景 → Dark `{color}-500/[.12]`（12%透過）。Light `-700` テキスト → Dark `-300` テキスト。
@@ -218,3 +218,7 @@ Cool ←――――――――――――――――――――――――
 ### 装飾ドットの色
 
 ステータスドット（Badge / Avatar）は小面積の装飾要素。WCAG 非テキスト UI 要素 3:1 を満たす `-500` を使用（Light/Dark共通）。
+
+## 2026-09-27: Neutral dark palette
+
+Substackの配信CSSのdark tokensを参照し、背景をチャコール、主要文字をオフホワイトへ更新。調査と対応関係は [dark-palette.md](../docs/dark-palette.md) を参照。ライトのMeltaトークン、Primary、ステータス色は維持する。区切り用border-defaultは装飾用。操作領域の識別には3:1以上のinput-border / border-strongを使う。

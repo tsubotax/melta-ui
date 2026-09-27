@@ -2,9 +2,26 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Dark のセマンティックトークン 11 値をニュートラルな暗色へ更新（melta-contracts 0.10.0 の公開候補）** —
+  Slate の青みを外し、Substack の Dark 配色を参考に `bg-page` `#161718` / `bg-surface` `#1b1c1d` /
+  `bg-page-alt` `#232525` / 本文 `#eeeeee` / `text-muted` `#a3a3a3` / `border-default` `#373839` /
+  `border-strong`・`input-border` `#777777` へ。Light・Primary・status は不変。
+  Dark トークンの `tailwind` は Slate の固定クラスと値が一致しなくなるため、CSS 変数参照
+  （`bg-[var(--bg-page)]` など）に変更。値の変更のみで互換判定は compatible だが、Dark を使う
+  全消費者の見た目が変わるため minor で出す。
+- **Card の影なし（`elevation: none`）で、action / link の押下を枠の強調で表す** — 0.9.1 では押下の差分が
+  影（sm→md）だけで、影なしにすると押しても見た目が変わらなかった。`elevationOptions.none.pressedStyle`
+  で `borderColor` を `primary-300`（web の link hover と同じ色）に切り替える。melta-app 側の追随は別途。
+- **Header の `appNote` に、centered / navigation が melta-app 未実装であることを明記** — 0.9.0 で
+  `appStatus: implemented` のまま 4 variant を公開したが、melta-app の実装は default / actions のみ。
+
 ### Added
 
-- APP Card / Skeleton に影なし指定の契約とレシピを追加。既定の影は維持する。melta-contracts 0.9.1 の公開候補。
+- APP Card / Skeleton に影なし指定の契約とレシピを追加。既定の影は維持する（melta-contracts 0.9.1 で公開済み）。
+- APP Header に centered / navigation variant を追加（中央タイトル、左右 44 以上の等幅スロット、
+  navigation は下に hairline）。header 契約 0.3.0（melta-contracts 0.9.0 で公開済み。この節への記載漏れを補記）。
 
 ### Fixed
 
