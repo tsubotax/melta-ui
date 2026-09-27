@@ -13,7 +13,7 @@
   全消費者の見た目が変わるため minor で出す。
 - **Card の影なし（`elevation: none`）で、action / link の押下を枠の強調で表す** — 0.9.1 では押下の差分が
   影（sm→md）だけで、影なしにすると押しても見た目が変わらなかった。`elevationOptions.none.pressedStyle`
-  で `borderColor` を `border-strong` に切り替える。melta-app 側の追随は別途。
+  で `borderColor` を `primary-300`（web の link hover と同じ色）に切り替える。melta-app 側の追随は別途。
 - **Header の `appNote` に、centered / navigation が melta-app 未実装であることを明記** — 0.9.0 で
   `appStatus: implemented` のまま 4 variant を公開したが、melta-app の実装は default / actions のみ。
 

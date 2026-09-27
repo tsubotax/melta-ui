@@ -191,4 +191,4 @@
 
 ## APPの影なし指定
 
-`elevation="none"` は製品テーマがフラットな面を使う場合の明示指定。既定値 `default` は従来の影を維持する。none時は押下中も影を付けず、背景・枠・余白は維持する。操作は引き続きprimaryActionで到達できる。
+`elevation="none"` は製品テーマがフラットな面を使う場合の明示指定。既定値 `default` は従来の影を維持する。none時は押下中も影を付けない。背景・余白は維持し、action/link の押下は枠を primary-300 に変えて表す。操作は引き続きprimaryActionで到達できる。
