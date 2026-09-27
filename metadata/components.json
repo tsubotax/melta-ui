@@ -1217,7 +1217,7 @@
         "focus-within"
       ],
       "platformSemantics": {
-        "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。背景・枠・余白と primaryAction の操作契約は維持する。"
+        "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。影で押下を表せないため、action/link の押下は枠を border-strong に強めて表す（recipe の elevationOptions.none.pressedStyle）。背景・余白と primaryAction の操作契約は維持する。"
       },
       "appStatus": "implemented",
       "recipes": {
@@ -1328,9 +1328,18 @@
               "description": "既存variant/stateのelevationを維持"
             },
             "none": {
+              "description": "影なし。action/link の押下は影の代わりに枠を border-strong に強めて表す",
               "style": {
                 "elevation": {
                   "token": "elevation.none"
+                }
+              },
+              "pressedStyle": {
+                "elevation": {
+                  "token": "elevation.none"
+                },
+                "borderColor": {
+                  "token": "color.semantic.light.border-strong"
                 }
               }
             }
@@ -1907,6 +1916,7 @@
         "default"
       ],
       "appStatus": "implemented",
+      "appNote": "melta-app に実装済みなのは default / actions のみ。centered / navigation は契約だけが先行しており、melta-app では型は通るが default と同じ描画になる。使う前に melta-app 側の実装を待つこと",
       "recipes": {
         "app": {
           "$schema": "../../../schemas/recipe.schema.json",

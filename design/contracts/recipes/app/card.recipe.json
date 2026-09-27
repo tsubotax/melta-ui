@@ -105,9 +105,18 @@
       "description": "既存variant/stateのelevationを維持"
     },
     "none": {
+      "description": "影なし。action/link の押下は影の代わりに枠を border-strong に強めて表す",
       "style": {
         "elevation": {
           "token": "elevation.none"
+        }
+      },
+      "pressedStyle": {
+        "elevation": {
+          "token": "elevation.none"
+        },
+        "borderColor": {
+          "token": "color.semantic.light.border-strong"
         }
       }
     }

@@ -102,6 +102,6 @@
     "media": "<div class=\"bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm\"><img src=\"...\" alt=\"\" class=\"w-full h-48 object-cover\"><div class=\"p-6\"><h3 class=\"text-lg font-bold text-slate-900\">タイトル</h3></div></div>"
   },
   "platformSemantics": {
-    "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。背景・枠・余白と primaryAction の操作契約は維持する。"
+    "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。影で押下を表せないため、action/link の押下は枠を border-strong に強めて表す（recipe の elevationOptions.none.pressedStyle）。背景・余白と primaryAction の操作契約は維持する。"
   }
 }
