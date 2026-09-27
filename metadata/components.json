@@ -1216,6 +1216,9 @@
         "hover",
         "focus-within"
       ],
+      "platformSemantics": {
+        "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。背景・枠・余白と primaryAction の操作契約は維持する。"
+      },
       "appStatus": "implemented",
       "recipes": {
         "app": {
@@ -1223,7 +1226,7 @@
           "id": "card",
           "platform": "app",
           "contractVersion": "2.1.0",
-          "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus 時は FocusRing overlay（borderWidth 2 / color.primary.500 / inset -3 / borderRadius = radius.lg + 3）。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。",
+          "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus 時は FocusRing overlay（borderWidth 2 / color.primary.500 / inset -3 / borderRadius = radius.lg + 3）。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。",
           "variants": {
             "basic": {
               "style": {
@@ -1319,7 +1322,19 @@
             }
           },
           "sizes": {},
-          "states": {}
+          "states": {},
+          "elevationOptions": {
+            "default": {
+              "description": "既存variant/stateのelevationを維持"
+            },
+            "none": {
+              "style": {
+                "elevation": {
+                  "token": "elevation.none"
+                }
+              }
+            }
+          }
         }
       },
       "accessibility": {
@@ -1857,7 +1872,7 @@
       "id": "header",
       "name": "Header",
       "category": "layout",
-      "description": "画面ヘッダー。defaultは可視見出し、actionsは見出しを視覚的に隠した操作バー。どちらも意味のあるtitleを必須とし、leading/trailingの操作を個別に読み上げる。",
+      "description": "画面ヘッダー。defaultは左寄せ見出し、actionsは可視タイトルなしの操作バー、centered/navigationは中央タイトル。配置・寸法・文字組みはHeaderが所有し、画面の操作内容とnavigationは利用側が渡す。",
       "docPath": "components/header.md",
       "anatomy": [
         "container",
@@ -1875,6 +1890,16 @@
           "name": "actions",
           "class": "",
           "tailwind": ""
+        },
+        {
+          "name": "centered",
+          "class": "",
+          "tailwind": ""
+        },
+        {
+          "name": "navigation",
+          "class": "",
+          "tailwind": ""
         }
       ],
       "sizes": [],
@@ -1887,8 +1912,8 @@
           "$schema": "../../../schemas/recipe.schema.json",
           "id": "header",
           "platform": "app",
-          "contractVersion": "0.2.0",
-          "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。containerStyle は横並び（leading? / title / trailing?）+ 下 border。title は melta の Text（variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"）を compose するため titleStyle は持たない（typography は text recipe が正）。titleWrapStyle の flex:1 で title が余白を占有し trailing を右端へ押す。 actionsはdefaultの外側余白・下線・titleWrapを保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しだけを視覚的に隠す。",
+          "contractVersion": "0.3.0",
+          "description": "RN 実装（src/components/Header.tsx）の具象レシピ（styleRefs 形式）。title は melta の Text を compose するため titleStyle は持たない（typography は text recipe が正）。default/actions は variant=\"xl\" weight=\"bold\" color=\"text-heading\" role=\"heading\"。default の横並び・外側余白・下線・titleWrapStyle の flex:1 を actions も保ち、中央spacer前後のgapだけspacing.1に抑え、hiddenTitleStyleでa11y見出しを視覚的に隠す。centered/navigation は Text variant=\"lg\" を既定、長い動的タイトルは \"base\" とし、独立した見出しgroupに置く。等幅の左右slotと縮小可能なタイトル領域を持ち、最小高44でフォント拡大を許す。navigation の borderBottomWidth:1 は密度1での値で、実機ではStyleSheet.hairlineWidthをresolverへ渡す。centered は下線を持たず横余白は親が持つ。",
           "variants": {
             "default": {
               "containerStyle": {
@@ -1945,6 +1970,59 @@
                 "height": 1,
                 "overflow": "hidden"
               }
+            },
+            "centered": {
+              "containerStyle": {
+                "flexDirection": "row",
+                "alignItems": "center",
+                "minHeight": 44
+              },
+              "titleWrapStyle": {
+                "flexShrink": 1,
+                "minWidth": 0
+              },
+              "leadingStyle": {
+                "flex": 1,
+                "minWidth": 44,
+                "flexDirection": "row",
+                "justifyContent": "flex-start"
+              },
+              "trailingStyle": {
+                "flex": 1,
+                "minWidth": 44,
+                "flexDirection": "row",
+                "justifyContent": "flex-end"
+              }
+            },
+            "navigation": {
+              "containerStyle": {
+                "flexDirection": "row",
+                "alignItems": "center",
+                "minHeight": 44,
+                "paddingHorizontal": {
+                  "token": "spacing.4"
+                },
+                "borderBottomWidth": 1,
+                "borderBottomColor": {
+                  "token": "color.semantic.light.border-default"
+                }
+              },
+              "titleWrapStyle": {
+                "flexShrink": 1,
+                "minWidth": 0
+              },
+              "leadingStyle": {
+                "flex": 1,
+                "minWidth": 44,
+                "flexDirection": "row",
+                "justifyContent": "flex-start"
+              },
+              "trailingStyle": {
+                "flex": 1,
+                "minWidth": 44,
+                "flexDirection": "row",
+                "justifyContent": "flex-end"
+              }
             }
           },
           "sizes": {},
@@ -1954,8 +2032,9 @@
       "accessibility": {
         "role": "banner",
         "required": [
-          "titleは空でない画面名。defaultでは可視heading、actionsでは視覚的に隠したheading（RN: accessibilityRole=\"header\"）として読み上げる",
-          "container全体を単一のaccessible要素にまとめない。leading/trailingの操作は独立してフォーカス・読み上げ・操作できる"
+          "titleは空でない画面名。default/centered/navigationでは可視heading、actionsでは視覚的に隠したheading（RN: accessibilityRole=\"header\"）として読み上げる。スクロールによるタイトル切替で見えない場合は、利用側wrapperで読み上げ対象からも外す",
+          "container全体を単一のaccessible要素にまとめない。leading/trailingの操作は独立してフォーカス・読み上げ・操作できる",
+          "centered/navigationの左右slotに入れる操作は44pt以上の標的を持たせる。固定高でフォント拡大を切らず、最小高で確保する"
         ],
         "focusRing": "N/A"
       },
@@ -3290,6 +3369,9 @@
         "loading",
         "loaded"
       ],
+      "platformSemantics": {
+        "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。Skeleton の text/circle はカードの elevation を参照しない。"
+      },
       "appStatus": "implemented",
       "recipes": {
         "app": {
@@ -3297,7 +3379,7 @@
           "id": "skeleton",
           "platform": "app",
           "contractVersion": "2.0.0",
-          "description": "RN 実装（src/components/Skeleton.tsx）の具象レシピ（styleRefs 形式）。text は行バー（複数行時は行間 gap spacing.2、最終行のみ width 70%）。circle は 40x40 固定。card は Surface 土台（bg-surface / radius.lg / elevation.sm / padding spacing.6 + borderWidth 1 border-default）の上に border-default のバー（height 12 / radius.sm）とアバター円（40x40）を gap spacing.3 / spacing.2 で構成。バー寸法（14 / 12 / 40 / %幅）は token に対応が無く literal。states.loading は pulse アニメーション（opacity 1↔0.4 を motion.duration.slow で loop、reduce-motion ON 時は完全停止で opacity 1 固定 + busy 維持）。loaded は Skeleton 自体をアンマウント（style 差分なし）。",
+          "description": "RN 実装（src/components/Skeleton.tsx）の具象レシピ（styleRefs 形式）。text は行バー（複数行時は行間 gap spacing.2、最終行のみ width 70%）。circle は 40x40 固定。card は Surface 土台（bg-surface / radius.lg / elevation.sm / padding spacing.6 + borderWidth 1 border-default）の上に border-default のバー（height 12 / radius.sm）とアバター円（40x40）を gap spacing.3 / spacing.2 で構成。バー寸法（14 / 12 / 40 / %幅）は token に対応が無く literal。states.loading は pulse アニメーション（opacity 1↔0.4 を motion.duration.slow で loop、reduce-motion ON 時は完全停止で opacity 1 固定 + busy 維持）。loaded は Skeleton 自体をアンマウント（style 差分なし）。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。",
           "variants": {
             "text": {
               "style": {
@@ -3371,6 +3453,18 @@
             },
             "loaded": {
               "style": {}
+            }
+          },
+          "elevationOptions": {
+            "default": {
+              "description": "既存variant/stateのelevationを維持"
+            },
+            "none": {
+              "style": {
+                "elevation": {
+                  "token": "elevation.none"
+                }
+              }
             }
           }
         }

@@ -1,11 +1,11 @@
 {
   "$schema": "../schemas/component-contract.schema.json",
   "id": "header",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "name": "Header",
   "category": "layout",
   "appStatus": "implemented",
-  "intent": "画面ヘッダー。defaultは可視見出し、actionsは見出しを視覚的に隠した操作バー。どちらも意味のあるtitleを必須とし、leading/trailingの操作を個別に読み上げる。",
+  "intent": "画面ヘッダー。defaultは左寄せ見出し、actionsは可視タイトルなしの操作バー、centered/navigationは中央タイトル。配置・寸法・文字組みはHeaderが所有し、画面の操作内容とnavigationは利用側が渡す。",
   "docPath": "components/header.md",
   "appFirst": true,
   "webStatus": "pending",
@@ -38,6 +38,22 @@
         "gap": "spacing.1"
       },
       "tailwind": ""
+    },
+    "centered": {
+      "description": "中央タイトル、下線・内側横余白なし。親のページ余白内に置く。 最小内容高44、左右は等幅かつ44以上を予約し、titleは1行省略。左右には44幅以下の単独アイコン操作を渡し、広い文字操作はdefault/actionsを使う。titleはText lg bold相当（長い動的タイトルはbaseへ切替可能）。タイトルのfadeは利用側が提供するwrapperで行い、文字組みと領域は置換しない。",
+      "tokenRefs": {
+        "titleColor": "color.semantic.light.text-heading"
+      },
+      "tailwind": ""
+    },
+    "navigation": {
+      "description": "中央タイトル、左右spacing.4、下に端末のhairline。戻る／閉じる等を左右slotへ置く。 最小内容高44、左右は等幅かつ44以上を予約し、titleは1行省略。左右には44幅以下の単独アイコン操作を渡し、広い文字操作はdefault/actionsを使う。titleはText lg bold相当（長い動的タイトルはbaseへ切替可能）。タイトルのfadeは利用側が提供するwrapperで行い、文字組みと領域は置換しない。",
+      "tokenRefs": {
+        "titleColor": "color.semantic.light.text-heading",
+        "border": "color.semantic.light.border-default",
+        "paddingX": "spacing.4"
+      },
+      "tailwind": ""
     }
   },
   "sizes": {},
@@ -47,8 +63,9 @@
   "a11y": {
     "role": "banner",
     "required": [
-      "titleは空でない画面名。defaultでは可視heading、actionsでは視覚的に隠したheading（RN: accessibilityRole=\"header\"）として読み上げる",
-      "container全体を単一のaccessible要素にまとめない。leading/trailingの操作は独立してフォーカス・読み上げ・操作できる"
+      "titleは空でない画面名。default/centered/navigationでは可視heading、actionsでは視覚的に隠したheading（RN: accessibilityRole=\"header\"）として読み上げる。スクロールによるタイトル切替で見えない場合は、利用側wrapperで読み上げ対象からも外す",
+      "container全体を単一のaccessible要素にまとめない。leading/trailingの操作は独立してフォーカス・読み上げ・操作できる",
+      "centered/navigationの左右slotに入れる操作は44pt以上の標的を持たせる。固定高でフォント拡大を切らず、最小高で確保する"
     ],
     "keyboard": [],
     "focusRing": "N/A"
