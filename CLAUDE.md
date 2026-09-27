@@ -1,7 +1,9 @@
 # melta UI - Claude Code 作業指示
 
-> 作業ルール・アーキテクチャ・読み込みモード・タスク別ガイドは @AGENTS.md（全エージェント共通の SSOT）。
-> デザイン仕様は `DESIGN.md`。本ファイルは Claude Code 固有の挙動のみを記述する。
+作業ルール・アーキテクチャ・読み込みモード・タスク別ガイドは全エージェント共通の SSOT である `AGENTS.md` を正とし、下の import でセッション冒頭に読み込む。
+デザイン仕様は `DESIGN.md`。本ファイルは Claude Code 固有の挙動のみを記述する。
+
+@AGENTS.md
 
 ## Claude Code 固有
 
