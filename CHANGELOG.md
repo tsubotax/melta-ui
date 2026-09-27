@@ -2,9 +2,18 @@
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-09-27
+
+### 同梱 contracts を 0.10.0 へ更新（Dark パレット + 0.9.x の Header / Card）
+
+npm の 1.7.0 は contracts 0.8.1 を同梱したままで、MCP（`get_token` / `get_component` / `check_html`）が
+0.9.0（Header centered / navigation）・0.9.1（Card / Skeleton の影なし）・0.10.0（Dark トークン）を
+配れていなかった。0.9.x は main を経由せず公開されていたため、PR #19 で main に取り込んでから
+PR #21 で 0.10.0 をまとめた。
+
 ### Changed
 
-- **Dark のセマンティックトークン 11 値をニュートラルな暗色へ更新（melta-contracts 0.10.0 の公開候補）** —
+- **Dark のセマンティックトークン 11 値をニュートラルな暗色へ更新（melta-contracts 0.10.0）** —
   Slate の青みを外し、Substack の Dark 配色を参考に `bg-page` `#161718` / `bg-surface` `#1b1c1d` /
   `bg-page-alt` `#232525` / 本文 `#eeeeee` / `text-muted` `#a3a3a3` / `border-default` `#373839` /
   `border-strong`・`input-border` `#777777` へ。Light・Primary・status は不変。
