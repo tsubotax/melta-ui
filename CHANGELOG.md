@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Dark のセマンティックトークン 11 値をニュートラルな暗色へ更新（melta-contracts 0.10.0 の公開候補）** —
+  Slate の青みを外し、Substack の Dark 配色を参考に `bg-page` `#161718` / `bg-surface` `#1b1c1d` /
+  `bg-page-alt` `#232525` / 本文 `#eeeeee` / `text-muted` `#a3a3a3` / `border-default` `#373839` /
+  `border-strong`・`input-border` `#777777` へ。Light・Primary・status は不変。
+  Dark トークンの `tailwind` は Slate の固定クラスと値が一致しなくなるため、CSS 変数参照
+  （`bg-[var(--bg-page)]` など）に変更。値の変更のみで互換判定は compatible だが、Dark を使う
+  全消費者の見た目が変わるため minor で出す。
+
 ### Added
 
 - APP Card / Skeleton に影なし指定の契約とレシピを追加。既定の影は維持する。melta-contracts 0.9.1 の公開候補。
