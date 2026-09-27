@@ -3,7 +3,7 @@
   "id": "card",
   "platform": "app",
   "contractVersion": "2.1.0",
-  "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus 時は FocusRing overlay（borderWidth 2 / color.primary.500 / inset -3 / borderRadius = radius.lg + 3）。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。合成順は variant の style → variant の pressedStyle → elevationOptions の style / pressedStyle（後勝ち）。elevationOptions の pressedStyle は pressedStyle を持つ variant（action/link）にだけ適用する。",
+  "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus ring は Card では描かず、フォーカスを受ける primaryAction 側が持つ。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。合成順は variant の style → variant の pressedStyle → elevationOptions の style / pressedStyle（後勝ち）。elevationOptions の pressedStyle は pressedStyle を持つ variant（action/link）にだけ適用する。",
   "variants": {
     "basic": {
       "style": {
@@ -105,7 +105,7 @@
       "description": "既存variant/stateのelevationを維持"
     },
     "none": {
-      "description": "影なし。action/link の押下は影の代わりに枠を primary-300 へ変えて表す（web の link hover と同じ色）",
+      "description": "影なし。action/link の押下は影の代わりに枠を primary-300 へ変えて表す（web の link hover と同じ色。Dark では bg-surface に対し 8.46:1 と focus ring の primary-500 より目立つが、web の hover と同値にそろえる）",
       "style": {
         "elevation": {
           "token": "elevation.none"

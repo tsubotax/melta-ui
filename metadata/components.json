@@ -1217,7 +1217,7 @@
         "focus-within"
       ],
       "platformSemantics": {
-        "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。影で押下を表せないため、action/link の押下は枠を primary-300 に変えて表す（web の link hover と同じ色。recipe の elevationOptions.none.pressedStyle）。背景・余白と primaryAction の操作契約は維持する。"
+        "elevation": "APP は製品テーマに合わせて影なしを明示選択できる。省略時は従来の影を維持する。影なし時は押下中も elevation.none のみを読み、sm/md を参照しない。影で押下を表せないため、action/link の押下は枠を primary-300 に変えて表す（web では link の hover に使う色。APP の影なしでは action の押下にも使う。recipe の elevationOptions.none.pressedStyle）。背景・余白と primaryAction の操作契約は維持する。"
       },
       "appStatus": "implemented",
       "recipes": {
@@ -1226,7 +1226,7 @@
           "id": "card",
           "platform": "app",
           "contractVersion": "2.1.0",
-          "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus 時は FocusRing overlay（borderWidth 2 / color.primary.500 / inset -3 / borderRadius = radius.lg + 3）。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。合成順は variant の style → variant の pressedStyle → elevationOptions の style / pressedStyle（後勝ち）。elevationOptions の pressedStyle は pressedStyle を持つ variant（action/link）にだけ適用する。",
+          "description": "RN 実装（src/components/Card.tsx）の具象レシピ（styleRefs 形式）。elevation は iOS shadow* + Android elevation の複合トークン（theme.elevation[key] を spread）。action/link は Pressable で pressed 時に elevation sm→md（contract hover → pressed mapping）。media は iOS の影と overflow:hidden の同居不可のため外枠に overflow を付けず、内側 clip View（borderRadius radius.lg + overflow hidden）でクリップし body のみ bodyStyle の padding を持つ。focus ring は Card では描かず、フォーカスを受ける primaryAction 側が持つ。contract の focus-within は RN 非サポートとして Phase1 drop 済みのため states は空。 elevation prop は default（省略時）または none。none は全状態で elevation.none を使う。合成順は variant の style → variant の pressedStyle → elevationOptions の style / pressedStyle（後勝ち）。elevationOptions の pressedStyle は pressedStyle を持つ variant（action/link）にだけ適用する。",
           "variants": {
             "basic": {
               "style": {
@@ -1328,7 +1328,7 @@
               "description": "既存variant/stateのelevationを維持"
             },
             "none": {
-              "description": "影なし。action/link の押下は影の代わりに枠を primary-300 へ変えて表す（web の link hover と同じ色）",
+              "description": "影なし。action/link の押下は影の代わりに枠を primary-300 へ変えて表す（web の link hover と同じ色。Dark では bg-surface に対し 8.46:1 と focus ring の primary-500 より目立つが、web の hover と同値にそろえる）",
               "style": {
                 "elevation": {
                   "token": "elevation.none"
@@ -1916,7 +1916,7 @@
         "default"
       ],
       "appStatus": "implemented",
-      "appNote": "melta-app に実装済みなのは default / actions のみ。centered / navigation は契約だけが先行している。melta-contracts ^0.8.0 の現行 melta-app では型エラーになり、0.9 以降へ上げると型は通るが default と同じ描画になる。使う前に melta-app 側の実装を待つこと",
+      "appNote": "melta-app に実装済みなのは default / actions のみ。centered / navigation は契約だけが先行している。melta-app の型は melta-app 内に生成済みの契約型（header 0.2.0）から取るため、melta-app が新しい契約で型を再生成して公開するまでは型エラーになる。再生成後も実装が入るまでは default と同じ描画になる。使う前に melta-app 側の実装を待つこと",
       "recipes": {
         "app": {
           "$schema": "../../../schemas/recipe.schema.json",
