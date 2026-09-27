@@ -146,7 +146,7 @@ const ALLOWED_SAME: Record<string, { value: string; reason: string }> = {
     reason: "surface-alt は page と同じ面に沈める設計",
   },
   "dark|bg-page|bg-surface-alt": {
-    value: "#0f172a",
+    value: "#161718",
     reason: "surface-alt は page と同じ面に沈める設計",
   },
 };

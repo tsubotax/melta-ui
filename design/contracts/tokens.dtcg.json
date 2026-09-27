@@ -449,16 +449,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.0588,
+            0.0863,
             0.0902,
-            0.1647
+            0.0941
           ],
           "alpha": 1,
-          "hex": "#0f172a"
+          "hex": "#161718"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "bg-slate-900",
+            "tailwind": "bg-[var(--bg-page)]",
             "cssVar": "--bg-page"
           }
         }
@@ -467,16 +467,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.2,
-            0.2549,
-            0.3333
+            0.1373,
+            0.1451,
+            0.1451
           ],
           "alpha": 1,
-          "hex": "#334155"
+          "hex": "#232525"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "bg-slate-700",
+            "tailwind": "bg-[var(--bg-page-alt)]",
             "cssVar": "--bg-page-alt"
           }
         }
@@ -485,16 +485,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.1176,
-            0.1608,
-            0.2314
+            0.1059,
+            0.1098,
+            0.1137
           ],
           "alpha": 1,
-          "hex": "#1e293b"
+          "hex": "#1b1c1d"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "bg-slate-800",
+            "tailwind": "bg-[var(--bg-surface)]",
             "cssVar": "--bg-surface"
           }
         }
@@ -503,16 +503,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.0588,
+            0.0863,
             0.0902,
-            0.1647
+            0.0941
           ],
           "alpha": 1,
-          "hex": "#0f172a"
+          "hex": "#161718"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "bg-slate-900",
+            "tailwind": "bg-[var(--bg-surface-alt)]",
             "cssVar": "--bg-surface-alt"
           }
         }
@@ -521,16 +521,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.9451,
-            0.9608,
-            0.9765
+            0.9333,
+            0.9333,
+            0.9333
           ],
           "alpha": 1,
-          "hex": "#f1f5f9"
+          "hex": "#eeeeee"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "text-slate-100",
+            "tailwind": "text-[var(--text-heading)]",
             "cssVar": "--text-heading"
           }
         }
@@ -539,16 +539,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.7961,
-            0.8353,
-            0.8824
+            0.9333,
+            0.9333,
+            0.9333
           ],
           "alpha": 1,
-          "hex": "#cbd5e1"
+          "hex": "#eeeeee"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "text-slate-300",
+            "tailwind": "text-[var(--text-default)]",
             "cssVar": "--text-default"
           }
         }
@@ -557,16 +557,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.5804,
             0.6392,
-            0.7216
+            0.6392,
+            0.6392
           ],
           "alpha": 1,
-          "hex": "#94a3b8"
+          "hex": "#a3a3a3"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "text-slate-400",
+            "tailwind": "text-[var(--text-muted)]",
             "cssVar": "--text-muted"
           }
         }
@@ -575,16 +575,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.2,
-            0.2549,
-            0.3333
+            0.2157,
+            0.2196,
+            0.2235
           ],
           "alpha": 1,
-          "hex": "#334155"
+          "hex": "#373839"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "border-slate-700",
+            "tailwind": "border-[var(--border-default)]",
             "cssVar": "--border-default"
           }
         }
@@ -593,16 +593,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.2784,
-            0.3333,
-            0.4118
+            0.4667,
+            0.4667,
+            0.4667
           ],
           "alpha": 1,
-          "hex": "#475569"
+          "hex": "#777777"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "border-slate-600",
+            "tailwind": "border-[var(--border-strong)]",
             "cssVar": "--border-strong"
           }
         }
@@ -611,16 +611,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.0588,
+            0.0863,
             0.0902,
-            0.1647
+            0.0941
           ],
           "alpha": 1,
-          "hex": "#0f172a"
+          "hex": "#161718"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "bg-slate-900",
+            "tailwind": "bg-[var(--input-bg)]",
             "cssVar": "--input-bg"
           }
         }
@@ -629,16 +629,16 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.2784,
-            0.3333,
-            0.4118
+            0.4667,
+            0.4667,
+            0.4667
           ],
           "alpha": 1,
-          "hex": "#475569"
+          "hex": "#777777"
         },
         "$extensions": {
           "com.melta": {
-            "tailwind": "border-slate-600",
+            "tailwind": "border-[var(--input-border)]",
             "cssVar": "--input-border"
           }
         }

@@ -65,7 +65,7 @@
     "value": "#f9fafb",
     "themes": {
       "Light": "#f9fafb",
-      "Dark": "#0f172a"
+      "Dark": "#161718"
     }
   },
   {
@@ -74,7 +74,7 @@
     "value": "#f3f4f6",
     "themes": {
       "Light": "#f3f4f6",
-      "Dark": "#334155"
+      "Dark": "#232525"
     }
   },
   {
@@ -83,7 +83,7 @@
     "value": "#ffffff",
     "themes": {
       "Light": "#ffffff",
-      "Dark": "#1e293b"
+      "Dark": "#1b1c1d"
     }
   },
   {
@@ -92,7 +92,7 @@
     "value": "#f9fafb",
     "themes": {
       "Light": "#f9fafb",
-      "Dark": "#0f172a"
+      "Dark": "#161718"
     }
   },
   {
@@ -101,7 +101,7 @@
     "value": "#0f172a",
     "themes": {
       "Light": "#0f172a",
-      "Dark": "#f1f5f9"
+      "Dark": "#eeeeee"
     }
   },
   {
@@ -110,7 +110,7 @@
     "value": "#3d4b5f",
     "themes": {
       "Light": "#3d4b5f",
-      "Dark": "#cbd5e1"
+      "Dark": "#eeeeee"
     }
   },
   {
@@ -119,7 +119,7 @@
     "value": "#64748b",
     "themes": {
       "Light": "#64748b",
-      "Dark": "#94a3b8"
+      "Dark": "#a3a3a3"
     }
   },
   {
@@ -128,7 +128,7 @@
     "value": "#e2e8f0",
     "themes": {
       "Light": "#e2e8f0",
-      "Dark": "#334155"
+      "Dark": "#373839"
     }
   },
   {
@@ -137,7 +137,7 @@
     "value": "#cbd5e1",
     "themes": {
       "Light": "#cbd5e1",
-      "Dark": "#475569"
+      "Dark": "#777777"
     }
   },
   {
@@ -146,7 +146,7 @@
     "value": "#ffffff",
     "themes": {
       "Light": "#ffffff",
-      "Dark": "#0f172a"
+      "Dark": "#161718"
     }
   },
   {
@@ -155,7 +155,7 @@
     "value": "#cbd5e1",
     "themes": {
       "Light": "#cbd5e1",
-      "Dark": "#475569"
+      "Dark": "#777777"
     }
   },
   {

@@ -188,7 +188,7 @@ ${wfVars ? `\n${wfVars}` : ""}
 }
 
 /* --- Dark Theme --- */
-html[data-theme="dark"] {
+html[data-theme="dark"], .dark-preview {
 ${darkVars}
   --sidebar-active-color: #95b6ff;
   --sidebar-active-bg: #0e266a;
