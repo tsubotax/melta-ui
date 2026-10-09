@@ -8,12 +8,12 @@
     "source": "github"
   },
   "websiteUrl": "https://melta.tsubotax.com",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "melta-ds-mcp",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "transport": {
         "type": "stdio"
       }

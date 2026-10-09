@@ -31,12 +31,12 @@ const rules = JSON.parse(readFileSync(require.resolve("melta-contracts/rules"), 
 
 ## `melta-ds-mcp` の entry 規約
 
-- **公開 entry**: `melta-ds-mcp/lint`（`exports` に追加済み。npm 公開は 1.9.0 の予定で、1.8.0 には無い）。`lint(source, { sourceType })` は class lint + html-attr lint に加え、`sourceType: "html"`（既定）なら **composition lint（ネスト modal / interactive 内 interactive 等）まで含めて**判定し、`{ passed, errorCount, warnCount, violations, sourceType }` を返す。MCP `check_html`・CI の lint CLI・PostToolUse hook もこの `lint()` を呼ぶので、同じソースなら 4 経路の判定は一致する
+- **公開 entry**: `melta-ds-mcp/lint`（1.9.0 から。1.8.0 には無い）。`lint(source, { sourceType })` は class lint + html-attr lint に加え、`sourceType: "html"`（既定）なら **composition lint（ネスト modal / interactive 内 interactive 等）まで含めて**判定し、`{ passed, errorCount, warnCount, violations, sourceType }` を返す。MCP `check_html`・CI の lint CLI・PostToolUse hook もこの `lint()` を呼ぶので、同じソースなら 4 経路の判定は一致する
   - `sourceType: "jsx"` は class + html-attr lint のみ（composition は DOM パース前提のため）。未知の値と `null` は throw する（composition を無言で外さない）
   - `sourceTypeForPath(path)` は拡張子から sourceType を返す。`.html` は `"html"`、`.tsx` / `.jsx` / `.vue` は `"jsx"`、それ以外は `null`
   - `passed: true` は「自動検査できるルールで error がない」であって完全準拠ではない。manual ルールとブランド適合は判定しない
   - 判定の一致は「同じ engine・ruleset・sourceType なら、MCP `check_html` / CLI / hook / npm の `lint()` で違反と件数が一致する」という意味。CLI と hook は拡張子で sourceType を決めるので `.tsx` / `.jsx` / `.vue` は composition を含まない。CI の `--baseline` は warn 件数の追加ゲートで、`passed: true` でも baseline を超えれば失敗する
-- **lint CLI**: `melta-lint`（`bin` に追加済み。npm 公開は 1.9.0 の予定。実体は `dist/cli/lint-generated.js`）。`melta-ds-mcp` を依存に入れたプロジェクトでは `npx melta-lint <file...>` で CI gate と同じ検査を回せる。error があれば exit 1、`--baseline <json>` で warn のラチェット、`--hook`（stdin に PostToolUse の JSON。`tool_input.file_path` を読む。plugin と hook はこちら）または `--hook <file>` で Claude Code PostToolUse 用の JSON を返す。node だけで動き、tsx も TS ソースも要らない
+- **lint CLI**: `melta-lint`（1.9.0 から。実体は `dist/cli/lint-generated.js`）。`melta-ds-mcp` を依存に入れたプロジェクトでは `npx melta-lint <file...>` で CI gate と同じ検査を回せる。error があれば exit 1、`--baseline <json>` で warn のラチェット、`--hook`（stdin に PostToolUse の JSON。`tool_input.file_path` を読む。plugin と hook はこちら）または `--hook <file>` で Claude Code PostToolUse 用の JSON を返す。node だけで動き、tsx も TS ソースも要らない
   - 依存に入れずに打つときは `npx -p melta-ds-mcp melta-lint <file...>` と書く。`npx melta-lint` だけだと npm は `melta-lint` という名前の別パッケージを registry に取りに行く（この名前は melta の配布物ではない）
 - **`melta-ds-mcp/lint-core`**（1.5.0 で `exports` に明示）: `lintSource(source)` は **class lint + html-attr lint まで**で、**composition lint は含まない**。`lintSource()` の `[]` は「class / html-attr の違反なし」であって「CI と同じ判定で違反なし」ではない。互換のため残す。新しく組み込むなら `melta-ds-mcp/lint` を使う
   - 以前この行は「CI / hook / MCP check_html と同一の lint ロジック」と書いていたが誤り（2026-08-17 訂正）
