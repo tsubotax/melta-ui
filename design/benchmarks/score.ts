@@ -8,14 +8,12 @@
  * CI / MCP check_html / PostToolUse hook と同一判定になり、旧ナイーブ includes の
  * 誤検出（top-0 → p-0 等）と、Q3/Q5/S2 で増えた検知（prefixPatterns / html-attr /
  * composition）の未反映を同時に解消する。
+ * 2026-10-10: 自前の連結をやめ、単一 lint API `lint()`（src/utils/lint.ts）を呼ぶ。
+ * benchmark の採点だけ経路が別だと、check_html / CI / hook / npm と合否が食い違いうる。
  */
 
-import {
-  lintSource,
-  extractClassStrings,
-  type LintViolation,
-} from "../../src/utils/lint-core.js";
-import { lintComposition } from "../../src/utils/composition-lint.js";
+import { extractClassStrings, type LintViolation } from "../../src/utils/lint-core.js";
+import { lint } from "../../src/utils/lint.js";
 
 export interface Score {
   /** error 違反数（lint core 判定） */
@@ -78,7 +76,8 @@ function countPositiveSignals(html: string): number {
  * - 総合スコア（0-100、BASE 50 ± 加減点）
  */
 export function scoreHTML(html: string): Score {
-  const violations = lintSource(html).concat(lintComposition(html));
+  // 生成物は HTML なので composition まで検査する（check_html の既定と同じ）
+  const violations = lint(html, { sourceType: "html" }).violations;
   const errors = violations.filter((v) => v.severity === "error");
   const warns = violations.filter((v) => v.severity === "warn");
 

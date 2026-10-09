@@ -4,6 +4,12 @@
 
 ### Changed
 
+- **`melta-ds-mcp/lint-core` を互換 entry に格下げ** — `lintSource()` は class + html-attr lint までで composition を
+  含まないため、CI / check_html と同じ判定にならない。entry は壊さずに残し、新しく組み込むなら
+  `melta-ds-mcp/lint` を使うよう `docs/distribution.md` の entry 規約を書き換えた（2026-08-17 に「未解決」と
+  記録していた項目を解決済みにした）。lint CLI の本体は `scripts/design/lint-generated.ts` から
+  `src/cli/lint-generated.ts` へ移した。旧パスは import するだけの shim として残すので、
+  `npm run design:lint-generated` と CI の呼び方は変わらない
 - **DESIGN.md の公式 linter を `@google/design.md@0.4.0` へ更新** — 0.3.0 から findings は同数（errors 0 / warnings 12 / infos 1）で、
   CI ゲートの判定は変わらない。0.4.0 の `omitted` frontmatter（意図的に省いた区分の宣言）は、
   5 区分すべてを持つ melta には不要なので使わない
@@ -21,6 +27,23 @@
 
 ### Added
 
+- **`melta-ds-mcp/lint` — composition 込みの単一 lint API** — `lint(source, { sourceType })` は class + html-attr lint に、
+  `sourceType: "html"`（既定）なら composition lint（ネスト modal / interactive 内 interactive 等）まで足して
+  `{ passed, errorCount, warnCount, violations, sourceType }` を返す。MCP `check_html`・CI の lint CLI・
+  PostToolUse hook・benchmark の採点（`design/benchmarks/score.ts`）もこの関数を呼ぶように寄せたので、
+  npm 経路の消費者も同じ判定を持てる（これまでは
+  `lint-core` の `lintSource()` だけが公開されていて、ネスト modal 等が npm 経路でだけ素通りしていた）。
+  `sourceTypeForPath(path)` で拡張子から sourceType を決められる。判定一致は `tests/lint.spec.ts`、
+  配布物で composition が効くことは `npm run check:pack` が検査する
+- **`melta-lint` bin** — lint CLI（`dist/cli/lint-generated.js`）を npm に同梱した。`melta-ds-mcp` を依存に
+  入れたプロジェクトは `npx melta-lint <file...>` で CI gate と同じ検査（error で exit 1、`--baseline` の
+  warn ラチェット、`--hook` の PostToolUse JSON）を node だけで回せる。依存に入れずに打つときは
+  `npx -p melta-ds-mcp melta-lint` と書く（`melta-lint` という名前の npm パッケージは melta の配布物ではない）
+- **PostToolUse hook を dist 優先にする** — `scripts/design/hook-check-rule.sh` は `dist/cli/lint-generated.js` が
+  あれば `node` で叩き、無ければ従来どおり tsx で `src/cli/lint-generated.ts` を叩く。npm / plugin 配布では
+  tsx も TS ソースも無いため。どちらも無いときと、CLI が起動に失敗したときは「未検査」を通知する
+  （出力なし = 合格と区別できるようにする）。経路の選び方は `tests/hook-wrapper.spec.ts` が build 状態に
+  依存しない stub で固定する
 - **MCP Registry への公開を GitHub Actions に移す（`.github/workflows/mcp-registry.yml`）** — Registry の
   `io.github.tsubotax/melta-ui` が 1.3.0（2026-06-13）のまま止まり、npm は 1.8.0 まで進んでいた
   （2026-10-09 に 1.8.0 を手動公開して解消）。`npm publish` の後に

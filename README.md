@@ -43,7 +43,7 @@ AI にガイドラインを読ませることはできる。守るかどうか�
 | パッケージ | 役割 | 使い方 |
 |---|---|---|
 | [`melta-contracts`](https://www.npmjs.com/package/melta-contracts) | **契約データ**（tokens / rules / component contracts / recipes の JSON）。ビルド不要・フレームワーク非依存 | `npm install melta-contracts` |
-| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP サーバー + lint エンジン**（このリポジトリ）。`check_html` は CI / hook と同一ロジック | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint-core` |
+| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP サーバー + lint エンジン**（このリポジトリ）。`check_html` は CI / hook と同一ロジック | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint` |
 | [`melta-app`](https://www.npmjs.com/package/melta-app) | **React Native 実装**。消費者プロジェクト向け eslint plugin を同梱 | `npm install melta-app` |
 
 > `melta-ds-mcp` 自体の bare import（`import "melta-ds-mcp"`）は非サポート。entry は import しただけで stdio サーバーが起動する CLI なので、`npx melta-ds-mcp` か subpath 経由で使う。entry 規約・deep import 互換・パッケージ分割の予定は [docs/distribution.md](./docs/distribution.md)。
@@ -214,7 +214,7 @@ melta-app は消費者プロジェクト向けの eslint plugin も npm で配�
 
 **その他の制約**:
 
-- **clone 経路と npm 経路で届く層が違う**。PostToolUse hook / CI / lint CLI は「このリポジトリを clone して使う」前提の層で、`npm install` した消費者には届かない。npm 経路の強制層は `melta-ds-mcp/lint-core`（class / html-attr lint のみ。composition lint は含まない）と MCP の `check_html`（composition 込み）の 2 つで、これを各プロジェクトのフック / CI に自前で組み込む
+- **clone 経路と npm 経路で届く層が違う**。PostToolUse hook と CI workflow は「このリポジトリを clone して使う」前提の層で、`npm install` した消費者には届かない。npm 経路の強制層は `melta-ds-mcp/lint`（composition 込み。`check_html` / CI / hook と同じ判定）、それを CLI にした `melta-lint`、MCP の `check_html` の 3 つで、これを各プロジェクトのフック / CI に自前で組み込む
 - **class ベースでないスタイリングは検査できない**。スタイルがマークアップ（class / 属性）に現れないコードでは静的 lint が空振りする
 - **JSX の composition lint は未対応**。ネスト構造・a11y DOM の検査は HTML のみ。JSX は class / 属性 lint まで
 - **BYO-DS はデータ差し替えのみ**。自分の DS のトークン・ルールを JSON で書けば同じエンジンで検査できるが、component metadata の生成ツールは npm に未同梱で、detector は 6 種固定（`manual` は自動検査しない宣言）。新しい検査ロジックはエンジン側の変更が要る

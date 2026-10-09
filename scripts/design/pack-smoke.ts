@@ -13,13 +13,15 @@
  *    - 取得不能 → warn（オフライン。CI はネットワークありなので実質必須検査）
  * 3. 同梱スキーマ 3 種が tarball に入っていて JSON として読める
  * 4. tmp consumer に `npm install <tarball>` して、公開 entry（melta-ds-mcp/lint-core）と
- *    互換 passthrough（melta-ds-mcp/dist/utils/lint-core.js）の両 specifier で lint が動く
+ *    互換 passthrough（melta-ds-mcp/dist/utils/lint-core.js）の両 specifier で lint が動く。
+ *    あわせて主の公開 entry（melta-ds-mcp/lint）の lint() が composition 違反を返すこと、
+ *    bin（melta-lint）が node だけで起動し CI gate / hook と同じ判定を返すことを確かめる
  *
  * 罠メモ: pipefail 下で「長い出力 | grep」は SIGPIPE 141 で誤失敗するため、
  * このスクリプトは子プロセス出力をすべて変数に落としてから検査する（パイプを使わない）。
  */
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
@@ -36,6 +38,16 @@ const REQUIRED_SCHEMAS = [
 ];
 
 const LINT_SAMPLE = '<p class="text-black">配布物 smoke</p>';
+
+/**
+ * composition だけが拾う違反の検体（ネスト modal = MODAL_NO_NESTED）。class / html-attr の違反を
+ * 含めないので、lint() が error を返せば「公開 entry と bin が composition を含む」ことの証明になる。
+ * lintSource でも同じ違反が出る検体にすると、composition の有無を見分けられなくなる
+ */
+const COMPOSITION_SAMPLE = '<div role="dialog"><div role="dialog">配布物 smoke</div></div>';
+const COMPOSITION_RULE = "MODAL_NO_NESTED";
+/** 違反ゼロの検体（bin の exit 0 側の対照） */
+const CLEAN_SAMPLE = '<p class="text-body">配布物 smoke</p>';
 
 let failures = 0;
 let warnings = 0;
@@ -233,10 +245,17 @@ async function main(): Promise<void> {
     probePath,
     `import { lintSource as viaExportEntry } from "melta-ds-mcp/lint-core";\n` +
       `import { lintSource as viaDeepImport } from "melta-ds-mcp/dist/utils/lint-core.js";\n` +
+      `import { lint } from "melta-ds-mcp/lint";\n` +
       `const html = ${JSON.stringify(LINT_SAMPLE)};\n` +
+      `const nested = ${JSON.stringify(COMPOSITION_SAMPLE)};\n` +
+      `const rule = ${JSON.stringify(COMPOSITION_RULE)};\n` +
+      `const viaLint = lint(nested, { sourceType: "html" });\n` +
       `process.stdout.write(JSON.stringify({\n` +
       `  exportEntry: viaExportEntry(html).length,\n` +
       `  deepImport: viaDeepImport(html).length,\n` +
+      `  lintComposition: viaLint.violations.filter((v) => v.ruleId.includes(rule)).length,\n` +
+      `  lintPassed: viaLint.passed,\n` +
+      `  lintSourceComposition: viaExportEntry(nested).filter((v) => v.ruleId.includes(rule)).length,\n` +
       `}));\n`,
     "utf-8"
   );
@@ -257,6 +276,9 @@ async function main(): Promise<void> {
   const counts = JSON.parse(probeOut.slice(jsonStart < 0 ? 0 : jsonStart)) as {
     exportEntry: number;
     deepImport: number;
+    lintComposition: number;
+    lintPassed: boolean;
+    lintSourceComposition: number;
   };
   // text-black は rules.json の禁止クラス。同梱アセットを読めていれば必ず検出される
   if (counts.exportEntry < 1) {
@@ -270,6 +292,76 @@ async function main(): Promise<void> {
     );
   } else {
     ok(`melta-ds-mcp/dist/utils/lint-core.js で lint 発火（violations = ${counts.deepImport}）`);
+  }
+
+  // 主の公開 entry。npm 経路の消費者が check_html / CI / hook と同じ判定（composition 込み）を持てること
+  if (counts.lintSourceComposition > 0) {
+    fail(
+      `検体が lintSource でも ${COMPOSITION_RULE} を返します。composition の有無を見分けられないので検体を差し替えること`
+    );
+  }
+  if (counts.lintComposition < 1 || counts.lintPassed) {
+    fail(
+      `melta-ds-mcp/lint の lint() がネスト modal（${COMPOSITION_RULE}）を検出できませんでした ` +
+        `（composition 違反 = ${counts.lintComposition} / passed = ${counts.lintPassed}）。公開 entry が composition を含んでいない`
+    );
+  } else {
+    ok(
+      `melta-ds-mcp/lint の lint() が composition 違反を検出（${COMPOSITION_RULE} = ${counts.lintComposition}、lintSource 単体では ${counts.lintSourceComposition}）`
+    );
+  }
+
+  section("5. bin（melta-lint）を node だけで起動");
+
+  // tsx も TS ソースも無い消費者環境で、CI gate / PostToolUse hook と同じ判定が出ること。
+  // .bin の shim 経由で叩くので、shebang と npm が付ける実行権限まで含めて確かめる
+  const bin = join(consumerDir, "node_modules", ".bin", "melta-lint");
+  if (!existsSync(bin)) {
+    fail(`node_modules/.bin/melta-lint がありません（package.json の bin を確認）`);
+    return;
+  }
+  const nestedFile = join(consumerDir, "nested-modal.html");
+  const cleanFile = join(consumerDir, "clean.html");
+  writeFileSync(nestedFile, COMPOSITION_SAMPLE, "utf-8");
+  writeFileSync(cleanFile, CLEAN_SAMPLE, "utf-8");
+  // 出力は変数に落としてから検査する（パイプを使わない）
+  const runBin = (args: string[]) =>
+    spawnSync(bin, args, { cwd: consumerDir, encoding: "utf-8", timeout: 60000 });
+  /** 失敗時の手がかり。CLI の stdout は空行から始まるので trim してから 1 行目を取る */
+  const firstLine = (r: ReturnType<typeof runBin>) =>
+    (r.stderr || r.stdout || String(r.error ?? "")).trim().split("\n")[0];
+
+  const nested = runBin([nestedFile]);
+  if (nested.status === 1 && nested.stdout.includes(COMPOSITION_RULE)) {
+    ok(`melta-lint がネスト modal で exit 1（${COMPOSITION_RULE} を検出）`);
+  } else {
+    fail(
+      `melta-lint がネスト modal を落としませんでした（exit ${nested.status}）: ${firstLine(nested)}`
+    );
+  }
+
+  const clean = runBin([cleanFile]);
+  if (clean.status === 0) {
+    ok("melta-lint が違反なしの検体で exit 0");
+  } else {
+    fail(
+      `melta-lint が違反なしの検体で exit ${clean.status}: ${firstLine(clean)}`
+    );
+  }
+
+  const hook = runBin(["--hook", nestedFile]);
+  let hookDecision: string | undefined;
+  try {
+    hookDecision = (JSON.parse(hook.stdout) as { decision?: string }).decision;
+  } catch {
+    hookDecision = undefined;
+  }
+  if (hook.status === 0 && hookDecision === "block") {
+    ok("melta-lint --hook がネスト modal で block の JSON を返す");
+  } else {
+    fail(
+      `melta-lint --hook が block を返しませんでした（exit ${hook.status} / stdout: ${hook.stdout.slice(0, 200)}）`
+    );
   }
 }
 

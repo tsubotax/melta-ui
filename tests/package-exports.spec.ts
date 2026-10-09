@@ -16,6 +16,7 @@ import { compareSemver } from "../scripts/design/pack-smoke.js";
 /** exports の解決先（"./dist/*" 等の pattern を含む）を stub ファイルとして用意する */
 const STUB_FILES = [
   "dist/index.js",
+  "dist/utils/lint.js",
   "dist/utils/lint-core.js",
   "dist/utils/loader.js",
   "design/contracts/tokens.json",
@@ -66,7 +67,8 @@ test.describe("npm 配布の exports map", () => {
     try {
       const require = createRequire(consumerEntry);
       const cases: Array<[string, string]> = [
-        // 新設の公開 entry（Phase 0 で昇格させるのは lint-core だけ）
+        // 公開 entry。lint は composition 込みの単一 API（1.9.0）、lint-core は互換のため残す
+        ["melta-ds-mcp/lint", "dist/utils/lint.js"],
         ["melta-ds-mcp/lint-core", "dist/utils/lint-core.js"],
         ["melta-ds-mcp/package.json", "package.json"],
         // 既存の deep import（exports 新設で壊してはいけない経路）
