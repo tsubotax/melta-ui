@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-10-10
+
 ### Changed
 
 - **`melta-ds-mcp/lint-core` を互換 entry に格下げ** — `lintSource()` は class + html-attr lint までで composition を
