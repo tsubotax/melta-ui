@@ -49,28 +49,41 @@ test.describe("parseHookInput: stdin JSON から tool_input.file_path を取る"
     test(`不正な入力（${label}）は ok: false で理由を返す`, () => {
       const r = parseHookInput(raw);
       expect(r.ok).toBe(false);
-      if (!r.ok) expect(r.reason).toMatch(/hook の入力/);
+      // 配線ミスの通知は同じ句で始まる（external-ds.spec の wrapper E2E がこの句を見る）
+      if (!r.ok) expect(r.reason).toMatch(/^hook に検体のパスが渡されていません（.+）$/);
     });
   }
 });
 
 test.describe("isExcludedHookPath: テスト・ベンチ・検証用の検体は hook で検査しない", () => {
-  test("除外セグメントを含むパスは true", () => {
+  const cwd = "/repo";
+
+  test("プロジェクト内の除外セグメントを含むパスは true（絶対・相対どちらでも）", () => {
     for (const p of [
       "/repo/tests/fixtures/bad.html",
+      "tests/fixtures/bad.html",
       "/repo/test/a.tsx",
       "/repo/design/benchmarks/results/2026/x.html",
       "/repo/verification/case.html",
-      "C:\\repo\\tests\\x.html",
+      "./verification/case.html",
     ]) {
-      expect(isExcludedHookPath(p), p).toBe(true);
+      expect(isExcludedHookPath(p, cwd), p).toBe(true);
     }
   });
 
   test("通常のパスは false（testsite など部分一致では除外しない）", () => {
-    for (const p of ["/repo/docs/index.html", "/repo/src/testsite/page.html", "/repo/latest/x.html"]) {
-      expect(isExcludedHookPath(p), p).toBe(false);
+    for (const p of ["/repo/docs/index.html", "/repo/src/testsite/page.html", "/repo/latest/x.html", "docs/index.html"]) {
+      expect(isExcludedHookPath(p, cwd), p).toBe(false);
     }
+  });
+
+  test("プロジェクト外の親ディレクトリ名は見ない（/home/user/test/ の下のプロジェクトでも通常の画面は検査する）", () => {
+    const projectCwd = "/home/user/test/product";
+    expect(isExcludedHookPath("/home/user/test/product/src/page.html", projectCwd)).toBe(false);
+    expect(isExcludedHookPath("/home/user/test/product/tests/bad.html", projectCwd)).toBe(true);
+    // cwd の外にある検体は除外しない（何を書いているか分からないので検査に回す）
+    expect(isExcludedHookPath("/elsewhere/tests/bad.html", projectCwd)).toBe(false);
+    expect(isExcludedHookPath("../tests/bad.html", projectCwd)).toBe(false);
   });
 });
 
@@ -122,10 +135,16 @@ test.describe("CLI --hook（引数なし）は stdin の JSON を読む", () => 
     expect(r.stdout.trim()).toBe("");
   });
 
-  test("除外ディレクトリ（tests/）の検体は無言で抜ける", () => {
-    const r = runHook(JSON.stringify({ tool_input: { file_path: "/repo/tests/fixtures/bad.html" } }));
+  test("除外ディレクトリ（cwd 配下の tests/）の検体は無言で抜ける", () => {
+    const r = runHook(JSON.stringify({ tool_input: { file_path: resolve("tests/fixtures/does-not-matter.html") } }));
     expect(r.status).toBe(0);
     expect(r.stdout.trim()).toBe("");
+  });
+
+  test("cwd の外の tests/ は除外せず検査に回す（実物が無ければ未検査通知）", () => {
+    const r = runHook(JSON.stringify({ tool_input: { file_path: "/elsewhere/tests/bad.html" } }));
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("検体を解決できません");
   });
 
   test("従来の --hook <file> も引き続き動く", () => {

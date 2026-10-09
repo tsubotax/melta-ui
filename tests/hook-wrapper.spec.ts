@@ -262,12 +262,45 @@ test.describe("hook wrapper: 実行経路の優先順位", () => {
     }
   });
 
-  test("対象拡張子の文字列が入力のどこにも無ければ、dist があっても起動せず無言（足切り）", () => {
+  test("file_path があって対象拡張子の文字列が無ければ、dist があっても起動せず無言（足切り）", () => {
     const fake = createFakeRoot({ distStub: `process.stdout.write("should-not-run");\n` });
     try {
       const result = runWrapper(fake.wrapper, hookInput(join(fake.root, "notes.md")));
       expect(result.status).toBe(0);
       expect(result.stdout.trim()).toBe("");
+    } finally {
+      fake.cleanup();
+    }
+  });
+
+  for (const [label, input] of [
+    ["空", ""],
+    ["JSON でない", "not json"],
+  ] as const) {
+    test(`不正な入力（${label}）は足切りせず CLI に渡す（未検査通知を CLI に出させる）`, () => {
+      const fake = createFakeRoot({
+        distStub: `let d = ""; process.stdin.setEncoding("utf-8"); process.stdin.on("data", (c) => { d += c; }); process.stdin.on("end", () => { process.stdout.write(JSON.stringify({ via: "dist", raw: d })); });\n`,
+      });
+      try {
+        const result = runWrapper(fake.wrapper, input);
+        expect(result.status).toBe(0);
+        expect(JSON.parse(result.stdout)).toEqual({ via: "dist", raw: input });
+      } finally {
+        fake.cleanup();
+      }
+    });
+  }
+
+  test("file_path が無い入力（配線ミス）は足切りせず CLI に渡す（無言にしない）", () => {
+    const fake = createFakeRoot({ distStub: DIST_ECHO });
+    try {
+      const result = runWrapper(fake.wrapper, JSON.stringify({ tool_name: "Write", tool_input: {} }));
+      expect(result.status).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({
+        via: "dist",
+        args: ["--hook"],
+        stdin: { tool_name: "Write", tool_input: {} },
+      });
     } finally {
       fake.cleanup();
     }

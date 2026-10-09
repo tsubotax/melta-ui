@@ -20,8 +20,9 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
+import { resolve } from "node:path";
 import { lint, sourceTypeForPath, type LintResult } from "../utils/lint.js";
-import { isExcludedHookPath, parseHookInput } from "../utils/hook-input.js";
+import { isExcludedHookPath, NO_PATH_PHRASE, parseHookInput } from "../utils/hook-input.js";
 import { getAllRules } from "../utils/loader.js";
 
 // 検査対象の拡張子。sourceType の振り分け（.html → composition 込み）は
@@ -126,13 +127,15 @@ function notCheckedNotice(detail: string): void {
   );
 }
 
-function hookMain(file: string | undefined): void {
+function hookMain(fileArg: string | undefined): void {
   // hook の配線ミス（file_path を渡していない）。無言で通すと enforcement が
   // 落ちていることに誰も気づけないので、検査対象かどうかを判断する前に報告する
-  if (!file) {
-    notCheckedNotice("hook に検体のパスが渡されていません");
+  if (!fileArg) {
+    notCheckedNotice(NO_PATH_PHRASE);
     return;
   }
+  // `--hook <file>` の相対パスも stdin 経路と同じく cwd 基準で絶対化する（除外判定の入口を揃える）
+  const file = resolve(fileArg);
   // 検査対象外の拡張子は元から対象外なので黙って抜ける
   if (!isTarget(file)) return;
   // テスト / ベンチマーク / 検証用の検体も黙って抜ける（違反を含むのが仕事。hook-input.ts 参照）
@@ -213,7 +216,20 @@ function main(): void {
       hookMain(args[1]);
       process.exit(0);
     }
-    const parsed = parseHookInput(readFileSync(0, "utf-8"));
+    // 端末から手で打つと readFileSync(0) が入力待ちで止まるので、TTY なら読まずに案内する
+    if (process.stdin.isTTY) {
+      notCheckedNotice(`${NO_PATH_PHRASE}（stdin が端末。PostToolUse の JSON を stdin に渡すか --hook <file> を使う）`);
+      process.exit(0);
+    }
+    // stdin が閉じられている等で読めないときも、例外で落ちて無言になるのでなく未検査を通知する
+    let raw: string;
+    try {
+      raw = readFileSync(0, "utf-8");
+    } catch (e) {
+      notCheckedNotice(`${NO_PATH_PHRASE}（stdin を読めません: ${e instanceof Error ? e.message : String(e)}）`);
+      process.exit(0);
+    }
+    const parsed = parseHookInput(raw);
     if (!parsed.ok) {
       notCheckedNotice(parsed.reason);
       process.exit(0);
