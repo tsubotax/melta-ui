@@ -223,7 +223,7 @@ melta-app は消費者プロジェクト向けの eslint plugin も npm で配�
 <!-- sec: security -->
 ## セキュリティ・データ境界
 
-MCP サーバーも lint エンジンもローカルプロセスで完結する。生成コード・プロンプト・検査結果を外部へ送信する経路はなく、telemetry も持たない。ネットワークに出るのは `npx` によるパッケージ取得と、`npm run design:compat` / `npm run check:pack` が npm registry の公開バージョンを照会するときだけ。
+MCP サーバーも lint エンジンもローカルプロセスで完結する。生成コード・プロンプト・検査結果を外部へ送信する経路はなく、telemetry も持たない。ネットワークに出るのは `npx` によるパッケージ取得と、`npm run design:compat` / `npm run check:pack` / `npm run check:registry` が npm registry や MCP Registry の公開バージョンを照会するときだけ。
 
 <!-- sec: maturity -->
 ## 成熟度とメンテナンス

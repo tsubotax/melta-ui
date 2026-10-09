@@ -227,7 +227,7 @@ melta-app also ships an eslint plugin on npm for consumer projects, so raw liter
 <!-- sec: security -->
 ## Security and data boundary
 
-Both the MCP server and the lint engine run entirely as local processes. There is no path that sends generated code, prompts or check results anywhere, and there is no telemetry. The only network traffic is `npx` fetching the package, plus `npm run design:compat` / `npm run check:pack` querying published versions on the npm registry.
+Both the MCP server and the lint engine run entirely as local processes. There is no path that sends generated code, prompts or check results anywhere, and there is no telemetry. The only network traffic is `npx` fetching the package, plus `npm run design:compat` / `npm run check:pack` / `npm run check:registry` querying published versions on the npm registry and the MCP Registry.
 
 <!-- sec: maturity -->
 ## Maturity and maintenance
