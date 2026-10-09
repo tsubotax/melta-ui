@@ -1,8 +1,8 @@
 /**
  * check_html（MCP ツール）の統合テスト + check_rule / search の P1-2 改善分。
  *
- * 最重要の保証: checkHtml は lint-generated.ts（CI gate / PostToolUse hook）と
- * 同一の合成（lintSource + .html は lintComposition）であること。
+ * 最重要の保証: checkHtml は単一 lint API（src/utils/lint.ts の lint()）の判定をそのまま返すこと。
+ * lint CLI（CI gate / PostToolUse hook）と npm 公開 entry（melta-ds-mcp/lint）も同じ lint() を呼ぶ。
  * ここが乖離すると「MCP では PASS、CI では FAIL」という最悪の体験になる。
  */
 
@@ -10,8 +10,7 @@ import { test, expect } from "@playwright/test";
 import { checkHtml } from "../src/tools/check-html.js";
 import { checkRule } from "../src/tools/check-rule.js";
 import { search } from "../src/tools/search.js";
-import { lintSource } from "../src/utils/lint-core.js";
-import { lintComposition } from "../src/utils/composition-lint.js";
+import { lint } from "../src/utils/lint.js";
 
 test.describe("check_html: lint-generated と同一判定", () => {
   const FIXTURES = [
@@ -23,14 +22,13 @@ test.describe("check_html: lint-generated と同一判定", () => {
   ];
 
   for (const [i, html] of FIXTURES.entries()) {
-    test(`fixture ${i}: violations が lintSource + lintComposition の合成と一致`, () => {
-      const expected = lintSource(html).concat(lintComposition(html));
+    test(`fixture ${i}: violations / 件数 / 合否が lint() と一致`, () => {
+      const expected = lint(html, { sourceType: "html" });
       const result = checkHtml(html, "html");
-      expect(result.violations).toEqual(expected);
-      expect(result.errorCount).toBe(
-        expected.filter((v) => v.severity === "error").length
-      );
-      expect(result.warnCount).toBe(expected.length - result.errorCount);
+      expect(result.violations).toEqual(expected.violations);
+      expect(result.errorCount).toBe(expected.errorCount);
+      expect(result.warnCount).toBe(expected.warnCount);
+      expect(result.passed).toBe(expected.passed);
       expect(result.passed).toBe(result.errorCount === 0);
     });
   }

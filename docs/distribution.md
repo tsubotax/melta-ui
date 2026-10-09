@@ -7,7 +7,7 @@
 | パッケージ | 中身 | 主な entry |
 |---|---|---|
 | `melta-contracts` | tokens / rules / component contracts / recipes の JSON。ビルド不要・フレームワーク非依存 | `melta-contracts/tokens` `melta-contracts/rules` `melta-contracts/components/<id>` |
-| `melta-ds-mcp` | MCP サーバー（このリポジトリ）+ lint エンジン | `npx melta-ds-mcp`（stdio MCP）/ `melta-ds-mcp/lint-core` |
+| `melta-ds-mcp` | MCP サーバー（このリポジトリ）+ lint エンジン | `npx melta-ds-mcp`（stdio MCP）/ `melta-ds-mcp/lint` / `melta-lint`（lint CLI） |
 | `melta-app` | React Native 実装 + 消費者向け eslint plugin | `melta-app` / `melta-app/icons` / `melta-app/safe-area` / `melta-app/eslint-plugin` |
 
 MCP Registry の ID は `io.github.tsubotax/melta-ui`（マニフェストは `server.json`）。
@@ -31,10 +31,16 @@ const rules = JSON.parse(readFileSync(require.resolve("melta-contracts/rules"), 
 
 ## `melta-ds-mcp` の entry 規約
 
-- **公開 entry**: `melta-ds-mcp/lint-core`（1.5.0 で `exports` に明示）。`lintSource(source)` は **class lint + html-attr lint まで**を返す。**composition lint（ネスト modal / interactive 内 interactive 等）は含まない** — composition は MCP `check_html` と CI の lint CLI が別途足している。つまり `lintSource()` の `[]` は「class / html-attr の違反なし」であって「CI と同じ判定で違反なし」ではない
+- **公開 entry**: `melta-ds-mcp/lint`（`exports` に追加済み。npm 公開は 1.9.0 の予定で、1.8.0 には無い）。`lint(source, { sourceType })` は class lint + html-attr lint に加え、`sourceType: "html"`（既定）なら **composition lint（ネスト modal / interactive 内 interactive 等）まで含めて**判定し、`{ passed, errorCount, warnCount, violations, sourceType }` を返す。MCP `check_html`・CI の lint CLI・PostToolUse hook もこの `lint()` を呼ぶので、同じソースなら 4 経路の判定は一致する
+  - `sourceType: "jsx"` は class + html-attr lint のみ（composition は DOM パース前提のため）。未知の値と `null` は throw する（composition を無言で外さない）
+  - `sourceTypeForPath(path)` は拡張子から sourceType を返す。`.html` は `"html"`、`.tsx` / `.jsx` / `.vue` は `"jsx"`、それ以外は `null`
+  - `passed: true` は「自動検査できるルールで error がない」であって完全準拠ではない。manual ルールとブランド適合は判定しない
+  - 判定の一致は「同じ engine・ruleset・sourceType なら、MCP `check_html` / CLI / hook / npm の `lint()` で違反と件数が一致する」という意味。CLI と hook は拡張子で sourceType を決めるので `.tsx` / `.jsx` / `.vue` は composition を含まない。CI の `--baseline` は warn 件数の追加ゲートで、`passed: true` でも baseline を超えれば失敗する
+- **lint CLI**: `melta-lint`（`bin` に追加済み。npm 公開は 1.9.0 の予定。実体は `dist/cli/lint-generated.js`）。`melta-ds-mcp` を依存に入れたプロジェクトでは `npx melta-lint <file...>` で CI gate と同じ検査を回せる。error があれば exit 1、`--baseline <json>` で warn のラチェット、`--hook <file>` で Claude Code PostToolUse 用の JSON を返す。node だけで動き、tsx も TS ソースも要らない
+  - 依存に入れずに打つときは `npx -p melta-ds-mcp melta-lint <file...>` と書く。`npx melta-lint` だけだと npm は `melta-lint` という名前の別パッケージを registry に取りに行く（この名前は melta の配布物ではない）
+- **`melta-ds-mcp/lint-core`**（1.5.0 で `exports` に明示）: `lintSource(source)` は **class lint + html-attr lint まで**で、**composition lint は含まない**。`lintSource()` の `[]` は「class / html-attr の違反なし」であって「CI と同じ判定で違反なし」ではない。互換のため残す。新しく組み込むなら `melta-ds-mcp/lint` を使う
   - 以前この行は「CI / hook / MCP check_html と同一の lint ロジック」と書いていたが誤り（2026-08-17 訂正）
-  - composition まで含めた判定が要る場合は MCP の `check_html` を使う。`dist/tools/check-html.js` の deep import は動くが公開 API として推奨しない（下記 passthrough は互換維持であって契約ではない）
-  - **未解決**: npm 経路の消費者が composition 込みの単一 API を持てない状態は残る。単一 `lint()` API 化は Phase 2 S4（config resolver + 公開 entry 整理）で扱う
+  - **解決（2026-10-10、npm では 1.9.0 から）**: 2026-08-17 に「未解決」として記録した、npm 経路の消費者が composition 込みの単一 API を持てない状態は `melta-ds-mcp/lint` で解消した。`lint()` と `check_html` の判定一致は `tests/lint.spec.ts` が、配布物の `lint()` と `melta-lint` が composition 違反を返すことは `npm run check:pack` が検査する
 - **互換 passthrough**: `melta-ds-mcp/dist/*` / `melta-ds-mcp/design/*` / `melta-ds-mcp/metadata/*` の deep import は pattern で維持する。予告なく壊さない
 - **bare import は非サポート**: `import "melta-ds-mcp"` は entry ではない。`dist/index.js` は import しただけで stdio サーバーが起動する CLI entry であり、公開 API にしない。利用は `npx melta-ds-mcp`（MCP サーバー）か上記 subpath 経由
 - 解決経路は実際の Node 解決器で `tests/package-exports.spec.ts` が固定する
@@ -188,10 +194,11 @@ npm 上の 1.4.0 が古い contracts を同梱したまま stale 化した事故
 1. `npm pack` した tarball を展開
 2. registry の `melta-contracts` version とリポの contracts version を同期検査（registry が先行 = リポが stale なら fail、リポが先行なら「contracts を先に publish せよ」の warn、取得不能なら warn 継続）
 3. 同梱スキーマ 3 種の存在と JSON parse
-4. tmp consumer に `npm install <tarball>` して、公開 entry と互換 passthrough の**両 specifier**で lint が発火するか確認
+4. tmp consumer に `npm install <tarball>` して、公開 entry と互換 passthrough の**両 specifier**で lint が発火するか確認。あわせて `melta-ds-mcp/lint` の `lint()` がネスト modal（composition 違反）を検出するか確認
+5. consumer の `node_modules/.bin/melta-lint` を node だけで起動し、ネスト modal で exit 1、違反なしで exit 0、`--hook` で block の JSON を返すか確認
 
 あわせて `prepack` が `npm run build` を強制するため、dist の作り忘れによる空配布も起きない。
 
 ## パッケージ分割の予定
 
-将来、検証エンジン（`melta`）とルールセット（`melta-contracts`）を eslint 型に分離する方向で検討している。`melta-ds-mcp` は互換を維持したまま段階的に移行する予定で、現在の entry（`melta-ds-mcp/lint-core` および `dist/*`・`design/*`・`metadata/*` の deep import）を予告なく壊すことはしない。時期・パッケージ名は未確定。
+将来、検証エンジン（`melta`）とルールセット（`melta-contracts`）を eslint 型に分離する方向で検討している。`melta-ds-mcp` は互換を維持したまま段階的に移行する予定で、現在の entry（`melta-ds-mcp/lint`・`melta-ds-mcp/lint-core`・`melta-lint` bin および `dist/*`・`design/*`・`metadata/*` の deep import）を予告なく壊すことはしない。時期・パッケージ名は未確定。

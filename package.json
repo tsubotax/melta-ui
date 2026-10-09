@@ -22,9 +22,11 @@
   },
   "homepage": "https://melta.tsubotax.com",
   "bin": {
-    "melta-ds-mcp": "./dist/index.js"
+    "melta-ds-mcp": "./dist/index.js",
+    "melta-lint": "./dist/cli/lint-generated.js"
   },
   "exports": {
+    "./lint": "./dist/utils/lint.js",
     "./lint-core": "./dist/utils/lint-core.js",
     "./package.json": "./package.json",
     "./dist/*": "./dist/*",

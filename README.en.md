@@ -43,7 +43,7 @@ You can make an AI read your guidelines. Whether it *follows* them is up to the 
 | Package | Role | Usage |
 |---|---|---|
 | [`melta-contracts`](https://www.npmjs.com/package/melta-contracts) | **Contract data** (tokens / rules / component contracts / recipes, JSON only). No build step, framework-agnostic | `npm install melta-contracts` |
-| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP server + lint engine** (this repository). `check_html` runs the same logic as CI and the hook | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint-core` |
+| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP server + lint engine** (this repository). `check_html` runs the same logic as CI and the hook | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint` |
 | [`melta-app`](https://www.npmjs.com/package/melta-app) | **React Native implementation**, shipping an eslint plugin for consumer projects | `npm install melta-app` |
 
 > A bare import of `melta-ds-mcp` (`import "melta-ds-mcp"`) is unsupported: the entry is a CLI that boots a stdio server on import. Use `npx melta-ds-mcp` or the subpaths. Entry contract, deep-import compatibility and the package-split plan live in [docs/distribution.md](./docs/distribution.md).
@@ -218,7 +218,7 @@ melta-app also ships an eslint plugin on npm for consumer projects, so raw liter
 
 **Other limits**:
 
-- **The clone path and the npm path ship different layers.** The PostToolUse hook, CI and the lint CLI assume you cloned this repository; they do not reach a project that merely ran `npm install`. What the npm path gives you is `melta-ds-mcp/lint-core` (class and html-attr lint only; no composition lint) and the MCP `check_html` tool (composition included) — wire either into your own hook or CI
+- **The clone path and the npm path ship different layers.** The PostToolUse hook and the CI workflow assume you cloned this repository; they do not reach a project that merely ran `npm install`. What the npm path gives you is `melta-ds-mcp/lint` (composition included; the same verdict as `check_html`, CI and the hook), the `melta-lint` CLI built on it, and the MCP `check_html` tool — wire them into your own hook or CI
 - **Styling that isn't class-based cannot be inspected.** If style never lands in the markup (class / attributes), static lint fires on nothing
 - **Composition lint does not cover JSX.** Nesting and a11y-DOM checks are HTML-only; JSX gets class and attribute lint
 - **BYO-DS is data replacement only.** Write your DS's tokens and rules as JSON and the same engine checks against them, but the component-metadata generator is not shipped on npm and the detector set is fixed at 6 kinds (`manual` declares a rule as not auto-checked). New checking logic requires an engine change
