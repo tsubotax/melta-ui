@@ -9,29 +9,17 @@
 
 set -uo pipefail
 
-# stdin から tool use の JSON を読む
+# stdin から tool use の JSON を読む。パスの取り出しは CLI（src/utils/hook-input.ts）が JSON として行う。
+# 以前はここで grep していたが、値の \" や \\ や別階層の同名キーで取り違えるのでやめた
 INPUT=$(cat)
 
-# file_path を抽出
-FILE_PATH=$(echo "$INPUT" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*:[[:space:]]*"\([^"]*\)"/\1/')
-
-# file_path を取り出せなかった = hook の配線ミス。ここで exit 0 すると
-# 「検査が走らなかった」ことが誰にも伝わらないので TS 側に委ねて通知させる
-if [ -n "$FILE_PATH" ]; then
-  # 対象拡張子でなければスキップ。
-  # ここで弾くのは **毎回 node / tsx を起動しないための足切り**であって判定ではない
-  # （拡張子の正は src/cli/lint-generated.ts の TARGET_EXT と src/utils/lint.ts の
-  #   sourceTypeForPath。変更時は 3 か所を合わせること）
-  case "$FILE_PATH" in
-    *.html|*.tsx|*.jsx|*.vue) ;;
-    *) exit 0 ;;
-  esac
-
-  # テスト / ベンチマーク / デモ用ファイルは意図的に対象外
-  case "$FILE_PATH" in
-    */tests/*|*/test/*|*/benchmarks/results/*|*/verification/*) exit 0 ;;
-  esac
-fi
+# 足切り: 対象拡張子の文字列が入力のどこにも無ければ、node / tsx を起動せずに抜ける。
+# 判定ではない（パスに拡張子が含まれる以上、ここで対象を落とすことは無い）。
+# 対象の拡張子は src/utils/lint.ts の sourceTypeForPath が正。変更時はここも合わせる
+case "$INPUT" in
+  *.html*|*.tsx*|*.jsx*|*.vue*) ;;
+  *) exit 0 ;;
+esac
 
 # ⚠️ 「不在ならスキップ」を wrapper で判定しない。
 # 対象拡張子なのに実物が無い / ディレクトリだった、は **検査が走らなかった**ケースで、
@@ -69,14 +57,15 @@ SRC_CLI="$ROOT/src/cli/lint-generated.ts"
 DIST_CLI="$ROOT/dist/cli/lint-generated.js"
 TSX="$ROOT/node_modules/.bin/tsx"
 
+# CLI には stdin の JSON をそのまま渡す（--hook に引数を付けない = stdin を読む）
 run_dist() {
-  node "$DIST_CLI" --hook "$FILE_PATH" || not_checked "dist/cli/lint-generated.js の起動に失敗"
+  printf '%s' "$INPUT" | node "$DIST_CLI" --hook || not_checked "dist/cli/lint-generated.js の起動に失敗"
 }
 
 if [ -f "$SRC_CLI" ]; then
   # dev checkout: src が正
   if [ -x "$TSX" ]; then
-    "$TSX" "$SRC_CLI" --hook "$FILE_PATH" || not_checked "src/cli/lint-generated.ts の起動に失敗"
+    printf '%s' "$INPUT" | "$TSX" "$SRC_CLI" --hook || not_checked "src/cli/lint-generated.ts の起動に失敗"
     exit 0
   fi
   if [ -f "$DIST_CLI" ]; then

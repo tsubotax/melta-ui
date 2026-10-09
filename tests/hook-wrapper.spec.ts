@@ -6,6 +6,10 @@
  * 「未検査」を通知する（CI は最新 src、hook は旧 dist、という食い違いを無通知で起こさない）。
  * 配布物（src も tsx も無い npm / plugin）では dist を node で叩く。
  *
+ * 検体のパスは wrapper では取り出さず、stdin の JSON をそのまま CLI の `--hook` に流す
+ * （取り出しは src/utils/hook-input.ts。tests/hook-input.spec.ts が見る）。wrapper が持つのは
+ * 「対象拡張子の文字列が無ければ起動しない」という足切りだけ。
+ *
  * この分岐はリポジトリの build 状態に依存させると、手元（dist あり）と CI の test job（dist なし）で
  * 別の経路を検査してしまう。そこで wrapper を tmp の疑似ルートに複製し、src / tsx / dist の有無と
  * 中身を stub で固定して経路だけを測る。lint の判定そのものは tests/external-ds.spec.ts の wrapper E2E と
@@ -112,13 +116,13 @@ function createFakeRoot(options: FakeRootOptions = {}): FakeRoot {
   };
 }
 
-function runWrapper(wrapper: string, filePath: string): { status: number; stdout: string } {
+function hookInput(filePath: string): string {
+  return JSON.stringify({ tool_input: { file_path: filePath } });
+}
+
+function runWrapper(wrapper: string, input: string): { status: number; stdout: string } {
   try {
-    const stdout = execFileSync("bash", [wrapper], {
-      input: JSON.stringify({ tool_input: { file_path: filePath } }),
-      encoding: "utf-8",
-      timeout: 30000,
-    });
+    const stdout = execFileSync("bash", [wrapper], { input, encoding: "utf-8", timeout: 30000 });
     return { status: 0, stdout };
   } catch (e) {
     const err = e as { status: number | null; stdout?: string };
@@ -131,18 +135,26 @@ function contextOf(stdout: string): string | undefined {
     .hookSpecificOutput?.additionalContext;
 }
 
-const DIST_ECHO = `process.stdout.write(JSON.stringify({ via: "dist", args: process.argv.slice(2) }));\n`;
-const TSX_ECHO = `#!/bin/sh\nprintf '{"via":"tsx","args":["%s","%s","%s"]}' "$1" "$2" "$3"\n`;
+/** stub は引数と stdin をそのまま返す（wrapper が stdin を CLI へ流していることの証跡） */
+const DIST_ECHO = `let d = "";
+process.stdin.setEncoding("utf-8");
+process.stdin.on("data", (c) => { d += c; });
+process.stdin.on("end", () => {
+  process.stdout.write(JSON.stringify({ via: "dist", args: process.argv.slice(2), stdin: JSON.parse(d) }));
+});
+`;
+const TSX_ECHO = `#!/bin/sh\nprintf '{"via":"tsx","args":["%s","%s"],"stdin":%s}' "$1" "$2" "$(cat)"\n`;
 
 test.describe("hook wrapper: 実行経路の優先順位", () => {
-  test("dev checkout（src + tsx + dist が揃う）では src を tsx で叩く。dist があっても使わない", () => {
+  test("dev checkout（src + tsx + dist が揃う）では src を tsx で叩き、stdin の JSON をそのまま渡す", () => {
     const fake = createFakeRoot({ srcStub: true, tsxStub: TSX_ECHO, distStub: DIST_ECHO });
     try {
-      const result = runWrapper(fake.wrapper, fake.sample);
+      const result = runWrapper(fake.wrapper, hookInput(fake.sample));
       expect(result.status).toBe(0);
       expect(JSON.parse(result.stdout)).toEqual({
         via: "tsx",
-        args: [join(fake.root, "src", "cli", "lint-generated.ts"), "--hook", fake.sample],
+        args: [join(fake.root, "src", "cli", "lint-generated.ts"), "--hook"],
+        stdin: { tool_input: { file_path: fake.sample } },
       });
     } finally {
       fake.cleanup();
@@ -152,9 +164,13 @@ test.describe("hook wrapper: 実行経路の優先順位", () => {
   test("dev checkout で tsx が無ければ、dist が src より新しいときだけ dist を使う", () => {
     const fake = createFakeRoot({ srcStub: true, distStub: DIST_ECHO });
     try {
-      const result = runWrapper(fake.wrapper, fake.sample);
+      const result = runWrapper(fake.wrapper, hookInput(fake.sample));
       expect(result.status).toBe(0);
-      expect(JSON.parse(result.stdout)).toEqual({ via: "dist", args: ["--hook", fake.sample] });
+      expect(JSON.parse(result.stdout)).toEqual({
+        via: "dist",
+        args: ["--hook"],
+        stdin: { tool_input: { file_path: fake.sample } },
+      });
     } finally {
       fake.cleanup();
     }
@@ -163,7 +179,7 @@ test.describe("hook wrapper: 実行経路の優先順位", () => {
   test("dev checkout で dist が src より古ければ、古い engine で判定せず未検査を通知する", () => {
     const fake = createFakeRoot({ srcStub: true, distStub: DIST_ECHO, distOlderThanSrc: true });
     try {
-      const result = runWrapper(fake.wrapper, fake.sample);
+      const result = runWrapper(fake.wrapper, hookInput(fake.sample));
       expect(result.status).toBe(0);
       expect(result.stdout).not.toContain('"via"');
       const context = contextOf(result.stdout);
@@ -178,7 +194,7 @@ test.describe("hook wrapper: 実行経路の優先順位", () => {
   test("dev checkout で tsx も dist も無ければ未検査を通知する", () => {
     const fake = createFakeRoot({ srcStub: true });
     try {
-      const result = runWrapper(fake.wrapper, fake.sample);
+      const result = runWrapper(fake.wrapper, hookInput(fake.sample));
       expect(result.status).toBe(0);
       expect(contextOf(result.stdout)).toContain("tsx も dist/cli/lint-generated.js も見つからない");
     } finally {
@@ -186,12 +202,32 @@ test.describe("hook wrapper: 実行経路の優先順位", () => {
     }
   });
 
-  test("配布物（src 無し）では dist を node で叩き、--hook と検体のパスを渡す", () => {
+  test("配布物（src 無し）では dist を node で叩き、--hook と stdin の JSON を渡す", () => {
     const fake = createFakeRoot({ distStub: DIST_ECHO });
     try {
-      const result = runWrapper(fake.wrapper, fake.sample);
+      const result = runWrapper(fake.wrapper, hookInput(fake.sample));
       expect(result.status).toBe(0);
-      expect(JSON.parse(result.stdout)).toEqual({ via: "dist", args: ["--hook", fake.sample] });
+      expect(JSON.parse(result.stdout)).toEqual({
+        via: "dist",
+        args: ["--hook"],
+        stdin: { tool_input: { file_path: fake.sample } },
+      });
+    } finally {
+      fake.cleanup();
+    }
+  });
+
+  test("パスに \\\" や別階層の file_path が混ざっても、stdin をそのまま流すので CLI 側で正しく読める", () => {
+    const fake = createFakeRoot({ distStub: DIST_ECHO });
+    try {
+      // 旧 wrapper の grep はこの入力で `tool_response.file_path` や `\"` を拾っていた
+      const input = JSON.stringify({
+        tool_response: { file_path: "/decoy/other.html" },
+        tool_input: { file_path: fake.sample, content: 'say \\"hi\\" "file_path": "/decoy/in-content.html"' },
+      });
+      const result = runWrapper(fake.wrapper, input);
+      expect(result.status).toBe(0);
+      expect((JSON.parse(result.stdout) as { stdin: unknown }).stdin).toEqual(JSON.parse(input));
     } finally {
       fake.cleanup();
     }
@@ -201,7 +237,7 @@ test.describe("hook wrapper: 実行経路の優先順位", () => {
     // --hook は常に exit 0 が契約。非 0 は依存の未インストール等で CLI 自体が動いていない
     const fake = createFakeRoot({ distStub: `process.stderr.write("simulated crash\\n");\nprocess.exit(1);\n` });
     try {
-      const result = runWrapper(fake.wrapper, fake.sample);
+      const result = runWrapper(fake.wrapper, hookInput(fake.sample));
       expect(result.status).toBe(0);
       const payload = JSON.parse(result.stdout) as { decision?: string };
       expect(payload.decision).toBeUndefined();
@@ -215,7 +251,7 @@ test.describe("hook wrapper: 実行経路の優先順位", () => {
   test("dist も TS ソースも無ければ未検査を通知し、npm run build / npm install を案内する", () => {
     const fake = createFakeRoot();
     try {
-      const result = runWrapper(fake.wrapper, fake.sample);
+      const result = runWrapper(fake.wrapper, hookInput(fake.sample));
       expect(result.status).toBe(0);
       const context = contextOf(result.stdout);
       expect(context).toContain("この書き込みは未検査です");
@@ -226,10 +262,10 @@ test.describe("hook wrapper: 実行経路の優先順位", () => {
     }
   });
 
-  test("対象外の拡張子は dist があっても起動せず無言（毎回 node を起動しない足切り）", () => {
+  test("対象拡張子の文字列が入力のどこにも無ければ、dist があっても起動せず無言（足切り）", () => {
     const fake = createFakeRoot({ distStub: `process.stdout.write("should-not-run");\n` });
     try {
-      const result = runWrapper(fake.wrapper, join(fake.root, "notes.md"));
+      const result = runWrapper(fake.wrapper, hookInput(join(fake.root, "notes.md")));
       expect(result.status).toBe(0);
       expect(result.stdout.trim()).toBe("");
     } finally {

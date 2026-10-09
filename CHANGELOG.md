@@ -39,6 +39,12 @@
   入れたプロジェクトは `npx melta-lint <file...>` で CI gate と同じ検査（error で exit 1、`--baseline` の
   warn ラチェット、`--hook` の PostToolUse JSON）を node だけで回せる。依存に入れずに打つときは
   `npx -p melta-ds-mcp melta-lint` と書く（`melta-lint` という名前の npm パッケージは melta の配布物ではない）
+- **`melta-lint --hook` が stdin の PostToolUse JSON を直接読む** — 引数なしの `--hook` は stdin を JSON として読み
+  `tool_input.file_path` を検体にする（`src/utils/hook-input.ts`）。これまでは bash の wrapper が grep で
+  `"file_path"` を抜いていて、値の `\"` や `\\`、`tool_response` 側の同名キーで取り違えた。wrapper は
+  「対象拡張子の文字列が無ければ起動しない」足切りと実行経路の選択だけを持ち、stdin はそのまま CLI へ流す。
+  plugin 配布では wrapper を介さず `node .../dist/cli/lint-generated.js --hook` だけで hook が成立する。
+  テスト・ベンチマーク・検証用パスの除外は CLI 側（`isExcludedHookPath`）へ移した。`--hook <file>` は従来どおり
 - **PostToolUse hook を dist 優先にする** — `scripts/design/hook-check-rule.sh` は `dist/cli/lint-generated.js` が
   あれば `node` で叩き、無ければ従来どおり tsx で `src/cli/lint-generated.ts` を叩く。npm / plugin 配布では
   tsx も TS ソースも無いため。どちらも無いときと、CLI が起動に失敗したときは「未検査」を通知する

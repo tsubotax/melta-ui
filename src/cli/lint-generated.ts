@@ -21,6 +21,7 @@
 
 import { readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { lint, sourceTypeForPath, type LintResult } from "../utils/lint.js";
+import { isExcludedHookPath, parseHookInput } from "../utils/hook-input.js";
 import { getAllRules } from "../utils/loader.js";
 
 // 検査対象の拡張子。sourceType の振り分け（.html → composition 込み）は
@@ -134,6 +135,8 @@ function hookMain(file: string | undefined): void {
   }
   // 検査対象外の拡張子は元から対象外なので黙って抜ける
   if (!isTarget(file)) return;
+  // テスト / ベンチマーク / 検証用の検体も黙って抜ける（違反を含むのが仕事。hook-input.ts 参照）
+  if (isExcludedHookPath(file)) return;
 
   // 対象拡張子なのに実物が無い / ファイルでない（.html という名前のディレクトリ等）。
   // block にすると「書いて消した」だけで作業が止まるので block はしないが、
@@ -204,7 +207,18 @@ function hookMain(file: string | undefined): void {
 function main(): void {
   const args = process.argv.slice(2);
   if (args[0] === "--hook") {
-    hookMain(args[1]);
+    // `--hook <file>` は従来どおり。引数が無ければ stdin の PostToolUse JSON を読む
+    // （Claude Code の hook と plugin はこちら。wrapper の grep に頼らない）
+    if (args[1] !== undefined) {
+      hookMain(args[1]);
+      process.exit(0);
+    }
+    const parsed = parseHookInput(readFileSync(0, "utf-8"));
+    if (!parsed.ok) {
+      notCheckedNotice(parsed.reason);
+      process.exit(0);
+    }
+    hookMain(parsed.filePath);
     process.exit(0);
   }
   // --baseline = 比較モード（baseline 不在は exit 2。「不在 = PASS」を防ぐ）
