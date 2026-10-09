@@ -11,8 +11,11 @@
  *   contracts : DESIGN.md + contracts 要約（静的・tools 無し）
  *   mcp-raw   : 上記 + MCP tools（initialize instructions 無し）
  *   full      : 上記 + MCP tools + initialize instructions ← 実際の melta workflow
+ *   mcp-only  : DESIGN.md の Quick Reference 節だけ + MCP tools + initialize instructions
+ *               （短い入口だけ持ち、必要な契約は tools で取る経路）
  *
  * contracts→mcp-raw で tools 自体、mcp-raw→full で接続時ガイダンスの寄与を分離する。
+ * full→mcp-only は静的 context を Quick Reference だけに縮めて tools に委ねた効果。
  * tools 条件は多ターンになり得るため、スコアは静的コンテキスト量だけの差ではない。
  * スコアは DS 準拠の proxy であり、見た目の美しさそのものではない。
  *
@@ -30,7 +33,7 @@ import type { ModelProvider, GenerationResult } from "../../src/utils/types.js";
 import { prompts as benchmarkPrompts, type BenchmarkPrompt } from "./prompts.js";
 import { scoreHTML, type Score } from "./score.js";
 import { summarize, computeLift, formatSummary, formatLift, type Summary } from "./stats.js";
-import { createAnthropicProvider } from "./providers/anthropic.js";
+import { createAnthropicProvider, RefusalError } from "./providers/anthropic.js";
 import { createOpenAIProvider } from "./providers/openai.js";
 import { createMockProvider } from "./providers/mock.js";
 import { MCP_INSTRUCTIONS } from "../../src/guidance.js";
@@ -51,7 +54,7 @@ const root = resolve(__dirname, "../..");
 const resultsDir = resolve(__dirname, "results");
 const historyPath = resolve(__dirname, "history.json");
 
-const CONDITION_IDS = ["cold", "designmd", "contracts", "mcp-raw", "full"] as const;
+const CONDITION_IDS = ["cold", "designmd", "contracts", "mcp-raw", "full", "mcp-only"] as const;
 type ConditionId = (typeof CONDITION_IDS)[number];
 
 // ---------- 純粋な集計・レポート（テストから import するため副作用なし） ----------
@@ -77,7 +80,10 @@ export interface Cell {
   promptId: string;
   conditionId: ConditionId;
   attempted: number;
+  /** 生成の失敗（API エラー等）。refused とは別に数える */
   failed: number;
+  /** safety classifier の refusal。平均からは抜けるので、report は拒否率を併記し lift を抑止する */
+  refused: number;
   trials: Trial[];
   summary: Summary; // trial 分布
 }
@@ -136,6 +142,7 @@ export function buildReport(input: ReportInput): {
   }
 
   const totalFailed = cells.reduce((a, c) => a + c.failed, 0);
+  const totalRefused = cells.reduce((a, c) => a + c.refused, 0);
   const totalAttempted = cells.reduce((a, c) => a + c.attempted, 0);
 
   let report = `# melta UI Benchmark — 条件別 DS 準拠スコア\n\n`;
@@ -157,37 +164,52 @@ export function buildReport(input: ReportInput): {
         : `**生成元**: provenance 不明（score-dir に provenance.json が無い。生成時の model / commit は復元不能）\n`;
     }
   }
-  report += `**Trials/cell**: ${trials}（試行 ${totalAttempted} / 失敗 ${totalFailed}）\n`;
+  report += `**Trials/cell**: ${trials}（試行 ${totalAttempted} / 失敗 ${totalFailed} / 拒否 ${totalRefused}）\n`;
   report += `**Prompts**: ${allIds.join(", ")}\n`;
   report += `**採点**: 共通 lint core による DS 準拠 proxy（error -10 / warn -3、base 50 + 準拠シグナル +5）。見た目の美しさそのものではない。\n`;
   report += `**集約**: prompt 等重み（各 prompt の trial 平均を取り、prompt 間で平均）。CI/σ は prompt 間ばらつき。\n\n`;
 
   // 注記（交絡の明示）
-  report += `> **条件の読み方**: cold→designmd→contracts は静的コンテキスト量の差。contracts→mcp-raw は MCP tools 自体、mcp-raw→full は initialize instructions の寄与。tools 条件は多ターンになり得るため、上振れには tool 利用・自己修正の寄与が含まれる。\n\n`;
-  report += `> **resource の測定範囲**: mcp-raw / full はどちらも DESIGN.md と contracts を静的 context として持つため、この比較は \`melta://design-constitution\` resource が MCP-only 利用者へ情報を届ける効果を測りません。\n\n`;
+  report += `> **条件の読み方**: cold→designmd→contracts は静的コンテキスト量の差。contracts→mcp-raw は MCP tools 自体、mcp-raw→full は initialize instructions の寄与。full→mcp-only は「DESIGN.md 全文 + contracts 要約」を「Quick Reference だけ」に置き換えた処置全体の差（静的 context の量・内容・配置と、それに伴う tool 行動を分離していない。負でも「prose が効いた」とまでは言えない）。tools 条件は多ターンになり得るため、上振れには tool 利用・自己修正の寄与が含まれる。\n\n`;
+  report += `> **resource の測定範囲**: mcp-raw / full は DESIGN.md と contracts を静的 context に持ち、mcp-only は Quick Reference だけを持つ。provider は MCP resource を配信しないため、どの条件も \`melta://design-constitution\` resource が MCP-only 利用者へ情報を届ける効果を測りません。\n\n`;
+
+  // 条件ごとに「採点できた prompt の集合」。拒否や失敗で prompt が抜けると平均の母集団が変わるので、
+  // 2 条件の集合が一致しないときは lift を出さない（難しい prompt だけ拒否した条件が高く見える歪みを防ぐ）
+  const scoredIds = (conditionId: ConditionId, ids: string[]): string[] =>
+    ids.filter((pid) => {
+      const cell = cells.find((c) => c.promptId === pid && c.conditionId === conditionId);
+      return cell != null && cell.summary.n > 0;
+    });
+  const sameIds = (a: string[], b: string[]): boolean =>
+    a.length === b.length && a.every((x, i) => x === b[i]);
+  const liftBetween = (from: ConditionId, to: ConditionId, g: { key: string; ids: string[] }): string => {
+    const fromIds = scoredIds(from, g.ids);
+    const toIds = scoredIds(to, g.ids);
+    if (!sameIds(fromIds, toIds)) {
+      return `比較不能（採点できた prompt が違う: ${from} ${fromIds.length} / ${to} ${toIds.length}）`;
+    }
+    return formatLift(computeLift(groups[g.key][from].mean, groups[g.key][to].mean));
+  };
 
   for (const g of groupDefs) {
     const base = conditions[0];
-    const baseMean = groups[g.key][base.id]?.mean ?? 0;
     report += `## ${g.label}\n\n`;
-    report += `| 条件 | スコア (mean ±95%CI, range, σ, n=prompt数) | ${base.id} 比 |\n`;
-    report += `|------|------|------|\n`;
+    report += `| 条件 | スコア (mean ±95%CI, range, σ, n=prompt数) | 失敗 / 拒否 | ${base.id} 比 |\n`;
+    report += `|------|------|------|------|\n`;
     for (const cond of conditions) {
       const s = groups[g.key][cond.id];
-      const liftStr =
-        cond.id === base.id ? "—（基準）" : formatLift(computeLift(baseMean, s.mean));
-      report += `| **${cond.id}** (${cond.label}) | ${formatSummary(s)} | ${liftStr} |\n`;
+      const condCells = cells.filter((c) => c.conditionId === cond.id && g.ids.includes(c.promptId));
+      const failed = condCells.reduce((a, c) => a + c.failed, 0);
+      const refused = condCells.reduce((a, c) => a + c.refused, 0);
+      const liftStr = cond.id === base.id ? "—（基準）" : liftBetween(base.id, cond.id, g);
+      report += `| **${cond.id}** (${cond.label}) | ${formatSummary(s)} | ${failed} / ${refused} | ${liftStr} |\n`;
     }
     report += `\n`;
     if (conditions.length >= 2) {
       report += `限界寄与: `;
       const parts: string[] = [];
       for (let i = 1; i < conditions.length; i++) {
-        const from = conditions[i - 1];
-        const to = conditions[i];
-        parts.push(
-          `${from.id}→${to.id} ${formatLift(computeLift(groups[g.key][from.id].mean, groups[g.key][to.id].mean))}`
-        );
+        parts.push(`${conditions[i - 1].id}→${conditions[i].id} ${liftBetween(conditions[i - 1].id, conditions[i].id, g)}`);
       }
       report += parts.join(" / ") + "\n\n";
     }
@@ -200,9 +222,12 @@ export function buildReport(input: ReportInput): {
   for (const p of prompts) {
     const row = conditions.map((cond) => {
       const cell = cells.find((c) => c.promptId === p.id && c.conditionId === cond.id);
-      if (!cell || cell.summary.n === 0) return "—";
+      if (!cell) return "—";
+      // 拒否はスコアが無くても表に出す（平均から抜けたことを隠さない）
       const fail = cell.failed > 0 ? ` ✗${cell.failed}` : "";
-      return formatSummary(cell.summary) + fail;
+      const refuse = cell.refused > 0 ? ` 拒否${cell.refused}` : "";
+      if (cell.summary.n === 0) return `—${fail}${refuse}`;
+      return formatSummary(cell.summary) + fail + refuse;
     });
     report += `| ${p.id}: ${p.name}${p.isRedTeam ? " 🔴" : ""} | ${row.join(" | ")} |\n`;
   }
@@ -238,6 +263,78 @@ export function buildReport(input: ReportInput): {
   return { report, groups };
 }
 
+/**
+ * DESIGN.md から `## Quick Reference` 節だけを切り出す（見出し行を含み、次の `## ` 見出しの直前まで）。
+ *
+ * mcp-only 条件の静的 context。見出しが無い・次の `## ` が無い（節の終端が決まらない）ときは
+ * throw する。DESIGN.md 全文へ黙って fallback すると mcp-only が full と同じ処置になり、
+ * 「入口を縮めた効果」を測ったつもりで何も測らなくなるため。
+ */
+export function extractQuickReference(designMd: string): string {
+  const start = designMd.search(/^## Quick Reference[ \t\r]*$/m);
+  if (start < 0) {
+    throw new Error(
+      "DESIGN.md に `## Quick Reference` 見出しがありません（mcp-only 条件は全文へ fallback しない）"
+    );
+  }
+  const headingEnd = designMd.indexOf("\n", start);
+  if (headingEnd < 0) {
+    throw new Error("`## Quick Reference` の後に本文と次の `## ` 見出しがありません");
+  }
+  const bodyStart = headingEnd + 1;
+  const next = designMd.slice(bodyStart).search(/^## /m);
+  if (next < 0) {
+    throw new Error(
+      "`## Quick Reference` の後に次の `## ` 見出しがありません（節の終端が決まらないので切り出さない）"
+    );
+  }
+  return designMd.slice(start, bodyStart + next);
+}
+
+/**
+ * 条件の組み立て（純関数。fs を読む buildConditions から分離してテストで import する）。
+ * 並び順が限界寄与の比較順になるので、mcp-only は full の後ろに置く。
+ */
+export function buildConditionSet(
+  input: { designMd: string; contractSummary: string },
+  filter: string[]
+): Condition[] {
+  const { designMd, contractSummary } = input;
+  const withContracts = `${designMd}\n\n---\n\n## Component Contracts（参考）\n\n${contractSummary}`;
+  const all: Condition[] = [
+    { id: "cold", label: "No DS context", context: "", useTools: false },
+    { id: "designmd", label: "DESIGN.md only", context: designMd, useTools: false },
+    { id: "contracts", label: "DESIGN.md + contracts", context: withContracts, useTools: false },
+    {
+      id: "mcp-raw",
+      label: "+ MCP tools (no initialize instructions)",
+      context: withContracts,
+      useTools: true,
+      useInstructions: false,
+    },
+    {
+      id: "full",
+      label: "+ MCP tools + initialize instructions",
+      context: withContracts,
+      useTools: true,
+      useInstructions: true,
+    },
+  ];
+  // Quick Reference の切り出しは mcp-only を回すときだけ行う。見出しが崩れても、
+  // mcp-only を含まない run（--conditions cold,full 等）まで止めないため
+  if (filter.length === 0 || filter.includes("mcp-only")) {
+    all.push({
+      id: "mcp-only",
+      label: "Quick Reference + MCP tools + initialize instructions",
+      context: extractQuickReference(designMd),
+      useTools: true,
+      useInstructions: true,
+    });
+  }
+  if (filter.length === 0) return all;
+  return all.filter((c) => filter.includes(c.id));
+}
+
 // ---------- CLI（副作用あり。import 時には実行しない） ----------
 
 function getArg(args: string[], name: string): string | undefined {
@@ -269,29 +366,10 @@ function getContractSummary(): string {
 }
 
 function buildConditions(filter: string[]): Condition[] {
-  const designMd = getDesignMd();
-  const withContracts = `${designMd}\n\n---\n\n## Component Contracts（参考）\n\n${getContractSummary()}`;
-  const all: Condition[] = [
-    { id: "cold", label: "No DS context", context: "", useTools: false },
-    { id: "designmd", label: "DESIGN.md only", context: designMd, useTools: false },
-    { id: "contracts", label: "DESIGN.md + contracts", context: withContracts, useTools: false },
-    {
-      id: "mcp-raw",
-      label: "+ MCP tools (no initialize instructions)",
-      context: withContracts,
-      useTools: true,
-      useInstructions: false,
-    },
-    {
-      id: "full",
-      label: "+ MCP tools + initialize instructions",
-      context: withContracts,
-      useTools: true,
-      useInstructions: true,
-    },
-  ];
-  if (filter.length === 0) return all;
-  return all.filter((c) => filter.includes(c.id));
+  return buildConditionSet(
+    { designMd: getDesignMd(), contractSummary: getContractSummary() },
+    filter
+  );
 }
 
 function buildSystem(condition: Condition): string {
@@ -315,6 +393,7 @@ async function runCell(
   const scores: number[] = [];
   const trialResults: Trial[] = [];
   let failed = 0;
+  let refused = 0;
 
   for (let t = 0; t < trials; t++) {
     const suffix = trials > 1 ? `-t${t}` : "";
@@ -326,8 +405,14 @@ async function runCell(
         temperature,
       });
     } catch (err) {
-      console.error(`    ✗ ${prompt.id}/${condition.id} t${t} 失敗: ${(err as Error).message}`);
-      failed++;
+      // 拒否は失敗と分けて数える。拒否は prompt の難しさと相関しうるので、
+      // 平均から黙って抜けると「難しい prompt だけ拒否した条件」が高く見える
+      const isRefusal = err instanceof RefusalError;
+      console.error(
+        `    ✗ ${prompt.id}/${condition.id} t${t} ${isRefusal ? "拒否" : "失敗"}: ${(err as Error).message}`
+      );
+      if (isRefusal) refused++;
+      else failed++;
       continue;
     }
     writeFileSync(htmlPath, result.text, "utf-8");
@@ -347,6 +432,7 @@ async function runCell(
     conditionId: condition.id,
     attempted: trials,
     failed,
+    refused,
     trials: trialResults,
     summary: summarize(scores),
   };
@@ -395,6 +481,8 @@ function scoreCell(
     conditionId: condition.id,
     attempted: trials,
     failed,
+    // 生成済み HTML の採点には拒否という状態が無い（拒否された trial はファイルが無く、欠落 = failed）
+    refused: 0,
     trials: trialResults,
     summary: summarize(scores),
   };
@@ -441,7 +529,10 @@ function appendHistory(record: HistoryRecord): void {
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const providerId = (getArg(args, "--provider") ?? "anthropic") as "anthropic" | "openai" | "mock";
-  const modelName = getArg(args, "--model") ?? "claude-sonnet-4-20250514";
+  // 既定は claude-opus-5-5。--model claude-sonnet-5-5 で安価に回せる。
+  // Opus 5.5 は temperature 自体を、Sonnet 5.5 は既定以外の値を 400 で拒否するので、
+  // この 2 モデルでは --temperature を付けない
+  const modelName = getArg(args, "--model") ?? "claude-opus-5-5";
   const promptFilter = getArg(args, "--prompt") ?? null;
   const conditionFilter = (getArg(args, "--conditions") ?? "")
     .split(",")
@@ -560,6 +651,9 @@ async function main(): Promise<void> {
       model: recordedModel,
       temperature: temperature ?? null,
       temperatureSource: temperature != null ? "cli" : "provider-default",
+      // effort は渡していない（API 既定）。省略を来歴に残す。モデルごとに既定が違う点は provenance.ts を参照
+      effort: null,
+      effortSource: "api-default",
       trials,
     },
     prompts: targetPrompts.map((p) => p.id),

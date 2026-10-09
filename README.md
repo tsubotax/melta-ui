@@ -243,7 +243,7 @@ MCP サーバーも lint エンジンもローカルプロセスで完結する�
 | [AGENTS.md](./AGENTS.md) | AI エージェント共通の作業ガイド（読み込みモード・タスク別ガイド・npm scripts） |
 | [design/authority.md](./design/authority.md) | SSOT 宣言と値競合時の優先順位 |
 | [docs/melta-loop-playbook.md](./docs/melta-loop-playbook.md) | loop / pipeline 自動化の統治原則（自動化 3 Level 分類・SSOT write-protect・Human Gate の Hard / Soft 2 層化・監査ログ）。現状 W2 drift repair が稼働 |
-| [docs/benchmarks.md](./docs/benchmarks.md) | ベンチマークのプロトコル（5 条件 × N トライアルで DS 準拠スコアの lift を測る）と既知の限界 |
+| [docs/benchmarks.md](./docs/benchmarks.md) | ベンチマークのプロトコル（6 条件 × N トライアルで DS 準拠スコアの lift を測る）と既知の限界 |
 | [docs/distribution.md](./docs/distribution.md) | npm entry 規約・deep import 互換・BYO-DS（自分の DS を持ち込む）・パッケージ分割の予定 |
 | [docs/ai-ready-ds-maturity-model.md](./docs/ai-ready-ds-maturity-model.md) | AI-Ready 成熟度モデル（Lv0 None → Lv4 Verified）。任意のプロジェクトに当てられる |
 | [melta-screendiff](https://github.com/tsubotax/melta-screendiff) | UI 変更 PR の Before/After を実キャプチャで比較する Claude Code plugin（別リポジトリ）。このリポジトリの `.claude/screendiff.json` がその設定ファイルで、常設のデモ PR も置いてある。lint が検知できない「見た目の意図」を人間がレビューする側を担う |

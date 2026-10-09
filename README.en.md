@@ -247,7 +247,7 @@ Both the MCP server and the lint engine run entirely as local processes. There i
 | [AGENTS.md](./AGENTS.md) | Agent-neutral working guide (reading modes, task-based guide, npm scripts) |
 | [design/authority.md](./design/authority.md) | SSOT declaration and precedence when values conflict |
 | [docs/melta-loop-playbook.md](./docs/melta-loop-playbook.md) | Governance for loop / pipeline automation (three automation levels, SSOT write-protect, hard/soft human gates, audit log). W2 drift repair is live today |
-| [docs/benchmarks.md](./docs/benchmarks.md) | The benchmark protocol (five conditions × N trials measuring the lift in DS-compliance score) and its known limits |
+| [docs/benchmarks.md](./docs/benchmarks.md) | The benchmark protocol (six conditions × N trials measuring the lift in DS-compliance score) and its known limits |
 | [docs/distribution.md](./docs/distribution.md) | npm entry contract, deep-import compatibility, BYO-DS (bring your own design system), package-split plan |
 | [docs/ai-ready-ds-maturity-model.md](./docs/ai-ready-ds-maturity-model.md) | An AI-Ready maturity model (Lv0 None → Lv4 Verified) you can run against any project |
 | [melta-screendiff](https://github.com/tsubotax/melta-screendiff) | A Claude Code plugin (separate repository) that compares Before/After of a UI-changing PR with real captures. The `.claude/screendiff.json` in this repository is its config, and a standing demo PR lives here too. It covers the side lint cannot reach — a human reviewing whether the change looks the way it was meant to |

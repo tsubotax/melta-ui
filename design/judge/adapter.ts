@@ -30,17 +30,21 @@ export const JUDGE_PROTOCOL_VERSION = 1;
  * temperature を受け付けないと分かっているモデル。指定されたら起動前に usage error にする。
  * judge は temperature: 0 を固定で渡し、providers/anthropic.ts はそれをそのまま API へ転送する
  * ので、この表のモデルを既定にすると実 provider の既定経路が 400 になる。
- * 出典: claude-api スキルの Thinking & Effort 表（Sampling 列が "Removed - 400" の行）。
+ * 出典: claude-api スキルの Thinking & Effort 表（Sampling 列が "Removed - 400" の行と、
+ * "Non-default values - 400" の行。judge が送る 0 は既定値ではないので後者も 400 になる）。
  */
 export const TEMPERATURE_UNSUPPORTED_MODELS: readonly string[] = [
   "claude-fable-5-1",
   "claude-mythos-5-1",
   "claude-fable-5",
   "claude-mythos-5",
+  "claude-opus-5-5",
   "claude-opus-5",
   "claude-opus-4-8",
   "claude-opus-4-7",
+  "claude-sonnet-5-5",
   "claude-sonnet-5",
+  "claude-haiku-5-5",
 ];
 
 /** 指定モデルが temperature を受け付けないと分かっているか */
@@ -49,8 +53,8 @@ export function modelRejectsTemperature(model: string): boolean {
 }
 
 /**
- * 既定モデル。design/benchmarks/runner.ts の claude-sonnet-4-20250514 は古い ID なので
- * コピーしない。judge は temperature: 0 を固定で渡すため、**temperature を受け付ける現行
+ * 既定モデル。design/benchmarks/runner.ts の既定（claude-opus-5-5）は temperature を受け付けないので
+ * judge では使わない。judge は temperature: 0 を固定で渡すため、**temperature を受け付ける現行
  * モデルの中で最も能力の高いもの**を選ぶ（claude-api スキルの表で Sampling が "Allowed" なのは
  * Opus 4.6 / Sonnet 4.6 / Haiku 4.5）。
  */

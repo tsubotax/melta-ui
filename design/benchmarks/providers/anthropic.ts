@@ -26,6 +26,21 @@ import { search } from "../../../src/tools/search.js";
 import { getAllRules } from "../../../src/utils/loader.js";
 import type { RuleFilter } from "../../../src/utils/types.js";
 
+/**
+ * safety classifier による refusal。runner はこれを「失敗」とは別に「拒否」として数える。
+ * 拒否は prompt の難しさと相関しうるので、平均から黙って抜けると条件間の lift が歪む。
+ */
+export class RefusalError extends Error {
+  readonly category: string | null;
+  constructor(category: string | null, explanation: string | null) {
+    super(
+      `model が refusal で停止しました（category: ${category ?? "null"}${explanation ? `, explanation: ${explanation}` : ""}）`
+    );
+    this.name = "RefusalError";
+    this.category = category;
+  }
+}
+
 const MELTA_TOOLS: Tool[] = [
   {
     name: "get_token",
@@ -192,7 +207,7 @@ export function extractGenerationText(fullText: string, opts?: GenerateOptions):
 }
 
 export interface AnthropicProviderOptions {
-  /** Anthropic model id (e.g. "claude-sonnet-4-20250514") */
+  /** Anthropic model id (e.g. "claude-opus-5-5") */
   model: string;
   /** ループ上限。tool 呼び出しの暴走を防ぐ */
   maxIterations?: number;
@@ -204,7 +219,9 @@ export function createAnthropicProvider(
   options: AnthropicProviderOptions
 ): ModelProvider {
   const maxIterations = options.maxIterations ?? 10;
-  const maxTokens = options.maxTokensPerTurn ?? 8192;
+  // 非 streaming の推奨値。HTML 1 枚が途中で切れないように余裕を持たせる
+  // （現行モデルは thinking が常時有効で、thinking の token もこの上限に含まれる）
+  const maxTokens = options.maxTokensPerTurn ?? 16000;
 
   return {
     id: `anthropic:${options.model}`,
@@ -252,6 +269,14 @@ export function createAnthropicProvider(
         }
         if (typeof u.cache_creation_input_tokens === "number") {
           usage.cacheCreationTokens += u.cache_creation_input_tokens;
+        }
+
+        // 現行モデル（Opus 5.5 / Sonnet 5.5 等）は safety classifier で refusal を返しうる。
+        // 黙って空の本文を採点すると「DS 準拠が低い生成」と区別できなくなるので、
+        // throw して trial を失敗として数えさせる（runner の runCell が failed に積む）
+        if (response.stop_reason === "refusal") {
+          const details = response.stop_details;
+          throw new RefusalError(details?.category ?? null, details?.explanation ?? null);
         }
 
         finalContent = response.content;

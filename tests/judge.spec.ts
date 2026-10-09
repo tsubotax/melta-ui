@@ -591,7 +591,7 @@ test.describe("judge core", () => {
     // provider に応答本文を加工させない（フェンス抽出で契約が骨抜きになるのを防ぐ）
     expect(spy.calls[0].opts!.rawText).toBe(true);
     expect(JUDGE_RAW_TEXT).toBe(true);
-    // 既定モデルは runner.ts の古い ID をコピーしない
+    // 既定モデルは旧 runner.ts 既定の古い ID をコピーしない
     expect(DEFAULT_JUDGE_MODEL).not.toBe("claude-sonnet-4-20250514");
   });
 
@@ -965,6 +965,10 @@ test.describe("judge core", () => {
 
   test("16. 既定モデルは temperature 非対応表に無い / 非対応モデルは起動前に落ちる", async () => {
     expect(TEMPERATURE_UNSUPPORTED_MODELS).toContain("claude-opus-5");
+    // 5.5 世代は Opus が Sampling 削除、Sonnet / Haiku が既定値以外を 400（judge の 0 は既定値ではない）
+    for (const model of ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]) {
+      expect(modelRejectsTemperature(model)).toBe(true);
+    }
     expect(modelRejectsTemperature(DEFAULT_JUDGE_MODEL)).toBe(false);
     expect(TEMPERATURE_UNSUPPORTED_MODELS).not.toContain(DEFAULT_JUDGE_MODEL);
 
