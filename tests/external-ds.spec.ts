@@ -604,12 +604,14 @@ test.describe("外部 DS bundle: lint / 設計検査の層", () => {
     // この wrapper が TS に到達する前に `[ -f ]` で無言 exit 0 していた
     // （＝ hookMain の未検査通知に永久に到達しない fail-open が wrapper 層に残っていた）
     const root = copyFixture();
-    const runHook = (payload: unknown) => {
+    // Claude Code の PostToolUse 入力と同じ形で渡す（検体は tool_input.file_path。
+    // 2026-10-10 から CLI が stdin を JSON として読むので、平らな { file_path } では届かない）
+    const runHook = (toolInput: unknown) => {
       try {
         const stdout = execFileSync("bash", [resolve("scripts/design/hook-check-rule.sh")], {
           cwd: resolve("."),
           env: { ...process.env, MELTA_ROOT: root },
-          input: JSON.stringify(payload),
+          input: JSON.stringify({ tool_name: "Write", tool_input: toolInput }),
           encoding: "utf-8",
           timeout: 60000,
         });

@@ -325,8 +325,8 @@ async function main(): Promise<void> {
   writeFileSync(nestedFile, COMPOSITION_SAMPLE, "utf-8");
   writeFileSync(cleanFile, CLEAN_SAMPLE, "utf-8");
   // 出力は変数に落としてから検査する（パイプを使わない）
-  const runBin = (args: string[]) =>
-    spawnSync(bin, args, { cwd: consumerDir, encoding: "utf-8", timeout: 60000 });
+  const runBin = (args: string[], input?: string) =>
+    spawnSync(bin, args, { cwd: consumerDir, encoding: "utf-8", timeout: 60000, input });
   /** 失敗時の手がかり。CLI の stdout は空行から始まるので trim してから 1 行目を取る */
   const firstLine = (r: ReturnType<typeof runBin>) =>
     (r.stderr || r.stdout || String(r.error ?? "")).trim().split("\n")[0];
@@ -357,10 +357,26 @@ async function main(): Promise<void> {
     hookDecision = undefined;
   }
   if (hook.status === 0 && hookDecision === "block") {
-    ok("melta-lint --hook がネスト modal で block の JSON を返す");
+    ok("melta-lint --hook <file> がネスト modal で block の JSON を返す");
   } else {
     fail(
-      `melta-lint --hook が block を返しませんでした（exit ${hook.status} / stdout: ${hook.stdout.slice(0, 200)}）`
+      `melta-lint --hook <file> が block を返しませんでした（exit ${hook.status} / stdout: ${hook.stdout.slice(0, 200)}）`
+    );
+  }
+
+  // plugin と Claude Code の hook はこちら: 引数なしの --hook に PostToolUse の JSON を stdin で渡す
+  const hookStdin = runBin(["--hook"], JSON.stringify({ tool_input: { file_path: nestedFile } }));
+  let hookStdinDecision: string | undefined;
+  try {
+    hookStdinDecision = (JSON.parse(hookStdin.stdout) as { decision?: string }).decision;
+  } catch {
+    hookStdinDecision = undefined;
+  }
+  if (hookStdin.status === 0 && hookStdinDecision === "block") {
+    ok("melta-lint --hook（stdin の PostToolUse JSON）がネスト modal で block の JSON を返す");
+  } else {
+    fail(
+      `melta-lint --hook（stdin）が block を返しませんでした（exit ${hookStdin.status} / stdout: ${hookStdin.stdout.slice(0, 200)}）`
     );
   }
 }
