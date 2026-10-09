@@ -138,11 +138,13 @@ tsx design/judge/run.ts --provider file --phase collect --run-dir <dir> --runtim
 
 ### `--model` の既定値
 
-既定は **`claude-opus-4-6`**。`design/benchmarks/runner.ts` の `claude-sonnet-4-20250514` は古い ID なのでコピーしていない。
+既定は **`claude-opus-4-6`**。`design/benchmarks/runner.ts` の既定（`claude-opus-5-5`）は `temperature` を受け付けないので judge では使わない。
+
+provider が `refusal`（safety classifier の拒否）で止まった場合、judge は例外として受け取り、その step で **中断**する（残りの step は走らず、history への追記も止まる。完了した step の証跡は保存される）。以前は空の本文から `INVALID` を記録して続行していた。benchmark 側は拒否を「失敗」と別に数えて続行するので、挙動が違う点に注意する。
 
 judge は `temperature: 0` を固定で渡し、`design/benchmarks/providers/anthropic.ts` はそれをそのまま API に転送する。したがって **`temperature` を受け付けるモデルしか選べない**。`claude-api` スキルの Sampling 列が `Allowed` なのは Opus 4.6 / Sonnet 4.6 / Haiku 4.5 で、その中で最も能力が高い `claude-opus-4-6` を既定にした。
 
-`temperature` を受け付けないと分かっているモデル（`claude-opus-5` / `claude-opus-4-8` / `claude-opus-4-7` / `claude-sonnet-5` / Fable 5 系 / Mythos 5 系）は、API を叩く前に CLI が usage error で落とす。対応表は `design/judge/adapter.ts` の `TEMPERATURE_UNSUPPORTED_MODELS`。モデル世代が変わったらこの定数と既定値を更新する。
+`temperature` を受け付けないと分かっているモデル（`claude-opus-5-5` / `claude-opus-5` / `claude-opus-4-8` / `claude-opus-4-7` / `claude-sonnet-5-5` / `claude-sonnet-5` / `claude-haiku-5-5` / Fable 5 系 / Mythos 5 系）は、API を叩く前に CLI が usage error で落とす。対応表は `design/judge/adapter.ts` の `TEMPERATURE_UNSUPPORTED_MODELS`。モデル世代が変わったらこの定数と既定値を更新する。
 
 ---
 

@@ -19,7 +19,11 @@ import { MCP_INSTRUCTIONS } from "../../../src/guidance.js";
 
 type Quality = "cold" | "designmd" | "contracts" | "mcp-raw" | "full";
 
-/** system プロンプトと useTools から条件の質を推定する */
+/**
+ * system プロンプトと useTools から条件の質を推定する。
+ * mcp-only（Quick Reference + tools + instructions）は full と同じ質に落ちる。
+ * mock は tautology なので順位に意味は無く、パイプラインが落ちなければよい。
+ */
 function inferQuality(system: string, useTools: boolean): Quality {
   const hasDs = system.includes("melta UI デザインシステム") || system.includes("Design Constitution");
   const hasContracts = system.includes("Component Contracts");

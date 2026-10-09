@@ -7,6 +7,17 @@
 - **DESIGN.md の公式 linter を `@google/design.md@0.4.0` へ更新** — 0.3.0 から findings は同数（errors 0 / warnings 12 / infos 1）で、
   CI ゲートの判定は変わらない。0.4.0 の `omitted` frontmatter（意図的に省いた区分の宣言）は、
   5 区分すべてを持つ melta には不要なので使わない
+- **benchmark に `mcp-only` 条件を追加し、既定モデルを `claude-opus-5-5` へ更新（benchmark protocol v3）** —
+  `mcp-only` は静的 context を `DESIGN.md` の Quick Reference 節だけに縮め、MCP tools と initialize
+  instructions に委ねる。`full→mcp-only` の差で「短い入口 + 必要な契約は MCP で取る」経路を測る。
+  Quick Reference 節が切り出せないときは全文へ fallback せず落とす。`full→mcp-only` の差は「全文 + 要約」を
+  「Quick Reference」に置き換えた処置全体の差で、prose の効果そのものとは読まない。anthropic provider は
+  `refusal` で停止した生成を「拒否」として失敗と別に数え（空の本文を採点しない）、report は条件別の拒否数を
+  併記し、採点できた prompt の集合が違う 2 条件の限界寄与を「比較不能」にする。judge は同じ provider を使うので
+  `refusal` で中断するようになった（`docs/judge.md`）。1 ターンの `max_tokens` を 16000 に上げ、provenance に
+  `effort: null / effortSource: "api-default"` を記録する（省略の記録。モデルごとに API 既定が違う）。
+  judge の temperature 非対応表に `claude-opus-5-5` / `claude-sonnet-5-5` / `claude-haiku-5-5` を追加
+  （judge の既定 `claude-opus-4-6` は据え置き）
 
 ### Added
 

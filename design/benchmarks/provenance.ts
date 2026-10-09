@@ -21,8 +21,10 @@ import { resolve } from "node:path";
 /**
  * 条件名の意味や処置の組み立てが変わったときに上げる実験プロトコル世代。
  * history の時系列比較は同じ version の run 同士に限定する。
+ *
+ * 3: mcp-only 条件を追加・既定モデルを claude-opus-5-5 へ（2026-10-09）
  */
-export const BENCHMARK_PROTOCOL_VERSION = 2;
+export const BENCHMARK_PROTOCOL_VERSION = 3;
 
 export interface GitInfo {
   /** HEAD の commit SHA。git 取得失敗（CI 外・shallow 等）は null でベンチは止めない */
@@ -38,6 +40,13 @@ export interface ProviderInfo {
   temperature: number | null;
   /** temperature=null が「provider 既定値」であることを明示（実効値は現状取得不能） */
   temperatureSource: "cli" | "provider-default";
+  /**
+   * effort（thinking の深さ）。provider は渡していないので null = API 既定
+   * （Opus 5.5 は medium、Sonnet 5.5 は high など、モデルごとに違う）。
+   * 省略の記録であって実効値の統一ではない。モデル間比較は「モデル + 既定設定」の差として読む
+   */
+  effort: string | null;
+  effortSource: "cli" | "api-default";
   trials: number;
 }
 

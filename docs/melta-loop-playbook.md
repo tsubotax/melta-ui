@@ -225,7 +225,7 @@ than rewrite policy.
 | Substrate | local cron, Claude schedule, or manual run |
 | Context | `design/benchmarks/`, latest report, benchmark prompts and scoring code |
 | Action | Run benchmark conditions, compare only with reports sharing the same `benchmarkProtocolVersion`, summarize changes |
-| Verify | Benchmark report includes its protocol version and cold / designmd / contracts / mcp-raw / full conditions |
+| Verify | Benchmark report includes its protocol version and cold / designmd / contracts / mcp-raw / full / mcp-only conditions |
 | Stop | Report produced; no autonomous product or rule change |
 | Human Gate | Score interpretation, rubric changes, priority decisions |
 | Escalation payload | Regression summary, changed prompts or score code, suggested investigation path |

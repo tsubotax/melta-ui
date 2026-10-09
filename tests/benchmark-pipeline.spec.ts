@@ -10,6 +10,9 @@
  * ことの smoke として扱う。
  */
 
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { test, expect } from "@playwright/test";
 import { summarize, computeLift } from "../design/benchmarks/stats.js";
 import { scoreHTML } from "../design/benchmarks/score.js";
@@ -17,6 +20,8 @@ import { createMockProvider } from "../design/benchmarks/providers/mock.js";
 import {
   buildReport,
   aggregateByCondition,
+  buildConditionSet,
+  extractQuickReference,
   type Cell,
 } from "../design/benchmarks/runner.js";
 import {
@@ -30,6 +35,9 @@ import {
 } from "../design/benchmarks/provenance.js";
 import { prompts as benchmarkPrompts } from "../design/benchmarks/prompts.js";
 import { MCP_INSTRUCTIONS } from "../src/guidance.js";
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const readDesignMd = (): string => readFileSync(resolve(root, "DESIGN.md"), "utf-8");
 
 test.describe("stats: 集計純関数", () => {
   test("summarize は mean/min/max/stdev/ci95/n を返す", () => {
@@ -115,6 +123,7 @@ test.describe("buildReport: 集約・lift・prompt 等重み", () => {
       conditionId,
       attempted: scores.length,
       failed: 0,
+      refused: 0,
       trials: scores.map((s) => ({
         score: { totalScore: s, ruleViolations: 0, violationDetails: [], prohibitedPatterns: 0, patternDetails: [] },
         toolCalls: conditionId === "full" ? 1 : 0,
@@ -169,15 +178,129 @@ test.describe("buildReport: 集約・lift・prompt 等重み", () => {
     expect(report).toContain("MOCK FIXTURE — NOT EVIDENCE");
     expect(report).toContain("resource が MCP-only 利用者へ情報を届ける効果を測りません");
   });
+
+  test("拒否で prompt が抜けた 2 条件の限界寄与は出さず、拒否数を表に残す", () => {
+    const std = benchmarkPrompts.filter((p) => !p.isRedTeam).slice(0, 2);
+    // prompt A: 両条件とも採点できた / prompt B: full では拒否されて採点が無い
+    const refusedCell: Cell = { ...cell(std[1].id, "full", []), attempted: 1, refused: 1 };
+    const cells: Cell[] = [
+      cell(std[0].id, "cold", [40]),
+      cell(std[1].id, "cold", [20]),
+      cell(std[0].id, "full", [90]),
+      refusedCell,
+    ];
+    const { report } = buildReport({
+      cells,
+      conditions: [
+        { id: "cold", label: "cold", context: "", useTools: false },
+        { id: "full", label: "full", context: "", useTools: true },
+      ],
+      prompts: std,
+      isoDate: "2026-01-01T00:00:00.000Z",
+      providerId: "mock",
+      modelName: null,
+      trials: 1,
+    });
+    // 母集団が違う（cold は 2 prompt、full は 1 prompt）ので lift を数字で出さない
+    expect(report).toContain("cold→full 比較不能（採点できた prompt が違う: cold 2 / full 1）");
+    expect(report).not.toMatch(/cold→full [+-]\d/);
+    // 拒否は見出しの集計と条件表と prompt 別内訳の 3 か所に出る
+    expect(report).toContain("失敗 0 / 拒否 1");
+    expect(report).toMatch(/\*\*full\*\* \(full\) \| [^|]+\| 0 \/ 1 \|/);
+    expect(report).toContain("— 拒否1");
+  });
+
+  test("採点できた prompt の集合が同じなら限界寄与は従来どおり数字で出る", () => {
+    const std = benchmarkPrompts.find((p) => !p.isRedTeam)!;
+    const cells: Cell[] = [cell(std.id, "cold", [40]), cell(std.id, "full", [90])];
+    const { report } = buildReport({
+      cells,
+      conditions: [
+        { id: "cold", label: "cold", context: "", useTools: false },
+        { id: "full", label: "full", context: "", useTools: true },
+      ],
+      prompts: [std],
+      isoDate: "2026-01-01T00:00:00.000Z",
+      providerId: "mock",
+      modelName: null,
+      trials: 1,
+    });
+    expect(report).toMatch(/cold→full \+50/);
+    expect(report).not.toContain("比較不能");
+  });
+});
+
+test.describe("extractQuickReference: mcp-only の静的 context", () => {
+  test("`## Quick Reference` 行から次の `## ` 見出しの直前までを返す", () => {
+    const md = "## A\n...\n## Quick Reference\nx\ny\n## B\n...";
+    expect(extractQuickReference(md)).toBe("## Quick Reference\nx\ny\n");
+  });
+
+  test("見出しが無ければ throw（全文へ fallback しない）", () => {
+    expect(() => extractQuickReference("## A\nx\n## B\ny\n")).toThrow(/Quick Reference/);
+  });
+
+  test("次の `## ` 見出しが無ければ throw（節の終端が決まらない）", () => {
+    expect(() => extractQuickReference("## A\n...\n## Quick Reference\nx\ny\n")).toThrow(
+      /次の `## ` 見出し/
+    );
+  });
+
+  test("実物の DESIGN.md: frontmatter を含まず、全文の 40% 未満に縮む", () => {
+    const designMd = readDesignMd();
+    const qr = extractQuickReference(designMd);
+    expect(qr.startsWith("## Quick Reference\n")).toBe(true);
+    // frontmatter は先頭の `---` から次の `---` 行まで。節末尾の `---` は次節との水平線なので許す
+    const frontmatterEnd = designMd.indexOf("\n---\n", 4);
+    expect(designMd.startsWith("---\n")).toBe(true);
+    expect(frontmatterEnd).toBeGreaterThan(0);
+    expect(designMd.indexOf(qr)).toBeGreaterThan(frontmatterEnd);
+    expect(qr).not.toContain("version: alpha");
+    // 全文への fallback（100%）を確実に弾き、入口が膨らんだら気づける閾値。
+    // 実測 34.3%（6,273 / 18,292 字、2026-10-09）。frontmatter は 1 行が短く、行数比（約 24%）より大きく出る
+    expect(qr.length).toBeLessThan(designMd.length * 0.4);
+  });
+});
+
+test.describe("buildConditionSet: 条件の組み立て", () => {
+  const designMd = readDesignMd();
+  const input = { designMd, contractSummary: "### Button Contract (要約)" };
+
+  test("6 条件を返し、mcp-only は最後で Quick Reference + tools + instructions", () => {
+    const conditions = buildConditionSet(input, []);
+    expect(conditions.map((c) => c.id)).toEqual([
+      "cold",
+      "designmd",
+      "contracts",
+      "mcp-raw",
+      "full",
+      "mcp-only",
+    ]);
+    const mcpOnly = conditions[conditions.length - 1];
+    expect(mcpOnly.id).toBe("mcp-only");
+    expect(mcpOnly.useTools && mcpOnly.useInstructions).toBe(true);
+    expect(mcpOnly.context).toBe(extractQuickReference(designMd));
+    const full = conditions.find((c) => c.id === "full")!;
+    expect(mcpOnly.context).not.toBe(full.context);
+  });
+
+  test("filter は指定した条件だけを並び順を保って返す", () => {
+    expect(buildConditionSet(input, ["mcp-only", "cold"]).map((c) => c.id)).toEqual([
+      "cold",
+      "mcp-only",
+    ]);
+  });
 });
 
 test.describe("provenance: 計測来歴（施策6A）", () => {
   const GIT: GitInfo = { commit: "a".repeat(40), dirty: true, dirtyFiles: ["DESIGN.md"] };
   const PROVIDER: ProviderInfo = {
     id: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    model: "claude-opus-5-5",
     temperature: null,
     temperatureSource: "provider-default",
+    effort: null,
+    effortSource: "api-default",
     trials: 3,
   };
 
@@ -198,6 +321,10 @@ test.describe("provenance: 計測来歴（施策6A）", () => {
       ...overrides,
     });
   }
+
+  test("BENCHMARK_PROTOCOL_VERSION は 3（mcp-only 追加・既定モデル更新）", () => {
+    expect(BENCHMARK_PROTOCOL_VERSION).toBe(3);
+  });
 
   test("buildProvenance は必須キーを揃え、dirty / temperatureSource が伝播する", () => {
     const p = prov();
