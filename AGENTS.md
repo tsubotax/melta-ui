@@ -65,6 +65,7 @@ npm run design:lint-generated # 生成 HTML/TSX の禁止パターン検査（er
 npm run design:drift          # ドキュメント ↔ contracts の drift 検出
 npm run design:compat         # 互換ゲート（npm 公開版 vs HEAD、breaking 分類 + semver 強制）
 npm run check:pack            # 配布物 smoke（npm pack → registry の melta-contracts と同期検査 + schemas 3 種 + 両 specifier の consumer import）
+npm run check:registry        # MCP Registry 公開前の判定（版の照合 + Registry 公開済みならスキップ + npm 公開待ち）。workflow mcp-registry.yml が呼ぶ
 npm run design:recipes        # 契約 → recipes/web/ 生成（app recipe は手書き）
 npm run design:build          # contract → metadata/components.json + llms.txt 生成
 npm run validate              # tokens.json vs ds-config.js / ds-theme.css の整合性

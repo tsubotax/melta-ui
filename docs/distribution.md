@@ -12,6 +12,8 @@
 
 MCP Registry の ID は `io.github.tsubotax/melta-ui`（マニフェストは `server.json`）。
 
+**Registry への公開は npm の後に行う。** Registry は、npm に同じ版が `mcpName` 付きで出ていないと公開を拒否する。`npm publish` の後に `gh workflow run mcp-registry.yml -f version=X.Y.Z` を打つと、`.github/workflows/mcp-registry.yml` が GitHub OIDC で `mcp-publisher publish` まで進める。その前に、入力の版と `server.json` / `package.json` の版が一致するかを確かめ、npm に版が出るまで最大 5 分待つ。Registry に同じ版が既にあれば緑でスキップし、版の食い違いと npm 未公開は赤で止まる。押し忘れは毎日 09:17 JST の定期ジョブが拾う。npm の latest が Registry に無ければ赤くなり、打つべき 1 行をログに出す。定期ジョブは公開まではしない。`-f dry_run=true` を付けると、公開せずに validate と OIDC ログインまでを確かめられる。判定ロジックは `npm run check:registry` で手元からも打てる。
+
 ## `melta-contracts` の読み方
 
 ビルドツール（Node / Metro）に依存しない最も確実な読み方は `require.resolve` + `readFileSync`:

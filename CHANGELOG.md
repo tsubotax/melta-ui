@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- **MCP Registry への公開を GitHub Actions に移す（`.github/workflows/mcp-registry.yml`）** — Registry の
+  `io.github.tsubotax/melta-ui` が 1.3.0（2026-06-13）のまま止まり、npm は 1.8.0 まで進んでいた
+  （2026-10-09 に 1.8.0 を手動公開して解消）。`npm publish` の後に
+  `gh workflow run mcp-registry.yml -f version=X.Y.Z` を打つと、版の照合 → Registry に公開済みならスキップ →
+  npm に出るまで最大 5 分待つ → GitHub OIDC で `mcp-publisher publish` まで進む。押し忘れは毎日の定期ジョブが
+  npm の latest と Registry を比べて赤で知らせる（公開はしない）。判定は `npm run check:registry`
+  （`scripts/design/mcp-registry-precheck.ts`）
+
 ## [1.8.0] - 2026-09-27
 
 ### 同梱 contracts を 0.10.0 へ更新（Dark パレット + 0.9.x の Header / Card）

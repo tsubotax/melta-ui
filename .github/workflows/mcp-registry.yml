@@ -1,0 +1,123 @@
+name: MCP Registry Publish
+
+# npm に出した melta-ds-mcp を公式 MCP Registry（io.github.tsubotax/melta-ui）へ載せる。
+# Registry は npm に同じ版（package.json の mcpName 入り）が無いと公開を拒否するので、順番は npm → Registry。
+#
+#   workflow_dispatch … npm publish の後に人が打つ（publish は human gate: docs/melta-loop-playbook.md）
+#                       gh workflow run mcp-registry.yml -f version=X.Y.Z
+#                       dry_run=true は公開せず validate + OIDC ログインまで（配線の確認用）
+#   schedule          … 公開はしない。npm の latest が Registry に無ければ赤くする（押し忘れの検知）
+#
+# 2026-06〜10 に Registry が 1.3.0 のまま止まり、npm は 1.8.0 まで進んでいた（手元で mcp-publisher を
+# 叩く 1 手が抜け続けた）。npm の ignore-scripts=true 環境では postpublish に繋いでも発火しないので、
+# 押し忘れは schedule の検知で拾う。判定ロジックは scripts/design/mcp-registry-precheck.ts。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "公開する版（npm に出した melta-ds-mcp の版。server.json / package.json と一致していること）"
+        required: true
+        type: string
+      dry_run:
+        description: "公開せず validate + OIDC ログインまでで止める"
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 0 * * *" # 毎日 09:17 JST
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcp-registry
+  cancel-in-progress: false
+
+jobs:
+  # 版の照合と npm 待ちは id-token を持たない job で行う（npm ci で入る依存のコードを、
+  # Registry 用の OIDC トークンを発行できる job で動かさない）
+  precheck:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.check.outputs.action }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: 版の照合 → Registry に公開済みならスキップ → npm に出るまで最大 5 分待つ
+        id: check
+        run: npm run check:registry -- --version "$VERSION" --wait-seconds 300 --interval-seconds 20
+        env:
+          VERSION: ${{ inputs.version }}
+
+  publish:
+    needs: precheck
+    # dry_run は Registry に公開済みの版（skip）でも配線を確認できるようにする。fail のときは走らない
+    if: needs.precheck.outputs.action == 'publish' || (inputs.dry_run && needs.precheck.outputs.action == 'skip')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # mcp-publisher login github-oidc に必要
+    env:
+      # 版とハッシュを固定する。上げるときは
+      # https://github.com/modelcontextprotocol/registry/releases の registry_<版>_checksums.txt から
+      # mcp-publisher_linux_amd64.tar.gz の行を写す。login が "invalid audience" で落ちたら上げどき
+      MCP_PUBLISHER_VERSION: "1.8.1"
+      MCP_PUBLISHER_SHA256: "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc"
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/mcp-publisher.tar.gz" \
+            "https://github.com/modelcontextprotocol/registry/releases/download/v${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
+          echo "${MCP_PUBLISHER_SHA256}  $RUNNER_TEMP/mcp-publisher.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/mcp-publisher.tar.gz" -C "$RUNNER_TEMP" mcp-publisher
+
+      - name: Validate server.json
+        run: |
+          "$RUNNER_TEMP/mcp-publisher" validate
+
+      - name: Login (GitHub OIDC)
+        run: |
+          "$RUNNER_TEMP/mcp-publisher" login github-oidc
+
+      - name: Publish
+        if: ${{ !inputs.dry_run }}
+        run: |
+          "$RUNNER_TEMP/mcp-publisher" publish
+
+      - name: 公開の確認（Registry から同じ版が引ける）
+        if: ${{ !inputs.dry_run }}
+        run: |
+          NAME=$(jq -r '.name | @uri' server.json)
+          curl -fsS -o "$RUNNER_TEMP/registry.json" \
+            "https://registry.modelcontextprotocol.io/v0.1/servers/${NAME}/versions/${VERSION}"
+          jq '{version: .server.version, meta: ._meta}' "$RUNNER_TEMP/registry.json"
+          jq -e --arg v "$VERSION" '.server.version == $v' "$RUNNER_TEMP/registry.json"
+
+  # 押し忘れの検知。公開はしない（id-token も持たない）。赤くなったらログの「出す:」の 1 行を打つ
+  lag-check:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: npm の latest が Registry に載っているか
+        run: npm run check:registry -- --lag-check
