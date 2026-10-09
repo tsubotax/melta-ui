@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **DESIGN.md の公式 linter を `@google/design.md@0.4.0` へ更新** — 0.3.0 から findings は同数（errors 0 / warnings 12 / infos 1）で、
+  CI ゲートの判定は変わらない。0.4.0 の `omitted` frontmatter（意図的に省いた区分の宣言）は、
+  5 区分すべてを持つ melta には不要なので使わない
+
 ### Added
 
 - **MCP Registry への公開を GitHub Actions に移す（`.github/workflows/mcp-registry.yml`）** — Registry の

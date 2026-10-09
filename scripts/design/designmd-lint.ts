@@ -15,7 +15,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "../..");
 
-const LINTER = "@google/design.md@0.3.0";
+// 2026-10-09 に 0.3.0 → 0.4.0。findings は同数（warnings 12 / infos 1）で出力の形も同じ。
+// 0.4.0 の `omitted` frontmatter は、5 区分（colors / typography / rounded / spacing / components）を
+// 全部持つ melta には不要。
+const LINTER = "@google/design.md@0.4.0";
 
 interface Finding {
   severity: "error" | "warning" | "info";
