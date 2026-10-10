@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-10-10
+
+### Changed
+
+- **1.9.0 と同じ内容を 1.9.1 として再発行** — 1.9.0 は `npm publish` が受理され、version 単体の URL・`dist-tags`・
+  MCP Registry では見えるのに、`npm install` / `npm view` が読むパッケージ一覧（packument）に 5 時間以上
+  載らず、`npm install melta-ds-mcp@1.9.0` が `notarget` になった（npm の status page に incident なし）。
+  同じ版は再 publish できないので patch を上げる。コードの変更は無い
+- **`package.json` の `bin` を `./dist/...` → `dist/...`、`repository.url` を `git+https://` に** — 1.9.0 の
+  publish 時に npm が自動で正規化して警告を出した（`npm pkg fix` の結果と同じ）。公開物の `bin` は
+  1.8.0 以前から正規化後の形で入っていたので、挙動は変わらない
+
 ## [1.9.0] - 2026-10-10
 
 ### Changed
