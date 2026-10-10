@@ -1,6 +1,6 @@
 {
   "name": "melta-ds-mcp",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "melta UI — AI-Ready Design System with MCP server (design tokens, component contracts, prohibition rules, check_html self-verification)",
   "type": "module",
   "mcpName": "io.github.tsubotax/melta-ui",
@@ -18,12 +18,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tsubotax/melta-ui.git"
+    "url": "git+https://github.com/tsubotax/melta-ui.git"
   },
   "homepage": "https://melta.tsubotax.com",
   "bin": {
-    "melta-ds-mcp": "./dist/index.js",
-    "melta-lint": "./dist/cli/lint-generated.js"
+    "melta-ds-mcp": "dist/index.js",
+    "melta-lint": "dist/cli/lint-generated.js"
   },
   "exports": {
     "./lint": "./dist/utils/lint.js",
