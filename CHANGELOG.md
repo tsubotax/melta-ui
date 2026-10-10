@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Claude Code plugin（`plugin/` + `.claude-plugin/marketplace.json`）** — `/plugin marketplace add tsubotax/melta-ui` →
+  `/plugin install melta-ui@melta-ui` で、MCP サーバーと PostToolUse lint hook が 1 回で入る。中身は npm の
+  `melta-ds-mcp` を exact pin した `package.json` + lock で、engine のコードは持たない（install 時に Claude Code
+  が依存だけ解決する。build は走らないので dist は npm tarball のものを使う）。skills は入れていない
+  （リポジトリの文書と正本を前提にした手順のため。MCP だけで完結する形に書き直してから）。
+  `plugin.json` の version / pin / lock の解決版が root の version と一致することを `design:drift` が検査する。
+  clone して開発する側は従来どおり `.claude/settings.json` の hook と `.mcp.json` を使い、同じプロジェクトで
+  両方を有効にしない（hook と MCP が二重に走る）
+
 ## [1.9.1] - 2026-10-10
 
 ### Changed

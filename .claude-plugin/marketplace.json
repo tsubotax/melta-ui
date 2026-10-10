@@ -1,0 +1,19 @@
+{
+  "name": "melta-ui",
+  "owner": {
+    "name": "tsubotax",
+    "url": "https://github.com/tsubotax"
+  },
+  "metadata": {
+    "description": "melta UI — AI-Ready design system. MCP server + PostToolUse lint hook as a Claude Code plugin.",
+    "homepage": "https://melta.tsubotax.com"
+  },
+  "plugins": [
+    {
+      "name": "melta-ui",
+      "source": "./plugin",
+      "description": "melta UI の MCP サーバー（get_token / get_component / check_rule / check_html / get_rules / search）と、Write/Edit 直後に禁止パターンを検査する PostToolUse hook。melta-ds-mcp を npm から exact pin で入れる",
+      "category": "design"
+    }
+  ]
+}

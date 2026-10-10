@@ -1,0 +1,12 @@
+{
+  "name": "melta-ui",
+  "version": "1.9.0",
+  "description": "melta UI — AI-Ready design system enforcement: MCP server (tokens / contracts / 107 rules / check_html) + PostToolUse lint hook. Pins melta-ds-mcp from npm.",
+  "author": {
+    "name": "tsubotax",
+    "url": "https://github.com/tsubotax"
+  },
+  "homepage": "https://melta.tsubotax.com",
+  "repository": "https://github.com/tsubotax/melta-ui",
+  "keywords": ["design-system", "mcp", "lint", "tailwind", "ai-ready"]
+}

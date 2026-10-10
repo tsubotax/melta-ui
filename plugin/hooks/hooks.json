@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/node_modules/melta-ds-mcp/dist/cli/lint-generated.js", "--hook"],
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

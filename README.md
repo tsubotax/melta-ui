@@ -80,6 +80,13 @@ claude mcp list
 melta-ui: npx -y melta-ds-mcp - ✔ Connected
 ```
 
+Claude Code なら plugin でも入る。MCP サーバーに加えて、Write / Edit 直後に禁止パターンを検査する PostToolUse hook が同時に有効になる（中身は同じ `melta-ds-mcp` を exact pin。詳細は [docs/distribution.md](./docs/distribution.md)）:
+
+```text
+/plugin marketplace add tsubotax/melta-ui
+/plugin install melta-ui@melta-ui
+```
+
 接続時に MCP `instructions` が渡るので、「melta は完成 CSS ライブラリではない」「先に `melta://design-constitution` を読む」「生成後は `check_html` で自己検証する」を利用側が毎回プロンプトに書く必要はない。あとは UI を指示するだけ:
 
 > ユーザー一覧のテーブルを作って

@@ -80,6 +80,13 @@ claude mcp list
 melta-ui: npx -y melta-ds-mcp - ✔ Connected
 ```
 
+In Claude Code you can also install it as a plugin. Besides the MCP server, it turns on the PostToolUse hook that lints generated files right after Write / Edit (same `melta-ds-mcp`, exact-pinned; see [docs/distribution.md](./docs/distribution.md)):
+
+```text
+/plugin marketplace add tsubotax/melta-ui
+/plugin install melta-ui@melta-ui
+```
+
 On connect the server hands over MCP `instructions`, so you don't have to repeat "melta is not a ready-made CSS library", "read `melta://design-constitution` first" and "run `check_html` before presenting" in every prompt. Then just ask for UI:
 
 > Build me a user list table

@@ -45,6 +45,22 @@ const rules = JSON.parse(readFileSync(require.resolve("melta-contracts/rules"), 
 - **bare import は非サポート**: `import "melta-ds-mcp"` は entry ではない。`dist/index.js` は import しただけで stdio サーバーが起動する CLI entry であり、公開 API にしない。利用は `npx melta-ds-mcp`（MCP サーバー）か上記 subpath 経由
 - 解決経路は実際の Node 解決器で `tests/package-exports.spec.ts` が固定する
 
+## Claude Code plugin
+
+`plugin/` と `.claude-plugin/marketplace.json` で、MCP サーバーと PostToolUse hook を 1 回の install で入れられる。
+
+```text
+/plugin marketplace add tsubotax/melta-ui
+/plugin install melta-ui@melta-ui
+```
+
+- 中身は npm の `melta-ds-mcp` を **exact pin** した `plugin/package.json` + `package-lock.json`。Claude Code が install 時に依存だけ解決する（build は走らない。dist は npm tarball のもの）。plugin 自体に engine のコードは無い
+- MCP は `node ${CLAUDE_PLUGIN_ROOT}/node_modules/melta-ds-mcp/dist/index.js`、hook は同じ場所の `dist/cli/lint-generated.js --hook`（stdin の PostToolUse JSON を読む）
+- **skills は入れていない**。`build-screen` はリポジトリの `AGENTS.md` / `design/contracts/` / `npm run` を前提にし、`ban-pattern` は `rules.json` という正本を書き換える開発用のため、利用者のプロジェクトでは成立しない。MCP ツールだけで完結する形に書き直してから足す
+- **版は npm と 1 対 1**。`plugin.json` の version、pin、lock の解決版が root の `package.json` と一致することを `npm run design:drift` が検査する。順番は「npm publish → `plugin/` で `npm install --package-lock-only` → plugin を出す」。lock を先に作ると存在しない版を引きに行く
+- **clone と plugin を同じプロジェクトで併用しない**。clone 側は `.claude/settings.json` の hook と `.mcp.json`（src を tsx で）、plugin 側は npm の公開版。両方入れると hook と MCP が二重に走り、開発中 engine と公開済み engine で判定が食い違う
+- 公開前に `claude plugin validate ./plugin` を通す
+
 ## 自分のデザインシステムを持ち込む（BYO-DS）
 
 `melta-ds-mcp` は、起動時に読み込むアセット root を自分の DS bundle へ切り替えられる（`--melta-root=<path>`）。切り替えると melta のトークン・ルール・コンポーネント仕様は一切読まれず、**同じエンジンが自分の DS の辞書で検査する**。melta のルールとは混在しない。

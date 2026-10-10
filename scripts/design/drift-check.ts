@@ -211,6 +211,43 @@ if (!serverRuleMatch) {
   ok(`server.json description のルール件数一致: ${actualRuleCount} 件`);
 }
 
+// Claude Code plugin（plugin/）の版は npm の版と 1 対 1。plugin.json の version、plugin/package.json の
+// pin、plugin/package-lock.json の解決版が root の package.json とずれると、install 時に別の版を引く
+// か、存在しない版を引きに行く（Codex 設計レビュー 2026-10-10 の指摘 4）
+const pluginDir = resolve(root, "plugin");
+if (existsSync(pluginDir)) {
+  const pluginManifest = JSON.parse(readFileSync(resolve(pluginDir, ".claude-plugin/plugin.json"), "utf-8"));
+  const pluginPkg = JSON.parse(readFileSync(resolve(pluginDir, "package.json"), "utf-8"));
+  const pluginPin = pluginPkg.dependencies?.["melta-ds-mcp"];
+  const lockPath = resolve(pluginDir, "package-lock.json");
+  const lockResolved = existsSync(lockPath)
+    ? JSON.parse(readFileSync(lockPath, "utf-8")).packages?.["node_modules/melta-ds-mcp"]?.version
+    : undefined;
+  const pluginVersions: Array<[string, unknown]> = [
+    ["plugin/.claude-plugin/plugin.json version", pluginManifest.version],
+    ["plugin/package.json dependencies.melta-ds-mcp", pluginPin],
+    ["plugin/package-lock.json の melta-ds-mcp 解決版", lockResolved],
+  ];
+  const pluginMismatch = pluginVersions.filter(([, v]) => v !== pkgVersion);
+  if (!existsSync(lockPath)) {
+    drift("plugin/package-lock.json がありません（plugin ディレクトリで npm install --package-lock-only を回す。npm に同じ版が公開済みであること）");
+  } else if (pluginMismatch.length > 0) {
+    drift(`plugin の版が package.json（${pkgVersion}）と不一致: ${pluginMismatch.map(([k, v]) => `${k}=${String(v)}`).join(" / ")}`);
+  } else {
+    ok(`plugin の版一致: ${pkgVersion}（plugin.json / pin / lock）`);
+  }
+  // marketplace の entry 名と plugin.json の name が違うと install できない
+  const marketplace = JSON.parse(readFileSync(resolve(root, ".claude-plugin/marketplace.json"), "utf-8"));
+  const entry = (marketplace.plugins ?? []).find((p: { name?: string }) => p.name === pluginManifest.name);
+  if (!entry) {
+    drift(`.claude-plugin/marketplace.json に plugin "${pluginManifest.name}" の entry がありません`);
+  } else if (resolve(root, ".claude-plugin", String(entry.source)) !== pluginDir && resolve(root, String(entry.source)) !== pluginDir) {
+    drift(`marketplace の source "${String(entry.source)}" が plugin/ を指していません`);
+  } else {
+    ok(`marketplace.json の entry "${pluginManifest.name}" が plugin/ を指す`);
+  }
+}
+
 // showcase の version 表示は ds-showcase.js が .ds-version-label だけを置換する。
 // クラスを付け忘れた "v1.2" 表記は置換対象外＝永久 stale になるので、全 v 表記を検査する。
 if (existsSync(docsPath)) {
