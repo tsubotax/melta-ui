@@ -43,7 +43,8 @@ You can make an AI read your guidelines. Whether it *follows* them is up to the 
 | Package | Role | Usage |
 |---|---|---|
 | [`melta-contracts`](https://www.npmjs.com/package/melta-contracts) | **Contract data** (tokens / rules / component contracts / recipes, JSON only). No build step, framework-agnostic | `npm install melta-contracts` |
-| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP server + lint engine** (this repository). `check_html` runs the same logic as CI and the hook | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint` |
+| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP server + lint engine** (this repository). `check_html` runs the same logic as CI and the hook | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint` / `npx -p melta-ds-mcp melta-lint <file>` |
+| Claude Code plugin `melta-ui` | **MCP server + PostToolUse lint hook** in one install. Exact-pins `melta-ds-mcp` ([plugin/README.md](./plugin/README.md)) | `/plugin marketplace add tsubotax/melta-ui` → `/plugin install melta-ui@melta-ui` |
 | [`melta-app`](https://www.npmjs.com/package/melta-app) | **React Native implementation**, shipping an eslint plugin for consumer projects | `npm install melta-app` |
 
 > A bare import of `melta-ds-mcp` (`import "melta-ds-mcp"`) is unsupported: the entry is a CLI that boots a stdio server on import. Use `npx melta-ds-mcp` or the subpaths. Entry contract, deep-import compatibility and the package-split plan live in [docs/distribution.md](./docs/distribution.md).

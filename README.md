@@ -43,7 +43,8 @@ AI にガイドラインを読ませることはできる。守るかどうか�
 | パッケージ | 役割 | 使い方 |
 |---|---|---|
 | [`melta-contracts`](https://www.npmjs.com/package/melta-contracts) | **契約データ**（tokens / rules / component contracts / recipes の JSON）。ビルド不要・フレームワーク非依存 | `npm install melta-contracts` |
-| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP サーバー + lint エンジン**（このリポジトリ）。`check_html` は CI / hook と同一ロジック | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint` |
+| [`melta-ds-mcp`](https://www.npmjs.com/package/melta-ds-mcp) | **MCP サーバー + lint エンジン**（このリポジトリ）。`check_html` は CI / hook と同一ロジック | `npx -y melta-ds-mcp` / `melta-ds-mcp/lint` / `npx -p melta-ds-mcp melta-lint <file>` |
+| Claude Code plugin `melta-ui` | **MCP サーバー + PostToolUse lint hook** を 1 回で入れる。中身は `melta-ds-mcp` を exact pin（[plugin/README.md](./plugin/README.md)） | `/plugin marketplace add tsubotax/melta-ui` → `/plugin install melta-ui@melta-ui` |
 | [`melta-app`](https://www.npmjs.com/package/melta-app) | **React Native 実装**。消費者プロジェクト向け eslint plugin を同梱 | `npm install melta-app` |
 
 > `melta-ds-mcp` 自体の bare import（`import "melta-ds-mcp"`）は非サポート。entry は import しただけで stdio サーバーが起動する CLI なので、`npx melta-ds-mcp` か subpath 経由で使う。entry 規約・deep import 互換・パッケージ分割の予定は [docs/distribution.md](./docs/distribution.md)。
