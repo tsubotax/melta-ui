@@ -3,6 +3,6 @@
   "private": true,
   "description": "Claude Code plugin の依存。melta-ds-mcp を exact pin し、install 時に Claude Code が node_modules を入れる（lifecycle script は走らない）。version は plugin.json と package.json（root）と揃える（design:drift が検査）",
   "dependencies": {
-    "melta-ds-mcp": "1.9.0"
+    "melta-ds-mcp": "1.9.1"
   }
 }
